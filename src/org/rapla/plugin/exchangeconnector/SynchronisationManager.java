@@ -109,7 +109,6 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 	 * @param changeEvents : Array of {@link AllocationChangeEvent} with all changes that happened
 	 * @see org.rapla.facade.AllocationChangeListener#changed(org.rapla.facade.AllocationChangeEvent[])
 	 */
-	@Override
 	public void changed(AllocationChangeEvent[] changeEvents) {
 		Thread changeHandlerThread = new Thread(new ChangeHandler(changeEvents, clientFacade), "ChangeHandlerThread");
 		changeHandlerThread.start();
@@ -166,8 +165,6 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 		return returnMessage;
 	}
 
-
-    @Override
 	public boolean isInvokedOnAWTEventQueue() {
 		return false;
 	}

@@ -31,7 +31,6 @@ class MessageServerImpl implements  IMessageServer{
         return session;
     }
 
-    @Override
     public void sendObject(Message m) throws JMSException {
         final Queue queue = getSession().createQueue(MessageServerFactory.UPDATE_EXCHANGE);
         final MessageProducer producer = getSession().createProducer(queue);
@@ -39,7 +38,6 @@ class MessageServerImpl implements  IMessageServer{
         producer.send(m);
     }
 
-    @Override
     public Message createMessage(AllocationChangeEvent changeEvent) throws JMSException {
 
         return getSession().createObjectMessage(new MessageContainer(

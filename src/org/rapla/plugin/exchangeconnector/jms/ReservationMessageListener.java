@@ -25,7 +25,6 @@ public class ReservationMessageListener implements MessageListener {
         this.clientFacade = clientFacade;
     }
 
-    @Override
     public void onMessage(Message message) {
         if (message instanceof ObjectMessage) {
             ObjectMessage messageObject = (ObjectMessage) message;

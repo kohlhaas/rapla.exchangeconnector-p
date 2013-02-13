@@ -171,7 +171,6 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
     }
 
 
-	@Override
 	public void actionPerformed(ActionEvent actionEvent) {
 		if (actionEvent.getSource().equals(syncallButton)) {
 			try {

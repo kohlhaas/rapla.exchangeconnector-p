@@ -279,7 +279,6 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption implements
     }
 
     private class UpdateComponentsListener implements ActionListener {
-        @Override
         public void actionPerformed(ActionEvent e) {
             updateComponentState();
         }
