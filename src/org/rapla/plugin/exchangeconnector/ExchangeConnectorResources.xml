@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?><!--*- coding: utf-8 -*-->
+<!DOCTYPE resources SYSTEM "../../components/xmlbundle/resources.dtd">
+<resources default="en">
+<entry key="enable.sync.rapla.exchange">
+	<text lang="en">Enable syncing from Rapla to Exchange</text>
+	<text lang="de">Synchronisieren von Rapla zu Exchange aktivieren</text>
+</entry>
+<entry key="enable.sync.exchange.rapla">
+	<text lang="en">Enable syncing from Exchchange to Rapla</text>
+	<text lang="de">Synchronisieren von Exchange zu Rapla aktivieren</text>
+</entry>
+<entry key="security.info">
+	<text lang="en"><html> <br>For privacy reasons only appointments of the given category are imported.</br></html></text>
+	<text lang="de"><html> <br>Aus Datenschutzgründen werden nur Termine der gegebenen Kategorie importiert.</br></html></text>
+</entry>
+<entry key ="password.server">
+	<text lang="en">Password on Exchange-Server</text>
+	<text lang="de">Passwort auf dem Exchange-Server</text>
+</entry>
+<entry key ="username.server">
+	<text lang="en">Username on Exchange-Server</text>
+	<text lang="de">Username auf dem Exchange-Server</text>
+</entry>
+<entry key="category.filter">
+	<text lang="en">Exchange Category Filter</text>
+	<text lang="de">Nur Termine mit der folgenden Kategorie importieren</text>
+</entry>
+<entry key="button.sync">
+	<text lang="en">(Re-)Sync all</text>
+	<text lang="de">Alle (re-)synchronisieren</text>
+</entry>
+<entry key="infobox.sync">
+	<text lang="en">Synchronize all Appointments in chosen
+        			period of time for all user accounts,
+        			on which syncing is enabled.</text>
+    <text lang="de">Synchronisiere alle Termine im
+ 					gewählten Zeitraum für alle   		
+    				Benutzeraccounts, die synchro-
+    				nisieren aktivert haben.</text>
+</entry>
+<entry key ="sync.msexchange">
+	<text lang="en">Provide syncing to MS Exchange Server</text>
+	<text lang="de">Synchronisation des MS Exchange Server aktivieren</text>
+</entry>
+<entry key ="sync.future">
+	<text lang="en">Synchronize appoints in future (in days)</text>
+	<text lang="de">Termin in der Zukunft synchronisieren (in Tagen)</text>
+</entry>
+<entry key ="server.frequency">
+	<text lang="en">Pull frequency from Exchange Server (in seconds)</text>
+	<text lang="de">Abfrageintervall beim Exchange Server (in Sekunden)</text>
+</entry>
+<entry key ="sync.past">
+	<text lang="en">Synchronize appointments in past (in days)</text>
+	<text lang="de">Termine in der Vergangenheit synchronisieren (in Tagen)</text>
+</entry>
+<entry key="appointment.category">
+	<text lang="en">Category name of appointments created in MS Exchange Server</text>
+	<text lang="de">Kategorie der im Exchange angelegten Termine</text>
+</entry>
+<entry key="msexchange.hosturl">
+	<text lang="en">Exchange Webservice Host URL (with http or https)</text>
+	<text lang="de">Exchange Webservice Host URL (mit http oder https)</text>
+</entry>
+<entry key="event.raplatype">
+	<text lang="en">Choose rapla event type for imported events</text>
+	<text lang="de">Rapla-Veranstaltungstyp für die Veranstaltungen aus Exchange</text>
+</entry>
+    <entry key="event.raplatypes">
+        <text lang="en">Choose rapla event types to be pushed to Exchange</text>
+        <text lang="de">Nur Veranstaltungen dieser Art werden nach Exchange übertragen</text>
+    </entry>
+
+</resources>

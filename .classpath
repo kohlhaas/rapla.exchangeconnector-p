@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry exported="true" kind="src" path="/Rapla">
+		<accessrules>
+			<accessrule kind="nonaccessible" pattern="**/internal/**"/>
+			<accessrule kind="accessible" pattern="org/apache/avalon/**"/>
+			<accessrule kind="accessible" pattern="org/rapla/framework/*"/>
+			<accessrule kind="accessible" pattern="org/rapla/entities/**"/>
+			<accessrule kind="accessible" pattern="org/rapla/facade/*"/>
+			<accessrule kind="accessible" pattern="org/rapla/components/xmlbundle/**"/>
+			<accessrule kind="accessible" pattern="org/rapla/components/calendar/*"/>
+			<accessrule kind="accessible" pattern="org/rapla/components/layout/*"/>
+			<accessrule kind="accessible" pattern="org/rapla/gui/*"/>
+			<accessrule kind="accessible" pattern="org/rapla/gui/toolkit/*"/>
+			<accessrule kind="accessible" pattern="org/rapla/plugin/mail/*"/>
+			<accessrule kind="accessible" pattern="org/rapla/plugin/*"/>
+			<accessrule kind="accessible" pattern="org/rapla/servletpages/*"/>
+			<accessrule kind="accessible" pattern="org/rapla/plugin/abstractcalendar/*"/>
+			<accessrule kind="accessible" pattern="org/rapla/components/iolayer/*"/>
+			<accessrule kind="discouraged" pattern="**"/>
+		</accessrules>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/EWSAPI-1.1.5.jar"/>
+	<classpathentry kind="lib" path="lib/imq.jar"/>
+	<classpathentry kind="lib" path="lib/jcifs-1.3.17.jar"/>
+	<classpathentry kind="lib" path="lib/jms.jar"/>
+	<classpathentry kind="lib" path="lib/org.apache.commons.httpclient_3.1.0.v201012070820.jar"/>
+	<classpathentry kind="output" path="eclipse-build"/>
+</classpath>
