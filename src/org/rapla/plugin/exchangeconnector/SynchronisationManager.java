@@ -19,7 +19,7 @@ import javax.jms.JMSException;
  * @see {@link ExchangeAppointmentStorage}
  * @see {@link ExchangeAccountInformationStorage}
  */
-public class SynchronisationManager extends RaplaComponent implements AllocationChangeListener{
+public class SynchronisationManager extends RaplaComponent implements AllocationChangeListener, ModificationListener {
 	
 	
 	private static SynchronisationManager synchronisationManagerInstance = null;
@@ -39,7 +39,7 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 		
 		clientFacade = (ClientFacade) context.lookup(ClientFacade.ROLE);
 		clientFacade.addAllocationChangedListener(this);
-     //   clientFacade.addModificationListener(this);
+        clientFacade.addModificationListener(this);
 
 
 
@@ -110,11 +110,13 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 	 * @see org.rapla.facade.AllocationChangeListener#changed(org.rapla.facade.AllocationChangeEvent[])
 	 */
 	public void changed(AllocationChangeEvent[] changeEvents) {
+        SynchronisationManager.logInfo("Invoked change handler for " + changeEvents.length + " events");
 		Thread changeHandlerThread = new Thread(new ChangeHandler(changeEvents, clientFacade), "ChangeHandlerThread");
 		changeHandlerThread.start();
 	}
 	
 	public String addExchangeUser(String raplaUsername, String exchangeUsername, String exchangePassword, Boolean downloadFromExchange) throws RaplaException {
+        SynchronisationManager.logInfo("Invoked add exchange user for rapla " + raplaUsername+" with exchange user "+exchangeUsername);
 		boolean success = ExchangeAccountInformationStorage.getInstance().addAccount(raplaUsername, exchangeUsername, exchangePassword, downloadFromExchange);
 		String returnMessage;
 		if(success) {
@@ -133,7 +135,8 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 	}
 
 	private void syncUser(String raplaUsername) throws RaplaException {
-		Thread thread = new Thread(new SyncUserHandler(clientFacade, clientFacade.getUser(raplaUsername)), "SyncUserThread");
+        SynchronisationManager.logInfo("Invoked change sync for user "+raplaUsername);
+        Thread thread = new Thread(new SyncUserHandler(clientFacade, clientFacade.getUser(raplaUsername)), "SyncUserThread");
 		thread.start();
 	}
 
@@ -165,7 +168,14 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 		return returnMessage;
 	}
 
-	public boolean isInvokedOnAWTEventQueue() {
+    @Override
+    public void dataChanged(ModificationEvent evt) throws RaplaException {
+        SynchronisationManager.logInfo("Invoked data change handler for " + evt.getChanged().size() + " objects");
+        Thread changeHandlerThread = new Thread(new ChangeHandler(evt, clientFacade), "ChangeHandlerThread");
+        changeHandlerThread.start();
+    }
+
+    public boolean isInvokedOnAWTEventQueue() {
 		return false;
 	}
 
