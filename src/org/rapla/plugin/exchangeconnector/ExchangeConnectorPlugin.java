@@ -223,7 +223,7 @@ public class ExchangeConnectorPlugin implements PluginDescriptor {
     }
 
     public static DynamicType getImportEventType(ClientFacade currentClientFacade) throws RaplaException {
-        final DynamicType[] dynamicTypes = currentClientFacade.getDynamicTypes(DynamicTypeAnnotations.VALUE_RESERVATION_CLASSIFICATION);
+        final DynamicType[] dynamicTypes = currentClientFacade.getDynamicTypes(DynamicTypeAnnotations.VALUE_CLASSIFICATION_TYPE_RESERVATION);
         for (DynamicType dynamicType : dynamicTypes) {
             if (dynamicType.getElementKey().equals(ExchangeConnectorPlugin.IMPORT_EVENT_TYPE)) {
                 return dynamicType;

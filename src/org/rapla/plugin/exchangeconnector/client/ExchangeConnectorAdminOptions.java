@@ -134,7 +134,7 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 
 	protected void readConfig( Configuration config){
         try {
-            DynamicType[] dynamicTypes = getClientFacade().getDynamicTypes(DynamicTypeAnnotations.VALUE_RESERVATION_CLASSIFICATION);
+            DynamicType[] dynamicTypes = getClientFacade().getDynamicTypes(DynamicTypeAnnotations.VALUE_CLASSIFICATION_TYPE_RESERVATION);
             StringWrapper<DynamicType> [] eventTypes= new StringWrapper [dynamicTypes.length];
             for (int i = 0, dynamicTypesLength = dynamicTypes.length; i < dynamicTypesLength; i++) {
                 DynamicType dynamicType = dynamicTypes[i];

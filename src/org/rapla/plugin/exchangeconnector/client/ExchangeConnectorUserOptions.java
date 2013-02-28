@@ -258,7 +258,7 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption implements
 
         final DefaultListModel model = new DefaultListModel();
         try {
-            for (DynamicType event : getClientFacade().getDynamicTypes(DynamicTypeAnnotations.VALUE_RESERVATION_CLASSIFICATION)) {
+            for (DynamicType event : getClientFacade().getDynamicTypes(DynamicTypeAnnotations.VALUE_CLASSIFICATION_TYPE_RESERVATION)) {
                 // event type of "import from exchange" will be ignored!
                 if (!ExchangeConnectorPlugin.IMPORT_EVENT_TYPE.equalsIgnoreCase(event.getElementKey()))
                     model.addElement(new StringWrapper<DynamicType>(event));
