@@ -4,7 +4,6 @@
 package org.rapla.plugin.exchangeconnector;
 
 import microsoft.exchange.webservices.data.*;
-import org.apache.avalon.framework.configuration.Configuration;
 import org.rapla.entities.User;
 import org.rapla.entities.configuration.Preferences;
 import org.rapla.entities.configuration.RaplaConfiguration;
@@ -14,6 +13,7 @@ import org.rapla.entities.domain.Repeating;
 import org.rapla.entities.dynamictype.Classification;
 import org.rapla.facade.ClientFacade;
 import org.rapla.facade.RaplaComponent;
+import org.rapla.framework.Configuration;
 import org.rapla.framework.RaplaException;
 import org.rapla.framework.RaplaLocale;
 import org.rapla.gui.CalendarOptions;

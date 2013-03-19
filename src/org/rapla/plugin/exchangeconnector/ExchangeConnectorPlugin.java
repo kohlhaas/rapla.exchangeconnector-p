@@ -1,9 +1,6 @@
 package org.rapla.plugin.exchangeconnector;
 
 import microsoft.exchange.webservices.data.LegacyFreeBusyStatus;
-import org.apache.avalon.framework.configuration.Configuration;
-import org.apache.avalon.framework.configuration.ConfigurationException;
-import org.apache.avalon.framework.configuration.DefaultConfiguration;
 import org.rapla.components.xmlbundle.I18nBundle;
 import org.rapla.components.xmlbundle.impl.I18nBundleImpl;
 import org.rapla.entities.User;

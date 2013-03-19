@@ -3,6 +3,9 @@
  */
 package org.rapla.plugin.exchangeconnector;
 
+import javax.jms.JMSException;
+import javax.jms.Message;
+
 import org.rapla.entities.RaplaObject;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.Reservation;
@@ -11,11 +14,6 @@ import org.rapla.facade.AllocationChangeEvent;
 import org.rapla.facade.ClientFacade;
 import org.rapla.facade.ModificationEvent;
 import org.rapla.framework.RaplaException;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
-import java.util.List;
-import java.util.Set;
 
 /**
  * @author lutz

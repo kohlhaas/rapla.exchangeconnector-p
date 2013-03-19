@@ -168,7 +168,6 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 		return returnMessage;
 	}
 
-    @Override
     public void dataChanged(ModificationEvent evt) throws RaplaException {
         SynchronisationManager.logInfo("Invoked data change handler for " + evt.getChanged().size() + " objects");
         Thread changeHandlerThread = new Thread(new ChangeHandler(evt, clientFacade), "ChangeHandlerThread");
