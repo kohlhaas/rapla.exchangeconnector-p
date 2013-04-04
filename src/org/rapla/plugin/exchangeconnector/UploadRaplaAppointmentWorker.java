@@ -11,13 +11,13 @@ import org.rapla.entities.domain.Allocatable;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.Repeating;
 import org.rapla.entities.dynamictype.Classification;
+import org.rapla.facade.CalendarOptions;
 import org.rapla.facade.ClientFacade;
 import org.rapla.facade.RaplaComponent;
+import org.rapla.facade.internal.CalendarOptionsImpl;
 import org.rapla.framework.Configuration;
 import org.rapla.framework.RaplaException;
 import org.rapla.framework.RaplaLocale;
-import org.rapla.gui.CalendarOptions;
-import org.rapla.gui.CalendarOptionsImpl;
 import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAppointmentStorage;
 
 import java.text.SimpleDateFormat;
