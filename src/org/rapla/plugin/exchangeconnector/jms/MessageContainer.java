@@ -1,8 +1,8 @@
 package org.rapla.plugin.exchangeconnector.jms;
 
-import org.rapla.facade.AllocationChangeEvent;
-
 import java.io.Serializable;
+
+import org.rapla.facade.AllocationChangeEvent;
 
 /**
  * User: kuestermann

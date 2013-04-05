@@ -3,7 +3,28 @@
  */
 package org.rapla.plugin.exchangeconnector;
 
-import microsoft.exchange.webservices.data.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+
+import microsoft.exchange.webservices.data.Appointment;
+import microsoft.exchange.webservices.data.AppointmentSchema;
+import microsoft.exchange.webservices.data.AppointmentType;
+import microsoft.exchange.webservices.data.Attendee;
+import microsoft.exchange.webservices.data.AttendeeCollection;
+import microsoft.exchange.webservices.data.BasePropertySet;
+import microsoft.exchange.webservices.data.FindItemsResults;
+import microsoft.exchange.webservices.data.Item;
+import microsoft.exchange.webservices.data.ItemView;
+import microsoft.exchange.webservices.data.LogicalOperator;
+import microsoft.exchange.webservices.data.MessageBody;
+import microsoft.exchange.webservices.data.PropertySet;
+import microsoft.exchange.webservices.data.SearchFilter;
+import microsoft.exchange.webservices.data.Sensitivity;
+import microsoft.exchange.webservices.data.WellKnownFolderName;
+
 import org.rapla.entities.User;
 import org.rapla.entities.configuration.Preferences;
 import org.rapla.entities.domain.Allocatable;
@@ -12,13 +33,9 @@ import org.rapla.entities.domain.internal.ReservationImpl;
 import org.rapla.entities.dynamictype.Classification;
 import org.rapla.entities.dynamictype.ClassificationFilter;
 import org.rapla.entities.dynamictype.DynamicType;
-import org.rapla.entities.dynamictype.internal.ClassificationFilterImpl;
 import org.rapla.facade.ClientFacade;
 import org.rapla.framework.RaplaException;
 import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAppointmentStorage;
-
-import java.util.*;
-
 /**
  * This worker is used for the retrieval of new appointments from the Exchange Server
  *

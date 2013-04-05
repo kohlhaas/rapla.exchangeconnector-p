@@ -1,28 +1,29 @@
 package org.rapla.plugin.exchangeconnector;
 
+import java.util.Calendar;
+import java.util.Date;
+
 import microsoft.exchange.webservices.data.LegacyFreeBusyStatus;
+
 import org.rapla.components.xmlbundle.I18nBundle;
 import org.rapla.components.xmlbundle.impl.I18nBundleImpl;
-import org.rapla.entities.User;
-import org.rapla.entities.configuration.RaplaConfiguration;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.dynamictype.DynamicType;
 import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
 import org.rapla.facade.CalendarOptions;
 import org.rapla.facade.ClientFacade;
-import org.rapla.facade.internal.CalendarOptionsImpl;
-import org.rapla.framework.*;
+import org.rapla.framework.Configuration;
+import org.rapla.framework.ConfigurationException;
+import org.rapla.framework.Container;
+import org.rapla.framework.DefaultConfiguration;
+import org.rapla.framework.PluginDescriptor;
+import org.rapla.framework.RaplaException;
 import org.rapla.plugin.RaplaExtensionPoints;
 import org.rapla.plugin.RaplaPluginMetaInfo;
-import org.rapla.plugin.exchangeconnector.client.*;
-import org.rapla.plugin.mail.MailPlugin;
+import org.rapla.plugin.exchangeconnector.client.ExchangeConnectorAdminOptions;
+import org.rapla.plugin.exchangeconnector.client.ExchangeConnectorUserOptions;
 import org.rapla.plugin.mail.internal.MailOption;
 import org.rapla.server.ServerService;
-
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
 
 
 public class ExchangeConnectorPlugin implements PluginDescriptor {
@@ -89,6 +90,7 @@ public class ExchangeConnectorPlugin implements PluginDescriptor {
     public static final String DEFAULT_RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL = "email";
 
     //user, checkbox
+
     public static final String EXCHANGE_REMINDER_SET_KEY = "exchange.reminder.set";
     public static final boolean  DEFAULT_EXCHANGE_REMINDER_SET = true;
     public static boolean  EXCHANGE_REMINDER_SET = DEFAULT_EXCHANGE_REMINDER_SET;
@@ -146,23 +148,18 @@ public class ExchangeConnectorPlugin implements PluginDescriptor {
       * @see org.rapla.framework.PluginDescriptor#provideServices(org.rapla.framework.Container, org.apache.avalon.framework.configuration.Configuration)
       */
     public void provideServices(Container container, Configuration config) {
-        container.addContainerProvidedComponent(RaplaExtensionPoints.PLUGIN_OPTION_PANEL_EXTENSION, MailOption.class.getName(), MailPlugin.class.getName(), config);
-
         if (config.getAttributeAsBoolean(CONFIG_PLUGIN_ENABLED_KEY, DEFAULT_CONFIG_PLUGIN_ENABLED)) {
             try {
                 loadConfigParameters(config);
-                container.addContainerProvidedComponentInstance(PLUGIN_CLASS, Boolean.TRUE);
-                container.addContainerProvidedComponent(I18nBundle.ROLE, I18nBundleImpl.class.getName(), RESOURCE_FILE, I18nBundleImpl.createConfig(RESOURCE_FILE));
+                container.addContainerProvidedComponent(I18nBundle.class, I18nBundleImpl.class, RESOURCE_FILE, I18nBundleImpl.createConfig(RESOURCE_FILE));
 
-                if (container.getContext().has(ServerService.ROLE)) {
-                    container.addContainerProvidedComponent(RaplaExtensionPoints.SERVER_EXTENSION, SynchronisationManager.class.getName(), PLUGIN_CLASS, config);
-                    container.addContainerProvidedComponent(ExchangeConnectorRemote.class.getName(), ExchangeConnectorRemoteObject.class.getName(), ExchangeConnectorRemote.class.getName(), config);
+                if (container.getContext().has(ServerService.class)) {
+                    container.addContainerProvidedComponent(RaplaExtensionPoints.SERVER_EXTENSION, SynchronisationManager.class);
+                    container.addContainerProvidedComponent(ExchangeConnectorRemote.class, ExchangeConnectorRemoteObject.class);
                 } else {
-                    container.addContainerProvidedComponent(RaplaExtensionPoints.USER_OPTION_PANEL_EXTENSION, ExchangeConnectorUserOptions.class.getName(), PLUGIN_CLASS, config);
-                    container.addContainerProvidedComponent(RaplaExtensionPoints.PLUGIN_OPTION_PANEL_EXTENSION, ExchangeConnectorAdminOptions.class.getName(), PLUGIN_CLASS, config);
+                    container.addContainerProvidedComponent(RaplaExtensionPoints.USER_OPTION_PANEL_EXTENSION, ExchangeConnectorUserOptions.class);
+                    container.addContainerProvidedComponent(RaplaExtensionPoints.PLUGIN_OPTION_PANEL_EXTENSION, ExchangeConnectorAdminOptions.class, ExchangeConnectorPlugin.class.getName());
                 }
-
-
             } catch (ConfigurationException e) {
                 System.err.println("Exchange Connector Plugin did not start!");
             }

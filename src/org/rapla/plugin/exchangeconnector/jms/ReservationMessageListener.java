@@ -1,17 +1,17 @@
 package org.rapla.plugin.exchangeconnector.jms;
 
-import org.rapla.entities.storage.internal.SimpleIdentifier;
-import org.rapla.facade.AllocationChangeEvent;
-import org.rapla.facade.ClientFacade;
-import org.rapla.plugin.exchangeconnector.ExchangeConnectorUtils;
-import org.rapla.plugin.exchangeconnector.SynchronisationManager;
+import java.io.Serializable;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.ObjectMessage;
-import java.io.Serializable;
-import java.util.logging.Logger;
+
+import org.rapla.entities.storage.internal.SimpleIdentifier;
+import org.rapla.facade.AllocationChangeEvent;
+import org.rapla.facade.ClientFacade;
+import org.rapla.plugin.exchangeconnector.ExchangeConnectorUtils;
+import org.rapla.plugin.exchangeconnector.SynchronisationManager;
 
 /**
  * User: kuestermann

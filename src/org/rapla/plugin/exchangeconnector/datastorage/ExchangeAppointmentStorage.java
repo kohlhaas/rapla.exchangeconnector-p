@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import org.rapla.entities.domain.Appointment;
-import org.rapla.entities.storage.internal.SimpleIdentifier;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorUtils;
 import org.rapla.plugin.exchangeconnector.SynchronisationManager;

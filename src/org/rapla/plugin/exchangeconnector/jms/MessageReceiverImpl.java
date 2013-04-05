@@ -1,6 +1,11 @@
 package org.rapla.plugin.exchangeconnector.jms;
 
-import javax.jms.*;
+import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.Queue;
+import javax.jms.QueueConnectionFactory;
+import javax.jms.Session;
 
 /**
 * Created with IntelliJ IDEA.

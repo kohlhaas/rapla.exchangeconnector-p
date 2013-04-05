@@ -3,7 +3,11 @@
  */
 package org.rapla.plugin.exchangeconnector;
 
-import microsoft.exchange.webservices.data.*;
+import microsoft.exchange.webservices.data.Appointment;
+import microsoft.exchange.webservices.data.DeleteMode;
+import microsoft.exchange.webservices.data.ItemId;
+import microsoft.exchange.webservices.data.SendCancellationsMode;
+import microsoft.exchange.webservices.data.ServiceResponseException;
 
 import org.rapla.entities.storage.internal.SimpleIdentifier;
 import org.rapla.facade.ClientFacade;

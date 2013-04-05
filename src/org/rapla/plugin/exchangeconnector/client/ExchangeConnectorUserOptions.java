@@ -1,10 +1,25 @@
 package org.rapla.plugin.exchangeconnector.client;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Locale;
+
+import javax.swing.DefaultListModel;
+import javax.swing.JCheckBox;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
+
 import org.rapla.components.layout.TableLayout;
 import org.rapla.entities.configuration.Preferences;
 import org.rapla.entities.dynamictype.DynamicType;
 import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
-import org.rapla.framework.Configuration;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.gui.DefaultPluginOption;
@@ -12,11 +27,6 @@ import org.rapla.gui.OptionPanel;
 import org.rapla.gui.internal.edit.reservation.SortedListModel;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
-
-import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.Locale;
 
 /**
  * @author lutz
@@ -26,7 +36,6 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption implements
     private static final String DEFAULT_DISPLAYED_VALUE = "******";
     private Preferences preferences;
     @SuppressWarnings("unused")
-    private Configuration configuration;
 
     private String exchangeUsername;
     private String exchangePassword;
@@ -50,10 +59,9 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption implements
     private String eventTypeKeys;
 
 
-    public ExchangeConnectorUserOptions(RaplaContext raplaContext, Configuration config) throws Exception {
+    public ExchangeConnectorUserOptions(RaplaContext raplaContext) throws Exception {
         super(raplaContext);
         setChildBundleName(ExchangeConnectorPlugin.RESOURCE_FILE);
-        this.configuration = config;
     }
 
     public JComponent getComponent() {

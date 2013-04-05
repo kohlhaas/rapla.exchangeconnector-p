@@ -1,10 +1,14 @@
 package org.rapla.plugin.exchangeconnector;
 
-import microsoft.exchange.webservices.data.*;
-import org.rapla.components.util.DateTools;
-
 import java.net.URI;
-import java.util.TimeZone;
+
+import microsoft.exchange.webservices.data.ExchangeService;
+import microsoft.exchange.webservices.data.ExchangeVersion;
+import microsoft.exchange.webservices.data.NameResolutionCollection;
+import microsoft.exchange.webservices.data.ResolveNameSearchLocation;
+import microsoft.exchange.webservices.data.WebCredentials;
+
+import org.rapla.components.util.DateTools;
 
 /**
  * This class is obliged with the task to provide a connection to a specific Exchange Server-instance

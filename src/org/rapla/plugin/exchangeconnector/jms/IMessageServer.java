@@ -1,11 +1,9 @@
 package org.rapla.plugin.exchangeconnector.jms;
 
-import org.rapla.entities.storage.internal.SimpleIdentifier;
-import org.rapla.facade.AllocationChangeEvent;
-
 import javax.jms.JMSException;
 import javax.jms.Message;
-import java.io.Serializable;
+
+import org.rapla.facade.AllocationChangeEvent;
 
 /**
  * Created with IntelliJ IDEA.

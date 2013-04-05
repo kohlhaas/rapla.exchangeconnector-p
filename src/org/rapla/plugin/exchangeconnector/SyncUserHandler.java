@@ -3,13 +3,13 @@
  */
 package org.rapla.plugin.exchangeconnector;
 
+import java.util.Date;
+
 import org.rapla.entities.User;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.Reservation;
 import org.rapla.facade.ClientFacade;
 import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAppointmentStorage;
-
-import java.util.Date;
 
 /**
  * @author lutz

@@ -1,9 +1,21 @@
 package org.rapla.plugin.exchangeconnector;
 
-import microsoft.exchange.webservices.data.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.SimpleTimeZone;
+
+import microsoft.exchange.webservices.data.ExchangeService;
+import microsoft.exchange.webservices.data.ItemId;
+import microsoft.exchange.webservices.data.ServiceResponseException;
 import net.fortuna.ical4j.model.TimeZoneRegistry;
 import net.fortuna.ical4j.model.TimeZoneRegistryFactory;
 import net.fortuna.ical4j.model.component.VTimeZone;
+
 import org.rapla.components.util.Assert;
 import org.rapla.entities.User;
 import org.rapla.entities.domain.Allocatable;
@@ -18,8 +30,6 @@ import org.rapla.facade.ClientFacade;
 import org.rapla.framework.RaplaException;
 import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAppointmentStorage;
 import org.rapla.storage.impl.AbstractCachableOperator;
-
-import java.util.*;
 
 public class ExchangeConnectorUtils {
     private static final SimpleTimeZone gmt = new SimpleTimeZone(0, "GMT");

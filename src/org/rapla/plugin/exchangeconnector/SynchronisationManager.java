@@ -2,24 +2,30 @@ package org.rapla.plugin.exchangeconnector;
 
 import java.util.Timer;
 
-import org.rapla.facade.*;
+import javax.jms.JMSException;
+
+import org.rapla.facade.AllocationChangeEvent;
+import org.rapla.facade.AllocationChangeListener;
+import org.rapla.facade.ClientFacade;
+import org.rapla.facade.ModificationEvent;
+import org.rapla.facade.ModificationListener;
+import org.rapla.facade.RaplaComponent;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
-import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAppointmentStorage;
+import org.rapla.plugin.ServerExtension;
 import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAccountInformationStorage;
+import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAppointmentStorage;
 import org.rapla.plugin.exchangeconnector.jms.IMessageReceiver;
 import org.rapla.plugin.exchangeconnector.jms.IMessageServer;
 import org.rapla.plugin.exchangeconnector.jms.MessageServerFactory;
 import org.rapla.plugin.exchangeconnector.jms.ReservationMessageListener;
-
-import javax.jms.JMSException;
 
 /**    
  * @author Alex Heil, Dominik Joder, Lutz Bergendahl, Matthias Hundt
  * @see {@link ExchangeAppointmentStorage}
  * @see {@link ExchangeAccountInformationStorage}
  */
-public class SynchronisationManager extends RaplaComponent implements AllocationChangeListener, ModificationListener {
+public class SynchronisationManager extends RaplaComponent implements AllocationChangeListener, ModificationListener, ServerExtension {
 	
 	
 	private static SynchronisationManager synchronisationManagerInstance = null;
@@ -37,7 +43,7 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 		super(context);
 		setInstance(this);
 		
-		clientFacade = (ClientFacade) context.lookup(ClientFacade.ROLE);
+		clientFacade =  context.lookup(ClientFacade.class);
 		clientFacade.addAllocationChangedListener(this);
         clientFacade.addModificationListener(this);
 

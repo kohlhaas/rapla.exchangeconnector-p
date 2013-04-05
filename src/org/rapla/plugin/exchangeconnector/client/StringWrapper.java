@@ -1,9 +1,8 @@
 package org.rapla.plugin.exchangeconnector.client;
 
-import org.rapla.entities.MultiLanguageNamed;
-import org.rapla.entities.Named;
-
 import java.util.Locale;
+
+import org.rapla.entities.Named;
 
 /**
 * User: kuestermann

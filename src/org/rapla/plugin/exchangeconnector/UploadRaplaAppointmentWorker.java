@@ -3,9 +3,36 @@
  */
 package org.rapla.plugin.exchangeconnector;
 
-import microsoft.exchange.webservices.data.*;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.NoSuchElementException;
+import java.util.Set;
+
+import microsoft.exchange.webservices.data.ArgumentException;
+import microsoft.exchange.webservices.data.ArgumentOutOfRangeException;
+import microsoft.exchange.webservices.data.Attendee;
+import microsoft.exchange.webservices.data.BodyType;
+import microsoft.exchange.webservices.data.ConflictResolutionMode;
+import microsoft.exchange.webservices.data.DayOfTheWeek;
+import microsoft.exchange.webservices.data.DayOfTheWeekIndex;
+import microsoft.exchange.webservices.data.DeleteMode;
+import microsoft.exchange.webservices.data.LegacyFreeBusyStatus;
+import microsoft.exchange.webservices.data.MailboxType;
+import microsoft.exchange.webservices.data.MessageBody;
+import microsoft.exchange.webservices.data.Month;
+import microsoft.exchange.webservices.data.Recurrence;
+import microsoft.exchange.webservices.data.SendCancellationsMode;
+import microsoft.exchange.webservices.data.SendInvitationsMode;
+import microsoft.exchange.webservices.data.SendInvitationsOrCancellationsMode;
+import microsoft.exchange.webservices.data.ServiceLocalException;
+
 import org.rapla.entities.User;
-import org.rapla.entities.configuration.Preferences;
 import org.rapla.entities.configuration.RaplaConfiguration;
 import org.rapla.entities.domain.Allocatable;
 import org.rapla.entities.domain.Appointment;
@@ -13,15 +40,9 @@ import org.rapla.entities.domain.Repeating;
 import org.rapla.entities.dynamictype.Classification;
 import org.rapla.facade.CalendarOptions;
 import org.rapla.facade.ClientFacade;
-import org.rapla.facade.RaplaComponent;
 import org.rapla.facade.internal.CalendarOptionsImpl;
-import org.rapla.framework.Configuration;
 import org.rapla.framework.RaplaException;
-import org.rapla.framework.RaplaLocale;
 import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAppointmentStorage;
-
-import java.text.SimpleDateFormat;
-import java.util.*;
 
 /**
  * The worker-class for uploading a new- or changed appointment from Rapla to

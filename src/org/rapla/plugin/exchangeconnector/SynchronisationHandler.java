@@ -3,7 +3,9 @@
  */
 package org.rapla.plugin.exchangeconnector;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.TimerTask;
 
 import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.Reservation;

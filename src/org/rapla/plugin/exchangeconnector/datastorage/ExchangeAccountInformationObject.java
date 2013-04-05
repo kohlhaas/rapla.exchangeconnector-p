@@ -5,10 +5,10 @@ package org.rapla.plugin.exchangeconnector.datastorage;
 
 import java.io.Serializable;
 
-import org.rapla.plugin.exchangeconnector.SynchronisationManager;
-
 import microsoft.exchange.webservices.data.Appointment;
 import microsoft.exchange.webservices.data.WebCredentials;
+
+import org.rapla.plugin.exchangeconnector.SynchronisationManager;
 
 /**
  * This class contains all pieces of information related to a specific account on an Exchange Server

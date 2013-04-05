@@ -1,6 +1,6 @@
 package org.rapla.plugin.exchangeconnector.jms;
 
-import javax.jms.*;
+import javax.jms.JMSException;
 
 public class MessageServerFactory {
     static final String UPDATE_EXCHANGE = "rapla.exchangeconnector.queue.update_exchange";

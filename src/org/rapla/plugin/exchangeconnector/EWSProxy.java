@@ -4,16 +4,13 @@
 package org.rapla.plugin.exchangeconnector;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import microsoft.exchange.webservices.data.DefaultExtendedPropertySet;
 import microsoft.exchange.webservices.data.ExchangeService;
 import microsoft.exchange.webservices.data.ExtendedPropertyDefinition;
 import microsoft.exchange.webservices.data.MapiPropertyType;
 import microsoft.exchange.webservices.data.WebCredentials;
-import net.fortuna.ical4j.model.DateTime;
 
-import net.fortuna.ical4j.model.TimeZone;
 import org.rapla.entities.User;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.facade.ClientFacade;

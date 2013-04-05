@@ -1,11 +1,16 @@
 package org.rapla.plugin.exchangeconnector.jms;
 
-import org.rapla.entities.storage.internal.SimpleIdentifier;
+import javax.jms.DeliveryMode;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.QueueConnectionFactory;
+import javax.jms.Session;
+
 import org.rapla.facade.AllocationChangeEvent;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorUtils;
 import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAppointmentStorage;
-
-import javax.jms.*;
 
 /**
 * Created with IntelliJ IDEA.
