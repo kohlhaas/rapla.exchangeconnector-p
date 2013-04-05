@@ -22,7 +22,6 @@ import org.rapla.plugin.RaplaExtensionPoints;
 import org.rapla.plugin.RaplaPluginMetaInfo;
 import org.rapla.plugin.exchangeconnector.client.ExchangeConnectorAdminOptions;
 import org.rapla.plugin.exchangeconnector.client.ExchangeConnectorUserOptions;
-import org.rapla.plugin.mail.internal.MailOption;
 import org.rapla.server.ServerService;
 
 

@@ -23,7 +23,6 @@ import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.gui.DefaultPluginOption;
-import org.rapla.gui.OptionPanel;
 import org.rapla.gui.internal.edit.reservation.SortedListModel;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
@@ -31,11 +30,10 @@ import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 /**
  * @author lutz
  */
-public class ExchangeConnectorUserOptions extends DefaultPluginOption implements OptionPanel {
+public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 
     private static final String DEFAULT_DISPLAYED_VALUE = "******";
     private Preferences preferences;
-    @SuppressWarnings("unused")
 
     private String exchangeUsername;
     private String exchangePassword;
