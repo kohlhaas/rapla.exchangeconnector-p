@@ -20,6 +20,7 @@ import org.rapla.components.layout.TableLayout;
 import org.rapla.entities.configuration.Preferences;
 import org.rapla.entities.dynamictype.DynamicType;
 import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
+import org.rapla.framework.PluginDescriptor;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.gui.DefaultPluginOption;
@@ -278,10 +279,10 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
     }
 
     /**
-     * @see org.rapla.gui.DefaultPluginOption#getDescriptorClassName()
+     * @see org.rapla.gui.DefaultPluginOption#getPluginClass()
      */
-    public String getDescriptorClassName() {
-        return ExchangeConnectorPlugin.class.getName();
+    public Class<? extends PluginDescriptor> getPluginClass() {
+        return ExchangeConnectorPlugin.class;
     }
 
     private class UpdateComponentsListener implements ActionListener {

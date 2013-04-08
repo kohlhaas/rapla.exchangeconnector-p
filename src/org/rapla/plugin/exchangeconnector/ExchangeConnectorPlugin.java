@@ -18,6 +18,7 @@ import org.rapla.framework.Container;
 import org.rapla.framework.DefaultConfiguration;
 import org.rapla.framework.PluginDescriptor;
 import org.rapla.framework.RaplaException;
+import org.rapla.framework.TypedComponentRole;
 import org.rapla.plugin.RaplaExtensionPoints;
 import org.rapla.plugin.RaplaPluginMetaInfo;
 import org.rapla.plugin.exchangeconnector.client.ExchangeConnectorAdminOptions;
@@ -32,7 +33,7 @@ public class ExchangeConnectorPlugin implements PluginDescriptor {
     private static final String CONFIG_PLUGIN_ENABLED_KEY = "enabled";
 
     public static final String PLUGIN_CLASS = ExchangeConnectorPlugin.class.getName();
-    public static final String RESOURCE_FILE = ExchangeConnectorPlugin.class.getPackage().getName() + ".ExchangeConnectorResources";
+    public static final TypedComponentRole<I18nBundle> RESOURCE_FILE = new TypedComponentRole<I18nBundle>(ExchangeConnectorPlugin.class.getPackage().getName() + ".ExchangeConnectorResources");
 
 
     private static final boolean ENABLE_BY_DEFAULT = true;
@@ -150,14 +151,14 @@ public class ExchangeConnectorPlugin implements PluginDescriptor {
         if (config.getAttributeAsBoolean(CONFIG_PLUGIN_ENABLED_KEY, DEFAULT_CONFIG_PLUGIN_ENABLED)) {
             try {
                 loadConfigParameters(config);
-                container.addContainerProvidedComponent(I18nBundle.class, I18nBundleImpl.class, RESOURCE_FILE, I18nBundleImpl.createConfig(RESOURCE_FILE));
+                container.addContainerProvidedComponent(RESOURCE_FILE, I18nBundleImpl.class, I18nBundleImpl.createConfig(RESOURCE_FILE.getId()));
 
                 if (container.getContext().has(ServerService.class)) {
                     container.addContainerProvidedComponent(RaplaExtensionPoints.SERVER_EXTENSION, SynchronisationManager.class);
                     container.addContainerProvidedComponent(ExchangeConnectorRemote.class, ExchangeConnectorRemoteObject.class);
                 } else {
                     container.addContainerProvidedComponent(RaplaExtensionPoints.USER_OPTION_PANEL_EXTENSION, ExchangeConnectorUserOptions.class);
-                    container.addContainerProvidedComponent(RaplaExtensionPoints.PLUGIN_OPTION_PANEL_EXTENSION, ExchangeConnectorAdminOptions.class, ExchangeConnectorPlugin.class.getName());
+                    container.addContainerProvidedComponent(RaplaExtensionPoints.PLUGIN_OPTION_PANEL_EXTENSION, ExchangeConnectorAdminOptions.class);
                 }
             } catch (ConfigurationException e) {
                 System.err.println("Exchange Connector Plugin did not start!");

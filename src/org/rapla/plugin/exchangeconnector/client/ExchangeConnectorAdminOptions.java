@@ -22,6 +22,7 @@ import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
 import org.rapla.framework.Configuration;
 import org.rapla.framework.ConfigurationException;
 import org.rapla.framework.DefaultConfiguration;
+import org.rapla.framework.PluginDescriptor;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.gui.DefaultPluginOption;
@@ -170,8 +171,8 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
     }
 
     
-    public String getDescriptorClassName() {
-        return ExchangeConnectorPlugin.class.getName();
+    public Class<? extends PluginDescriptor> getPluginClass() {
+        return ExchangeConnectorPlugin.class;
     }
     
     public String getName(Locale locale) {
