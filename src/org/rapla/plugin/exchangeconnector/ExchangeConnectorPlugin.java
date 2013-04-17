@@ -3,8 +3,7 @@ package org.rapla.plugin.exchangeconnector;
 import java.util.Calendar;
 import java.util.Date;
 
-import microsoft.exchange.webservices.data.LegacyFreeBusyStatus;
-
+import org.rapla.client.ClientService;
 import org.rapla.components.xmlbundle.I18nBundle;
 import org.rapla.components.xmlbundle.impl.I18nBundleImpl;
 import org.rapla.entities.domain.Appointment;
@@ -13,10 +12,10 @@ import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
 import org.rapla.facade.CalendarOptions;
 import org.rapla.facade.ClientFacade;
 import org.rapla.framework.Configuration;
-import org.rapla.framework.ConfigurationException;
 import org.rapla.framework.Container;
 import org.rapla.framework.DefaultConfiguration;
 import org.rapla.framework.PluginDescriptor;
+import org.rapla.framework.RaplaContextException;
 import org.rapla.framework.RaplaException;
 import org.rapla.framework.TypedComponentRole;
 import org.rapla.plugin.RaplaExtensionPoints;
@@ -24,6 +23,7 @@ import org.rapla.plugin.RaplaPluginMetaInfo;
 import org.rapla.plugin.exchangeconnector.client.ExchangeConnectorAdminOptions;
 import org.rapla.plugin.exchangeconnector.client.ExchangeConnectorUserOptions;
 import org.rapla.server.ServerService;
+import org.rapla.server.ServerServiceContainer;
 
 
 public class ExchangeConnectorPlugin implements PluginDescriptor {
@@ -34,7 +34,6 @@ public class ExchangeConnectorPlugin implements PluginDescriptor {
 
     public static final String PLUGIN_CLASS = ExchangeConnectorPlugin.class.getName();
     public static final TypedComponentRole<I18nBundle> RESOURCE_FILE = new TypedComponentRole<I18nBundle>(ExchangeConnectorPlugin.class.getPackage().getName() + ".ExchangeConnectorResources");
-
 
     private static final boolean ENABLE_BY_DEFAULT = true;
 
@@ -110,7 +109,9 @@ public class ExchangeConnectorPlugin implements PluginDescriptor {
 
     /** user, combobox mit werten LegacyFreeBusyStatus.values() */
     public static final String EXCHANGE_FREE_AND_BUSY_KEY = "exchange.freeandbusy.mode";
-    public static final String DEFAULT_EXCHANGE_FREE_AND_BUSY = LegacyFreeBusyStatus.Busy.name();
+    // CK Removed this line to remove client side dependency from microsoft jars
+    //  public static final String DEFAULT_EXCHANGE_FREE_AND_BUSY = Busy.name();
+    public static final String DEFAULT_EXCHANGE_FREE_AND_BUSY = "Busy";
     public static String EXCHANGE_FREE_AND_BUSY = DEFAULT_EXCHANGE_FREE_AND_BUSY;
 
     /**
@@ -147,26 +148,25 @@ public class ExchangeConnectorPlugin implements PluginDescriptor {
     /* (non-Javadoc)
       * @see org.rapla.framework.PluginDescriptor#provideServices(org.rapla.framework.Container, org.apache.avalon.framework.configuration.Configuration)
       */
-    public void provideServices(Container container, Configuration config) {
+    public void provideServices(Container container, Configuration config) throws RaplaContextException {
+        container.addContainerProvidedComponent(RESOURCE_FILE, I18nBundleImpl.class, I18nBundleImpl.createConfig(RESOURCE_FILE.getId()));
+    	if ( container.getContext().has(ClientService.class)){
+    		container.addContainerProvidedComponent(RaplaExtensionPoints.PLUGIN_OPTION_PANEL_EXTENSION, ExchangeConnectorAdminOptions.class);
+    	}
         if (config.getAttributeAsBoolean(CONFIG_PLUGIN_ENABLED_KEY, DEFAULT_CONFIG_PLUGIN_ENABLED)) {
-            try {
-                loadConfigParameters(config);
-                container.addContainerProvidedComponent(RESOURCE_FILE, I18nBundleImpl.class, I18nBundleImpl.createConfig(RESOURCE_FILE.getId()));
+            loadConfigParameters(config);
 
-                if (container.getContext().has(ServerService.class)) {
-                    container.addContainerProvidedComponent(RaplaExtensionPoints.SERVER_EXTENSION, SynchronisationManager.class);
-                    container.addContainerProvidedComponent(ExchangeConnectorRemote.class, ExchangeConnectorRemoteObject.class);
-                } else {
-                    container.addContainerProvidedComponent(RaplaExtensionPoints.USER_OPTION_PANEL_EXTENSION, ExchangeConnectorUserOptions.class);
-                    container.addContainerProvidedComponent(RaplaExtensionPoints.PLUGIN_OPTION_PANEL_EXTENSION, ExchangeConnectorAdminOptions.class);
-                }
-            } catch (ConfigurationException e) {
-                System.err.println("Exchange Connector Plugin did not start!");
+            if (container.getContext().has(ServerService.class)) {
+            	container.addContainerProvidedComponent(RaplaExtensionPoints.SERVER_EXTENSION, SynchronisationManager.class);
+            	container.getContext().lookup( ServerServiceContainer.class).addRemoteMethodFactory(ExchangeConnectorRemote.class, ExchangeConnectorRemoteObject.class);
+            } 
+            if ( container.getContext().has(ClientService.class)){
+                container.addContainerProvidedComponent(RaplaExtensionPoints.USER_OPTION_PANEL_EXTENSION, ExchangeConnectorUserOptions.class);
             }
         }
     }
 
-    public static void loadConfigParameters(Configuration config) throws ConfigurationException {
+    public static void loadConfigParameters(Configuration config) {
         ENABLED_BY_ADMIN = config.getChild(ENABLED_BY_ADMIN_KEY).getValueAsBoolean(DEFAULT_ENABLED_BY_ADMIN);
         EXCHANGE_WS_FQDN = config.getChild(EXCHANGE_WS_FQDN_KEY).getValue(DEFAULT_EXCHANGE_WS_FQDN);
         SYNCING_PERIOD_PAST = config.getChild(SYNCING_PERIOD_PAST_KEY).getValueAsInteger(DEFAULT_SYNCING_PERIOD_PAST);
@@ -187,7 +187,7 @@ public class ExchangeConnectorPlugin implements PluginDescriptor {
         EXCHANGE_APPOINTMENT_PRIVATE_NAME_IN_RAPLA= config.getChild(EXCHANGE_APPOINTMENT_PRIVATE_NAME_IN_RAPLA_KEY).getValue(DEFAULT_EXCHANGE_APPOINTMENT_PRIVATE_NAME_IN_RAPLA);
     }
 
-    public static void storeParametersToConfig(DefaultConfiguration newConfig) throws ConfigurationException {
+    public static void storeParametersToConfig(DefaultConfiguration newConfig)  {
         newConfig.getMutableChild(ExchangeConnectorPlugin.ENABLED_BY_ADMIN_KEY, true).setValue(ENABLED_BY_ADMIN);
         newConfig.getMutableChild(ExchangeConnectorPlugin.EXCHANGE_WS_FQDN_KEY, true).setValue(EXCHANGE_WS_FQDN);
         newConfig.getMutableChild(ExchangeConnectorPlugin.SYNCING_PERIOD_PAST_KEY, true).setValue(SYNCING_PERIOD_PAST);

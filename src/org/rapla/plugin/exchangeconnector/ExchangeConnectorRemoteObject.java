@@ -4,12 +4,14 @@
 package org.rapla.plugin.exchangeconnector;
 
 import org.rapla.framework.RaplaException;
+import org.rapla.server.RemoteMethodFactory;
+import org.rapla.server.RemoteSession;
 
 /**
  * @author lutz
  *
  */
-public class ExchangeConnectorRemoteObject implements ExchangeConnectorRemote {
+public class ExchangeConnectorRemoteObject implements ExchangeConnectorRemote, RemoteMethodFactory<ExchangeConnectorRemote> {
 
 	/**
 	 * 
@@ -46,8 +48,14 @@ public class ExchangeConnectorRemoteObject implements ExchangeConnectorRemote {
 
     public void setDownloadFromExchange(String raplaUsername, boolean downloadFromExchange) throws RaplaException {
         if (SynchronisationManager.getInstance().setDownloadFromExchange(raplaUsername, downloadFromExchange))
+        {
             //SynchronisationManager.getInstance().
-       ; //todo: synch user if new?
+        }
+        //todo: synch user if new?
     }
+
+	public ExchangeConnectorRemote createService(RemoteSession remoteSession) {
+		return this;
+	}
 
 }

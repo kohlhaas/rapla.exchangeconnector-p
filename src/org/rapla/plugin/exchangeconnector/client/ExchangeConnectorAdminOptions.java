@@ -20,7 +20,6 @@ import org.rapla.components.layout.TableLayout;
 import org.rapla.entities.dynamictype.DynamicType;
 import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
 import org.rapla.framework.Configuration;
-import org.rapla.framework.ConfigurationException;
 import org.rapla.framework.DefaultConfiguration;
 import org.rapla.framework.PluginDescriptor;
 import org.rapla.framework.RaplaContext;
@@ -119,13 +118,8 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
     }
         
     protected void addChildren( DefaultConfiguration newConfig) {
-    	try {
-    		readUserInputValues();
-    		ExchangeConnectorPlugin.storeParametersToConfig(newConfig);
-    	} catch (ConfigurationException e) {
-			getLogger().error("An error has occurred saving the Exchange Connector Configuration " + e.getMessage());
-		}
-
+    	readUserInputValues();
+    	ExchangeConnectorPlugin.storeParametersToConfig(newConfig);
 	}
 
     private void readUserInputValues() {
@@ -153,21 +147,17 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
         } catch (RaplaException e) {
         }
 
+		ExchangeConnectorPlugin.loadConfigParameters(config);
+		enableSynchronisationBox.setSelected(ExchangeConnectorPlugin.ENABLED_BY_ADMIN);
+		exchangeWebServiceFQDNTextField.setText(ExchangeConnectorPlugin.EXCHANGE_WS_FQDN);
+		categoryForRaplaAppointmentsOnExchangeTextField.setText(ExchangeConnectorPlugin.EXCHANGE_APPOINTMENT_CATEGORY);
+		syncIntervalPast.setNumber(ExchangeConnectorPlugin.SYNCING_PERIOD_PAST);
+		syncIntervalFuture.setNumber(ExchangeConnectorPlugin.SYNCING_PERIOD_FUTURE);
+		pullFrequency.setNumber(ExchangeConnectorPlugin.PULL_FREQUENCY);
         try {
-			ExchangeConnectorPlugin.loadConfigParameters(config);
-			enableSynchronisationBox.setSelected(ExchangeConnectorPlugin.ENABLED_BY_ADMIN);
-			exchangeWebServiceFQDNTextField.setText(ExchangeConnectorPlugin.EXCHANGE_WS_FQDN);
-			categoryForRaplaAppointmentsOnExchangeTextField.setText(ExchangeConnectorPlugin.EXCHANGE_APPOINTMENT_CATEGORY);
-			syncIntervalPast.setNumber(ExchangeConnectorPlugin.SYNCING_PERIOD_PAST);
-			syncIntervalFuture.setNumber(ExchangeConnectorPlugin.SYNCING_PERIOD_FUTURE);
-			pullFrequency.setNumber(ExchangeConnectorPlugin.PULL_FREQUENCY);
-            try {
-                cbEventTypes.setSelectedItem(new StringWrapper<DynamicType>(ExchangeConnectorPlugin.getImportEventType(getClientFacade())));
-            } catch (RaplaException e) {
-            }
-        } catch (ConfigurationException e) {
-			getLogger().error("An error occurred while reading the configuration! ", e);
-		}  
+            cbEventTypes.setSelectedItem(new StringWrapper<DynamicType>(ExchangeConnectorPlugin.getImportEventType(getClientFacade())));
+        } catch (RaplaException e) {
+        }
     }
 
     
