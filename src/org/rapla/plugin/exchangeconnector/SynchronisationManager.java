@@ -15,10 +15,12 @@ import org.rapla.framework.RaplaException;
 import org.rapla.plugin.ServerExtension;
 import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAccountInformationStorage;
 import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAppointmentStorage;
+/*
 import org.rapla.plugin.exchangeconnector.jms.IMessageReceiver;
 import org.rapla.plugin.exchangeconnector.jms.IMessageServer;
 import org.rapla.plugin.exchangeconnector.jms.MessageServerFactory;
 import org.rapla.plugin.exchangeconnector.jms.ReservationMessageListener;
+*/
 
 /**    
  * @author Alex Heil, Dominik Joder, Lutz Bergendahl, Matthias Hundt
@@ -31,7 +33,7 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 	private static SynchronisationManager synchronisationManagerInstance = null;
 	private static ClientFacade clientFacade;
 	private Timer scheduledDownloadTimer;
-    private IMessageServer messageServer;
+    //private IMessageServer messageServer;
 
     /**
 	 * The constructor 
@@ -49,17 +51,19 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 
 
 
-        try {
+/*        try {
+
 
             messageServer = MessageServerFactory.getMessageServer();
             final IMessageReceiver messageReceiver = MessageServerFactory.getMessageReveiver();
 
             final ReservationMessageListener rsm = new ReservationMessageListener(clientFacade);
             messageReceiver.addMessageListener(rsm);
+
         } catch (JMSException e) {
             logException(e);
         }
-
+*/
 
 	    initScheduledDownloadTimer();		
 	}
@@ -184,9 +188,11 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 		return false;
 	}
 
+/*
     public IMessageServer getMessageServer() {
         return messageServer;
     }
+*/
 
     public static void logInfo(String s) {
         getInstance().getLogger().info("Exchange Connector Plugin: " +s);

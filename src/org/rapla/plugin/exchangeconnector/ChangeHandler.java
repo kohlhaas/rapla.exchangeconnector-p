@@ -3,8 +3,6 @@
  */
 package org.rapla.plugin.exchangeconnector;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
 
 import org.rapla.entities.RaplaObject;
 import org.rapla.entities.domain.Appointment;
@@ -78,7 +76,7 @@ public class ChangeHandler extends SynchronisationHandler {
 
 
 
-        if (ExchangeConnectorPlugin.USE_JMS && SynchronisationManager.getInstance().getMessageServer() != null) {
+       /* if (ExchangeConnectorPlugin.USE_JMS && SynchronisationManager.getInstance().getMessageServer() != null) {
             try {
                 runJMS();
             } catch (Exception e) {
@@ -87,9 +85,11 @@ public class ChangeHandler extends SynchronisationHandler {
             }
         } else {
             runLocal();
-        }
+        }*/
+        runLocal();
     }
 
+/*
     private void runJMS() {
         for (AllocationChangeEvent changeEvent : changeEvents) {
             try {
@@ -100,6 +100,7 @@ public class ChangeHandler extends SynchronisationHandler {
             }
         }
     }
+*/
 
     private void runLocal() {
         try {
