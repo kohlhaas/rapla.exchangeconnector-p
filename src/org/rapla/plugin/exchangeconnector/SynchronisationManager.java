@@ -2,7 +2,6 @@ package org.rapla.plugin.exchangeconnector;
 
 import java.util.Timer;
 
-import javax.jms.JMSException;
 
 import org.rapla.facade.AllocationChangeEvent;
 import org.rapla.facade.AllocationChangeListener;
@@ -15,12 +14,6 @@ import org.rapla.framework.RaplaException;
 import org.rapla.plugin.ServerExtension;
 import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAccountInformationStorage;
 import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAppointmentStorage;
-/*
-import org.rapla.plugin.exchangeconnector.jms.IMessageReceiver;
-import org.rapla.plugin.exchangeconnector.jms.IMessageServer;
-import org.rapla.plugin.exchangeconnector.jms.MessageServerFactory;
-import org.rapla.plugin.exchangeconnector.jms.ReservationMessageListener;
-*/
 
 /**    
  * @author Alex Heil, Dominik Joder, Lutz Bergendahl, Matthias Hundt
