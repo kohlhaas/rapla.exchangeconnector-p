@@ -169,7 +169,7 @@ public class ExchangeAppointmentStorage {
 	 */
 	public String getExchangeId(int appointmentId) {
 		ExchangeAppointmentStorageObject appointmentStorage = appointments.get(appointmentId);
-		return (appointmentStorage == null)?"":appointmentStorage.getExchangeId();
+		return (appointmentStorage == null)?null :appointmentStorage.getExchangeId();
 	}
 
 	/**

@@ -279,11 +279,11 @@ public class ExchangeConnectorUtils {
     }
 
     public static void synchronizeAppointmentRequest(ClientFacade clientFacade, AllocationChangeEvent.Type changeEvent, SimpleIdentifier raplaIdentifier) throws Exception {
-
         final Appointment appointment = (Appointment) getEntityBySimpleIdentifier(raplaIdentifier, clientFacade);
         if (appointment != null) {
             final String exchangeId = ExchangeAppointmentStorage.getInstance().getExchangeId(raplaIdentifier.getKey());
-            updateAppointment(clientFacade, appointment, exchangeId);
+            if (exchangeId != null && !"".equals(exchangeId))
+                updateAppointment(clientFacade, appointment, exchangeId);
         } else {
             deleteAppointment(clientFacade, raplaIdentifier);
         }

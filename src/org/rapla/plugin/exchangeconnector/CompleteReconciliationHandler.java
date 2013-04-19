@@ -27,7 +27,7 @@ public class CompleteReconciliationHandler extends SynchronisationHandler {
     }
 
     public void run() {
-        deleteExchangeItemsFromRapla();
+        deleteExchangeItemsFromRapla(clientFacade);
         ExchangeAppointmentStorage.getInstance().setAllDeleted();
         try {
             deleteAll();

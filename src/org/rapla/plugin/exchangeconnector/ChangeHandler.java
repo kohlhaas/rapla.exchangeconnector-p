@@ -13,28 +13,34 @@ import org.rapla.facade.ClientFacade;
 import org.rapla.facade.ModificationEvent;
 import org.rapla.framework.RaplaException;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * @author lutz
  */
 public class ChangeHandler extends SynchronisationHandler {
 
-    private AllocationChangeEvent[] changeEvents;
-    private Reservation changedReservation;
+    /*/private AllocationChangeEvent[] changeEvents;
+   // private Reservation changedReservation;
     private ModificationEvent modificationEvent;
 
     /**
      * @param changeEvents
      */
+
+
     public ChangeHandler(AllocationChangeEvent[] changeEvents, ClientFacade clientFacade) {
         super(clientFacade);
-        this.changeEvents = changeEvents;
-        changedReservation = changeEvents[0].getNewReservation();
+     //   this.changeEvents = changeEvents;
+       // changedReservation = changeEvents[0].getNewReservation();
 
     }
 
     public ChangeHandler(ModificationEvent evt, ClientFacade clientFacade) {
         super(clientFacade);
-        this.modificationEvent  = evt;
+
+        /*this.modificationEvent  = evt;
         for (RaplaObject raplaObject : evt.getChanged()) {
             if (raplaObject instanceof Reservation)
             {
@@ -42,12 +48,12 @@ public class ChangeHandler extends SynchronisationHandler {
                 break;
             }
         }
-
+*/
     }
 
     public void run() {
 
-        final DynamicType type = changedReservation.getClassification().getType();
+   /*     final DynamicType type = changedReservation.getClassification().getType();
 
         try {
             final DynamicType importEventType = ExchangeConnectorPlugin.getImportEventType(clientFacade);
@@ -72,7 +78,7 @@ public class ChangeHandler extends SynchronisationHandler {
                 return;
             }
         } catch (RaplaException e) {
-        }
+        }*/
 
 
 
@@ -103,7 +109,7 @@ public class ChangeHandler extends SynchronisationHandler {
 */
 
     private void runLocal() {
-        try {
+        /*try {
             if (modificationEvent != null)
             {
                 for (RaplaObject raplaObject : modificationEvent.getChanged()) {
@@ -125,7 +131,7 @@ public class ChangeHandler extends SynchronisationHandler {
                 }
         } catch (Exception e) {
             SynchronisationManager.logException(e);
-        }
+        }*/
     }
 
 }

@@ -23,10 +23,11 @@ public abstract class SynchronisationHandler extends TimerTask implements Runnab
      * @param clientFacade
      */
     public SynchronisationHandler(ClientFacade clientFacade) {
+        super();
         this.clientFacade = clientFacade;
     }
 
-    protected void deleteExchangeItemsFromRapla() {
+    protected synchronized void deleteExchangeItemsFromRapla(ClientFacade clientFacade) {
         HashSet<Reservation> reservations = new HashSet<Reservation>();
         for (Appointment appointment : ExchangeAppointmentStorage.getInstance().getExchangeItems()) {
             reservations.add(appointment.getReservation());
@@ -48,7 +49,7 @@ public abstract class SynchronisationHandler extends TimerTask implements Runnab
      * @param newReservation : {@link Reservation} which should be uploaded to the Exchange Server
      * @throws Exception
      */
-    protected void uploadReservation(Reservation newReservation) throws Exception {
+    protected synchronized  void uploadReservation(ClientFacade clientFacade, Reservation newReservation) throws Exception {
 /*
         newReservation.getClassification().setValue("dhbw-plugin-exchange-connector-fk", "uploaded");
         clientFacade.getOperator().storeAndRemove(new Entity[]{newReservation},new Entity[]{}, clientFacade.getUser());
@@ -57,7 +58,7 @@ public abstract class SynchronisationHandler extends TimerTask implements Runnab
         for (Appointment tmpAppointment : newReservation.getAppointments()) {
             // upload each appointment to the Exchange Server
             if (tmpAppointment.getStart().after(ExchangeConnectorPlugin.getSynchingPeriodPast(new Date())) && tmpAppointment.getStart().before(ExchangeConnectorPlugin.getSynchingPeriodFuture(new Date()))) {
-                uploadAppointment(ExchangeConnectorUtils.getAppointmentID(tmpAppointment));
+                uploadAppointment(clientFacade, ExchangeConnectorUtils.getAppointmentID(tmpAppointment));
             }
         }
     }
@@ -66,12 +67,12 @@ public abstract class SynchronisationHandler extends TimerTask implements Runnab
      * @param appointmentId
      * @throws Exception
      */
-    protected void uploadAppointment(int appointmentId) throws Exception {
+    protected synchronized  void uploadAppointment(ClientFacade clientFacade, int appointmentId) throws Exception {
 
         Appointment appointment = ExchangeConnectorUtils.getAppointmentById(appointmentId, clientFacade);
 
         if (appointment != null) {
-            uploadAppointment(appointment);
+            uploadAppointment(clientFacade, appointment);
         }
     }
 
@@ -81,7 +82,7 @@ public abstract class SynchronisationHandler extends TimerTask implements Runnab
      * @param appointment : {@link Appointment} to be uploaded to the Exchange Server
      * @throws Exception
      */
-    protected void uploadAppointment(Appointment appointment) throws Exception {
+    protected synchronized void uploadAppointment(ClientFacade clientFacade, Appointment appointment) throws Exception {
         // exchange items are appointments which have been downloaded from the exchange server to rapla
         // thus they will not be synchronized back to the exchange server and are ignored
         if (!ExchangeAppointmentStorage.getInstance().isExchangeItem(appointment)) {

@@ -46,6 +46,8 @@ public class DeleteRaplaAppointmentWorker extends EWSProxy {
 			if (!ExchangeAppointmentStorage.getInstance().isExchangeItem(identifier.getKey())) {
 
 				String exchangeId = ExchangeAppointmentStorage.getInstance().getExchangeId(identifier.getKey());
+                if (exchangeId != null && !"".equals(exchangeId))
+                    return;
 				Appointment exchangeAppointment;
 				try {
 					try {

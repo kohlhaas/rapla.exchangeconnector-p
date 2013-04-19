@@ -27,7 +27,7 @@ public class ScheduledDownloadHandler extends SynchronisationHandler {
 	@Override
 	public void run() {
 		try {
-			deleteExchangeItemsFromRapla();
+			deleteExchangeItemsFromRapla(clientFacade);
 			downloadExchangeAppointments();
 		} catch (Exception e) {
 			SynchronisationManager.logException(e);
