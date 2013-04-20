@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.rapla.plugin.exchangeconnector;
+package org.rapla.plugin.exchangeconnector.server;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -35,7 +35,8 @@ import org.rapla.entities.dynamictype.ClassificationFilter;
 import org.rapla.entities.dynamictype.DynamicType;
 import org.rapla.facade.ClientFacade;
 import org.rapla.framework.RaplaException;
-import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAppointmentStorage;
+import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
+import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 /**
  * This worker is used for the retrieval of new appointments from the Exchange Server
  *

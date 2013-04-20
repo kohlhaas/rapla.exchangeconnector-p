@@ -1,11 +1,11 @@
 /**
  * 
  */
-package org.rapla.plugin.exchangeconnector;
+package org.rapla.plugin.exchangeconnector.server;
 
 
 import org.rapla.facade.ClientFacade;
-import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAccountInformationStorage;
+import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAccountInformationStorage;
 
 /**
  * @author lutz

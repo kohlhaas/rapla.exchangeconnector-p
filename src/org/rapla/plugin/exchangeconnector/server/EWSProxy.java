@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.rapla.plugin.exchangeconnector;
+package org.rapla.plugin.exchangeconnector.server;
 
 import java.text.SimpleDateFormat;
 
@@ -14,8 +14,9 @@ import microsoft.exchange.webservices.data.WebCredentials;
 import org.rapla.entities.User;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.facade.ClientFacade;
-import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAccountInformationStorage;
-import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAppointmentStorage;
+import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
+import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAccountInformationStorage;
+import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 
 /**
  * This class provides all functionality in terms of Exchange Server communication

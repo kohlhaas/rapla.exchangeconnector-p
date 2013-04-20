@@ -1,4 +1,4 @@
-package org.rapla.plugin.exchangeconnector.datastorage;
+package org.rapla.plugin.exchangeconnector.server.datastorage;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -11,8 +11,8 @@ import java.util.HashSet;
 
 import org.rapla.entities.domain.Appointment;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
-import org.rapla.plugin.exchangeconnector.ExchangeConnectorUtils;
-import org.rapla.plugin.exchangeconnector.SynchronisationManager;
+import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorUtils;
+import org.rapla.plugin.exchangeconnector.server.SynchronisationManager;
 
 /**
  * This singleton class provides the functionality to save data related to the {@link ExchangeConnectorPlugin}. This includes

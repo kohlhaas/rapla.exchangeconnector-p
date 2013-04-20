@@ -1,4 +1,4 @@
-package org.rapla.plugin.exchangeconnector;
+package org.rapla.plugin.exchangeconnector.server;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,7 +28,8 @@ import org.rapla.entities.storage.internal.SimpleIdentifier;
 import org.rapla.facade.AllocationChangeEvent;
 import org.rapla.facade.ClientFacade;
 import org.rapla.framework.RaplaException;
-import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAppointmentStorage;
+import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
+import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 import org.rapla.storage.impl.AbstractCachableOperator;
 
 public class ExchangeConnectorUtils {
@@ -157,7 +158,7 @@ public class ExchangeConnectorUtils {
      * @param deleteAppointments : {@link String} the unique id of the {@link microsoft.exchange.webservices.data.Appointment} on the Exchange Server
      * @param addToDeleteList    : {@link Boolean} flag, if this appointment should be remembered in the "to delete" list in case deleting the item from the Exchange Server fails
      * @throws Exception
-     * @see org.rapla.plugin.exchangeconnector.datastorage.ExchangeAppointmentStorage
+     * @see org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage
      */
     public static void deleteAppointments(final ClientFacade clientFacade, final HashSet<SimpleIdentifier> deleteAppointments, boolean addToDeleteList) throws Exception {
         for (SimpleIdentifier simpleIdentifier : deleteAppointments) {

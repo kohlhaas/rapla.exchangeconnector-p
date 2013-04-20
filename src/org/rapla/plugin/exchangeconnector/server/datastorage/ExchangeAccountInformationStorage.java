@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.rapla.plugin.exchangeconnector.datastorage;
+package org.rapla.plugin.exchangeconnector.server.datastorage;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -19,9 +19,9 @@ import microsoft.exchange.webservices.data.ExchangeService;
 import microsoft.exchange.webservices.data.WebCredentials;
 
 import org.rapla.entities.User;
-import org.rapla.plugin.exchangeconnector.EWSConnector;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
-import org.rapla.plugin.exchangeconnector.SynchronisationManager;
+import org.rapla.plugin.exchangeconnector.server.EWSConnector;
+import org.rapla.plugin.exchangeconnector.server.SynchronisationManager;
 
 
 /**

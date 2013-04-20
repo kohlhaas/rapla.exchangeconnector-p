@@ -26,7 +26,7 @@ import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.gui.DefaultPluginOption;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
-import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
+import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorRemote;
 
 
 public class ExchangeConnectorAdminOptions extends DefaultPluginOption implements ActionListener{
@@ -161,7 +161,7 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
     }
 
     
-    public Class<? extends PluginDescriptor> getPluginClass() {
+    public Class<? extends PluginDescriptor<?>> getPluginClass() {
         return ExchangeConnectorPlugin.class;
     }
     

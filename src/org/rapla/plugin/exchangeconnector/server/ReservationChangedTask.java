@@ -1,19 +1,18 @@
-package org.rapla.plugin.exchangeconnector;
+package org.rapla.plugin.exchangeconnector.server;
+
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.rapla.entities.RaplaObject;
-import org.rapla.entities.User;
 import org.rapla.entities.domain.Appointment;
-import org.rapla.entities.domain.Reservation;
 import org.rapla.entities.dynamictype.DynamicType;
 import org.rapla.entities.storage.internal.SimpleIdentifier;
 import org.rapla.facade.ClientFacade;
 import org.rapla.facade.ModificationEvent;
 import org.rapla.framework.RaplaException;
-import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAppointmentStorage;
-
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
+import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 
 /**
  * Created with IntelliJ IDEA.

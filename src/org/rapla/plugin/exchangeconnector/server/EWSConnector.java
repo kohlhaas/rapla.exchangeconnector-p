@@ -1,4 +1,4 @@
-package org.rapla.plugin.exchangeconnector;
+package org.rapla.plugin.exchangeconnector.server;
 
 import java.net.URI;
 

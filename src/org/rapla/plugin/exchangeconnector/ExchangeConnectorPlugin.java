@@ -4,6 +4,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 import org.rapla.client.ClientService;
+import org.rapla.client.ClientServiceContainer;
 import org.rapla.components.xmlbundle.I18nBundle;
 import org.rapla.components.xmlbundle.impl.I18nBundleImpl;
 import org.rapla.entities.domain.Appointment;
@@ -18,24 +19,23 @@ import org.rapla.framework.PluginDescriptor;
 import org.rapla.framework.RaplaContextException;
 import org.rapla.framework.RaplaException;
 import org.rapla.framework.TypedComponentRole;
-import org.rapla.plugin.RaplaExtensionPoints;
-import org.rapla.plugin.RaplaPluginMetaInfo;
+import org.rapla.plugin.RaplaClientExtensionPoints;
+import org.rapla.plugin.RaplaServerExtensionPoints;
 import org.rapla.plugin.exchangeconnector.client.ExchangeConnectorAdminOptions;
 import org.rapla.plugin.exchangeconnector.client.ExchangeConnectorUserOptions;
+import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorRemote;
+import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorRemoteObject;
+import org.rapla.plugin.exchangeconnector.server.SynchronisationManager;
 import org.rapla.server.ServerService;
 import org.rapla.server.ServerServiceContainer;
 
 
-public class ExchangeConnectorPlugin implements PluginDescriptor {
+public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceContainer> {
 
-    private static final boolean DEFAULT_CONFIG_PLUGIN_ENABLED = false;
-
-    private static final String CONFIG_PLUGIN_ENABLED_KEY = "enabled";
+	public final static boolean ENABLE_BY_DEFAULT = true;
 
     public static final String PLUGIN_CLASS = ExchangeConnectorPlugin.class.getName();
     public static final TypedComponentRole<I18nBundle> RESOURCE_FILE = new TypedComponentRole<I18nBundle>(ExchangeConnectorPlugin.class.getPackage().getName() + ".ExchangeConnectorResources");
-
-    private static final boolean ENABLE_BY_DEFAULT = true;
 
     public static final String ENABLED_BY_USER_KEY = "exchange_connector_enabled_by_user";
     public static final boolean DEFAULT_ENABLED_BY_USER = false;
@@ -148,21 +148,12 @@ public class ExchangeConnectorPlugin implements PluginDescriptor {
     /* (non-Javadoc)
       * @see org.rapla.framework.PluginDescriptor#provideServices(org.rapla.framework.Container, org.apache.avalon.framework.configuration.Configuration)
       */
-    public void provideServices(Container container, Configuration config) throws RaplaContextException {
+    public void provideServices(ClientServiceContainer container, Configuration config) throws RaplaContextException {
         container.addContainerProvidedComponent(RESOURCE_FILE, I18nBundleImpl.class, I18nBundleImpl.createConfig(RESOURCE_FILE.getId()));
-    	if ( container.getContext().has(ClientService.class)){
-    		container.addContainerProvidedComponent(RaplaExtensionPoints.PLUGIN_OPTION_PANEL_EXTENSION, ExchangeConnectorAdminOptions.class);
-    	}
-        if (config.getAttributeAsBoolean(CONFIG_PLUGIN_ENABLED_KEY, DEFAULT_CONFIG_PLUGIN_ENABLED)) {
+        container.addContainerProvidedComponent(RaplaClientExtensionPoints.PLUGIN_OPTION_PANEL_EXTENSION, ExchangeConnectorAdminOptions.class);
+        if (config.getAttributeAsBoolean("enabled", ENABLE_BY_DEFAULT)) {
             loadConfigParameters(config);
-
-            if (container.getContext().has(ServerService.class)) {
-            	container.addContainerProvidedComponent(RaplaExtensionPoints.SERVER_EXTENSION, SynchronisationManager.class);
-            	container.getContext().lookup( ServerServiceContainer.class).addRemoteMethodFactory(ExchangeConnectorRemote.class, ExchangeConnectorRemoteObject.class);
-            } 
-            if ( container.getContext().has(ClientService.class)){
-                container.addContainerProvidedComponent(RaplaExtensionPoints.USER_OPTION_PANEL_EXTENSION, ExchangeConnectorUserOptions.class);
-            }
+            container.addContainerProvidedComponent(RaplaClientExtensionPoints.USER_OPTION_PANEL_EXTENSION, ExchangeConnectorUserOptions.class);
         }
     }
 
@@ -207,13 +198,6 @@ public class ExchangeConnectorPlugin implements PluginDescriptor {
         newConfig.getMutableChild(ExchangeConnectorPlugin.EXCHANGE_FINDITEMS_PAGESIZE_KEY, true).setValue(EXCHANGE_FINDITEMS_PAGESIZE);
         newConfig.getMutableChild(ExchangeConnectorPlugin.EXCHANGE_APPOINTMENT_PRIVATE_NAME_IN_RAPLA_KEY, true).setValue(EXCHANGE_APPOINTMENT_PRIVATE_NAME_IN_RAPLA);
 
-    }
-
-    public Object getPluginMetaInfos(String key) {
-        if (RaplaPluginMetaInfo.METAINFO_PLUGIN_ENABLED_BY_DEFAULT.equals(key)) {
-            return ENABLE_BY_DEFAULT;
-        }
-        return null;
     }
 
     public static DynamicType getImportEventType(ClientFacade currentClientFacade) throws RaplaException {

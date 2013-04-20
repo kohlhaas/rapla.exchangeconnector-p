@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.rapla.plugin.exchangeconnector;
+package org.rapla.plugin.exchangeconnector.server;
 
 import microsoft.exchange.webservices.data.Appointment;
 import microsoft.exchange.webservices.data.DeleteMode;
@@ -11,7 +11,7 @@ import microsoft.exchange.webservices.data.ServiceResponseException;
 
 import org.rapla.entities.storage.internal.SimpleIdentifier;
 import org.rapla.facade.ClientFacade;
-import org.rapla.plugin.exchangeconnector.datastorage.ExchangeAppointmentStorage;
+import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 
 /**
  * This worker is employed if an appointment needs to be deleted.

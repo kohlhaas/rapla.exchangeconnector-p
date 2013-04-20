@@ -26,7 +26,7 @@ import org.rapla.framework.RaplaException;
 import org.rapla.gui.DefaultPluginOption;
 import org.rapla.gui.internal.edit.reservation.SortedListModel;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
-import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
+import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorRemote;
 
 /**
  * @author lutz
@@ -281,7 +281,7 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
     /**
      * @see org.rapla.gui.DefaultPluginOption#getPluginClass()
      */
-    public Class<? extends PluginDescriptor> getPluginClass() {
+    public Class<? extends PluginDescriptor<?>> getPluginClass() {
         return ExchangeConnectorPlugin.class;
     }
 

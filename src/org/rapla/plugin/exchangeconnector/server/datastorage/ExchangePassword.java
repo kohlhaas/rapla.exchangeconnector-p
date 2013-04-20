@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.rapla.plugin.exchangeconnector.datastorage;
+package org.rapla.plugin.exchangeconnector.server.datastorage;
 
 import java.io.Serializable;
 

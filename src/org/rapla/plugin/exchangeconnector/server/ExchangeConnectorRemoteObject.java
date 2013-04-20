@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.rapla.plugin.exchangeconnector;
+package org.rapla.plugin.exchangeconnector.server;
 
 import org.rapla.framework.RaplaException;
 import org.rapla.server.RemoteMethodFactory;
