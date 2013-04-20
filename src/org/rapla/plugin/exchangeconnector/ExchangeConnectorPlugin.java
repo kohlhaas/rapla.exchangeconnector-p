@@ -3,7 +3,6 @@ package org.rapla.plugin.exchangeconnector;
 import java.util.Calendar;
 import java.util.Date;
 
-import org.rapla.client.ClientService;
 import org.rapla.client.ClientServiceContainer;
 import org.rapla.components.xmlbundle.I18nBundle;
 import org.rapla.components.xmlbundle.impl.I18nBundleImpl;
@@ -13,21 +12,14 @@ import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
 import org.rapla.facade.CalendarOptions;
 import org.rapla.facade.ClientFacade;
 import org.rapla.framework.Configuration;
-import org.rapla.framework.Container;
 import org.rapla.framework.DefaultConfiguration;
 import org.rapla.framework.PluginDescriptor;
 import org.rapla.framework.RaplaContextException;
 import org.rapla.framework.RaplaException;
 import org.rapla.framework.TypedComponentRole;
 import org.rapla.plugin.RaplaClientExtensionPoints;
-import org.rapla.plugin.RaplaServerExtensionPoints;
 import org.rapla.plugin.exchangeconnector.client.ExchangeConnectorAdminOptions;
 import org.rapla.plugin.exchangeconnector.client.ExchangeConnectorUserOptions;
-import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorRemote;
-import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorRemoteObject;
-import org.rapla.plugin.exchangeconnector.server.SynchronisationManager;
-import org.rapla.server.ServerService;
-import org.rapla.server.ServerServiceContainer;
 
 
 public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceContainer> {
