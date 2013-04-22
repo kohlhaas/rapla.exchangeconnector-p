@@ -14,6 +14,8 @@ import org.rapla.plugin.ServerExtension;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAccountInformationStorage;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
+import org.rapla.plugin.exchangeconnector.server.worker.AppointmentTask;
+import org.rapla.plugin.exchangeconnector.server.worker.EWSWorker;
 
 /**    
  * @author Alex Heil, Dominik Joder, Lutz Bergendahl, Matthias Hundt
@@ -21,12 +23,7 @@ import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointment
  * @see {@link ExchangeAccountInformationStorage}
  */
 public class SynchronisationManager extends RaplaComponent implements AllocationChangeListener, ModificationListener, ServerExtension {
-	
-	
-	private static SynchronisationManager synchronisationManagerInstance = null;
-	private static ClientFacade clientFacade;
-	private Timer scheduledDownloadTimer;
-    //private IMessageServer messageServer;
+	private static SynchronisationManager synchronisationManagerInstance;
 
     /**
 	 * The constructor 
@@ -36,44 +33,15 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 	 */
 	public SynchronisationManager(RaplaContext context) throws RaplaException {
 		super(context);
-		setInstance(this);
+        synchronisationManagerInstance = this;
 		
-		clientFacade =  context.lookup(ClientFacade.class);
+		final ClientFacade clientFacade =  context.lookup(ClientFacade.class);
 		clientFacade.addAllocationChangedListener(this);
-        //clientFacade.addModificationListener(this);
 
-
-
-/*        try {
-
-
-            messageServer = MessageServerFactory.getMessageServer();
-            final IMessageReceiver messageReceiver = MessageServerFactory.getMessageReveiver();
-
-            final ReservationMessageListener rsm = new ReservationMessageListener(clientFacade);
-            messageReceiver.addMessageListener(rsm);
-
-        } catch (JMSException e) {
-            logException(e);
-        }
-*/
-
-	    initScheduledDownloadTimer();		
+        final Timer scheduledDownloadTimer = new Timer("ScheduledDownloadThread",true);
+        scheduledDownloadTimer.schedule(new ScheduledDownloadHandler(context, clientFacade), 30000, ExchangeConnectorPlugin.PULL_FREQUENCY*1000);
 	}
 
-
-
-
-	/**
-	 * Init the scheduledDownloadTimer
-	 */
-	private void initScheduledDownloadTimer() {
-		scheduledDownloadTimer = new Timer("ScheduledDownloadThread",true);
-		scheduledDownloadTimer.schedule(new ScheduledDownloadHandler(clientFacade), 30000, ExchangeConnectorPlugin.PULL_FREQUENCY*1000);
-	}
-	
-
-	
 
 	/**
 	 * @return the synchronisationManagerInstance
@@ -82,20 +50,13 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 		return synchronisationManagerInstance; 
 	}
 
-	/**
-	 * @param synchronisationManagerInstance the synchronisationManagerInstance to set
-	 */
-	public static void setInstance(
-			SynchronisationManager synchronisationManagerInstance) {
-		SynchronisationManager.synchronisationManagerInstance = synchronisationManagerInstance;
-	}
-	
-	
+
+
 	/**
 	 * @return {@link ClientFacade}
 	 */
 	public static ClientFacade getSyncManagerClientFacade() {
-		return SynchronisationManager.clientFacade;
+		return SynchronisationManager.synchronisationManagerInstance.getClientFacade();
 	}
 
 
@@ -113,14 +74,11 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 	 * @see org.rapla.facade.AllocationChangeListener#changed(org.rapla.facade.AllocationChangeEvent[])
 	 */
 	public synchronized void changed(AllocationChangeEvent[] changeEvents) {
-       /* SynchronisationManager.logInfo("Invoked change handler for " + changeEvents.length + " events");
-		Thread changeHandlerThread = new Thread(new ChangeHandler( changeEvents, clientFacade), "ChangeHandlerThread");
-		//changeHandlerThread.start();
-		changeHandlerThread.run();*/
+
 	}
 	
 	public String addExchangeUser(String raplaUsername, String exchangeUsername, String exchangePassword, Boolean downloadFromExchange) throws RaplaException {
-        SynchronisationManager.logInfo("Invoked add exchange user for rapla " + raplaUsername+" with exchange user "+exchangeUsername);
+        getLogger().debug("Invoked add exchange user for rapla " + raplaUsername+" with exchange user "+exchangeUsername);
 		boolean success = ExchangeAccountInformationStorage.getInstance().addAccount(raplaUsername, exchangeUsername, exchangePassword, downloadFromExchange);
 		String returnMessage;
 		if(success) {
@@ -139,10 +97,10 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 	}
 
 	private void syncUser(String raplaUsername) throws RaplaException {
-        SynchronisationManager.logInfo("Invoked change sync for user "+raplaUsername);
-        Thread thread = new Thread(new SyncUserHandler(getContext(),clientFacade, clientFacade.getUser(raplaUsername)), "SyncUserThread");
-		//thread.start();
-		thread.run();
+        getLogger().debug("Invoked change sync for user "+raplaUsername);
+        final AppointmentTask task = new AppointmentTask(getContext());
+        task.downloadUserAppointments(getUser());
+        
 	}
 
 	public String removeExchangeUser(String raplaUsername) throws RaplaException{
@@ -175,9 +133,9 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 	}
 
     public synchronized void dataChanged(ModificationEvent evt) throws RaplaException {
-        SynchronisationManager.logInfo("Invoked data change handler for " + evt.getChanged().size() + " objects");
-        final ReservationChangedTask reservationChangedTask = new ReservationChangedTask(getContext());
-        reservationChangedTask.synchronize(clientFacade, evt);
+        getLogger().debug("Invoked data change handler for " + evt.getChanged().size() + " objects");
+        final AppointmentTask reservationChangedTask = new AppointmentTask(getContext());
+        reservationChangedTask.synchronize(evt);
 
 /*
         Thread changeHandlerThread = new Thread(new ChangeHandler(evt, clientFacade), "ChangeHandlerThread");
@@ -201,9 +159,9 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
     }
 
     public boolean isExchangeAvailable() throws RaplaException {
-        final EWSProxy ewsProxy;
+        final EWSWorker ewsProxy;
         try {
-            ewsProxy = new EWSProxy(getContext(), clientFacade, getUser());
+            ewsProxy = new EWSWorker(getContext(), getUser());
 
         } catch (Exception e) {
             throw new RaplaException(e);

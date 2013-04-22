@@ -3,32 +3,24 @@
  */
 package org.rapla.plugin.exchangeconnector.server;
 
-import java.util.Date;
-
-import org.rapla.entities.User;
-import org.rapla.entities.domain.Appointment;
-import org.rapla.entities.domain.Reservation;
-import org.rapla.entities.dynamictype.DynamicType;
 import org.rapla.facade.ClientFacade;
 import org.rapla.framework.RaplaException;
-import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
-import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 
 /**
  * @author lutz
  */
-public class CompleteReconciliationHandler extends SynchronisationHandler {
+public class CompleteReconciliationHandler  {
 
 
     /**
      * @param clientFacade
      */
     public CompleteReconciliationHandler(ClientFacade clientFacade) {
-        super(null,clientFacade);
+      //  super(null,clientFacade);
     }
 
     public void run() {
-        deleteExchangeItemsFromRapla(clientFacade);
+     /*   deleteExchangeItemsFromRapla(clientFacade);
         ExchangeAppointmentStorage.getInstance().setAllDeleted();
         try {
             deleteAll();
@@ -36,18 +28,18 @@ public class CompleteReconciliationHandler extends SynchronisationHandler {
             downloadAll();
         } catch (Exception e) {
             SynchronisationManager.logException(e);
-        }
+        }*/
     }
 
     /**
      * @throws InterruptedException
      */
     private void downloadAll() throws InterruptedException {
-        Thread thread = new Thread(new ScheduledDownloadHandler(clientFacade));
+       /* Thread thread = new Thread(new ScheduledDownloadHandler(clientFacade));
         thread.start();
         while (thread.isAlive()) {
             this.wait(100);
-        }
+        }*/
     }
 
     /**
@@ -56,7 +48,7 @@ public class CompleteReconciliationHandler extends SynchronisationHandler {
      */
     private void uploadAll() throws RaplaException, Exception {
 
-        DynamicType importEventType = ExchangeConnectorPlugin.getImportEventType(clientFacade);
+       /* DynamicType importEventType = ExchangeConnectorPlugin.getImportEventType(clientFacade);
         final Date from = ExchangeConnectorPlugin.getSynchingPeriodPast(new Date());
         final Date to = ExchangeConnectorPlugin.getSynchingPeriodFuture(new Date());
 
@@ -70,24 +62,24 @@ public class CompleteReconciliationHandler extends SynchronisationHandler {
                 // only upload those which weren't added by Exchange
                 if (importEventType != null && !reservation.getClassification().getType().getElementKey().equals(importEventType.getElementKey())) {
                     for (Appointment appointment : reservation.getAppointments()) {
-                        UploadRaplaAppointmentWorker worker = new UploadRaplaAppointmentWorker(null, clientFacade, appointment, null);
+                        AddUpdateWorker worker = new AddUpdateWorker(null, clientFacade, appointment, null);
                         worker.perform();
                     }
                 }
             }
-        }
+        }*/
     }
 
     /**
      * @throws Exception
      */
     private void deleteAll() throws Exception {
-        for (Appointment appointment : ExchangeAppointmentStorage.getInstance().getDeletedItems()) {
+       /* for (Appointment appointment : ExchangeAppointmentStorage.getInstance().getDeletedItems()) {
             String raplaUsername = ExchangeAppointmentStorage.getInstance().getRaplaUsername(appointment);
-            DeleteRaplaAppointmentWorker worker = new DeleteRaplaAppointmentWorker(null, clientFacade, raplaUsername,
+            DeleteWorker worker = new DeleteWorker(null, clientFacade, raplaUsername,
                     ExchangeConnectorUtils.getAppointmentSID(appointment));
             worker.perform();
         }
-        ExchangeAppointmentStorage.getInstance().clearStorage();
+        ExchangeAppointmentStorage.getInstance().clearStorage();*/
     }
 }

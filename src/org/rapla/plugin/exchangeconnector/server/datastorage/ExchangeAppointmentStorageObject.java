@@ -20,36 +20,35 @@ import org.rapla.entities.domain.Appointment;
  */
 public class ExchangeAppointmentStorageObject implements Serializable {
 	private static final long serialVersionUID = -8885900937714586442L;
-	private int appointmentId;
-	private String exchangeId;
+	private final int appointmentId;
+	private final String exchangeId;
 	private boolean isExchangeItem;
-	private String raplaUsername;
+	private final String raplaUsername;
 	private boolean deleted;
 	
 	/**
 	 * Parameterless constructor to generate an ExchangeAppointmentStorageObject object without any values 
-	 */
+	 *//*
 	public ExchangeAppointmentStorageObject() {
 		this("");
 	}
-	/**
+	*//**
 	 * Constructor to generate an appointment with a particular id of the Exchange {@link microsoft.exchange.webservices.data.Appointment}
 	 * @param exchangeId : {@link String}
-	 */
+	 *//*
 	public ExchangeAppointmentStorageObject(String exchangeId) {
 		this(0, exchangeId, "", false);
-	}
+	}*/
 
 	/**
 	 * Constructor to generate an appointment with a particular unique id of the {@link Appointment}, the id of the Exchange {@link microsoft.exchange.webservices.data.Appointment} and if the appointment has been created in Outlook
 	 * @param appointmentId : {@link Integer} the unique id of the Rapla {@link Appointment}
 	 * @param exchangeId : {@link String} the unique id of the Exchange {@link microsoft.exchange.webservices.data.Appointment} (the exchangeId is empty until the upload to the Exchange Server succeeds)
-	 * @param isExchangeItem : {@link Boolean} true if the appointment has been created in Outlook/Exchange, false if it has been created in Rapla
-	 * @param deleted : {@link Boolean} true if this appointment is flagged as deleted from the Rapla System
+	 * @param isExternalAppointment : {@link Boolean} true if the appointment has been created in Outlook/Exchange, false if it has been created in Rapla
 	 */
-	public ExchangeAppointmentStorageObject(int appointmentId, String exchangeId, String raplaUsername, boolean isExchangeItem) {
-		this(appointmentId, exchangeId, raplaUsername, isExchangeItem, false);
-	}
+/*	public ExchangeAppointmentStorageObject(int appointmentId, String exchangeId, String raplaUsername, boolean isExternalAppointment) {
+		this(appointmentId, exchangeId, raplaUsername, isExternalAppointment, false);
+	}*/
 	
 	/**
 	 * Constructor to generate an appointment with a particular unique id of the {@link Appointment}, the id of the Exchange {@link microsoft.exchange.webservices.data.Appointment} and if the appointment has been created in Outlook
@@ -76,10 +75,10 @@ public class ExchangeAppointmentStorageObject implements Serializable {
 	
 	/**
 	 * @param appointmentId : {@link Integer} the unique id of the Rapla {@link Appointment}
-	 */
+	 *//*
 	public void setAppointmentId(int appointmentId) {
 		this.appointmentId = appointmentId;
-	}
+	}*/
 	/**
 	 * @return exchangeId : {@link String} the unique id of the Exchange {@link microsoft.exchange.webservices.data.Appointment} (the exchangeId is empty until the upload to the Exchange Server succeeds)
 	 */
@@ -88,12 +87,11 @@ public class ExchangeAppointmentStorageObject implements Serializable {
 	}
 	/**
 	 * @param exchangeId : {@link String} the unique id of the Exchange {@link microsoft.exchange.webservices.data.Appointment}
-	 */
 	public void setExchangeId(String exchangeId) {
 		this.exchangeId = exchangeId;
 	}
 	/**
-	 * @return isExchangeItem : {@link Boolean} true if the appointment has been created in Outlook/Exchange, false if it has been created in Rapla
+	 * @return isExternalAppointment : {@link Boolean} true if the appointment has been created in Outlook/Exchange, false if it has been created in Rapla
 	 */
 	public boolean isExchangeItem() {
 		return isExchangeItem;
@@ -111,11 +109,11 @@ public class ExchangeAppointmentStorageObject implements Serializable {
 		return raplaUsername;
 	}
 	/**
-	 * @param getRaplaUsername : {@link String} the Rapla name of the user that owns this appointment on the Exchange Server
+	 * @param raplaUsername : {@link String} the Rapla name of the user that owns this appointment on the Exchange Server
 	 */
-	public void setRaplaUsername(String raplaUsername) {
+	/*public void setRaplaUsername(String raplaUsername) {
 		this.raplaUsername = raplaUsername;
-	}
+	}*/
 	
 	/**
 	 * @return deleted : {@link Boolean} true if the appointment has been deleted from the Rapla system

@@ -1,37 +1,9 @@
 /**
  * 
  */
-package org.rapla.plugin.exchangeconnector.server;
+package org.rapla.plugin.exchangeconnector.server.worker;
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.NoSuchElementException;
-import java.util.Set;
-
-import microsoft.exchange.webservices.data.ArgumentException;
-import microsoft.exchange.webservices.data.ArgumentOutOfRangeException;
-import microsoft.exchange.webservices.data.Attendee;
-import microsoft.exchange.webservices.data.BodyType;
-import microsoft.exchange.webservices.data.ConflictResolutionMode;
-import microsoft.exchange.webservices.data.DayOfTheWeek;
-import microsoft.exchange.webservices.data.DayOfTheWeekIndex;
-import microsoft.exchange.webservices.data.DeleteMode;
-import microsoft.exchange.webservices.data.LegacyFreeBusyStatus;
-import microsoft.exchange.webservices.data.MailboxType;
-import microsoft.exchange.webservices.data.MessageBody;
-import microsoft.exchange.webservices.data.Month;
-import microsoft.exchange.webservices.data.Recurrence;
-import microsoft.exchange.webservices.data.SendCancellationsMode;
-import microsoft.exchange.webservices.data.SendInvitationsMode;
-import microsoft.exchange.webservices.data.SendInvitationsOrCancellationsMode;
-import microsoft.exchange.webservices.data.ServiceLocalException;
-
+import microsoft.exchange.webservices.data.*;
 import org.rapla.entities.User;
 import org.rapla.entities.configuration.RaplaConfiguration;
 import org.rapla.entities.domain.Allocatable;
@@ -39,12 +11,16 @@ import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.Repeating;
 import org.rapla.entities.dynamictype.Classification;
 import org.rapla.facade.CalendarOptions;
-import org.rapla.facade.ClientFacade;
 import org.rapla.facade.internal.CalendarOptionsImpl;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
+import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorUtils;
+import org.rapla.plugin.exchangeconnector.server.model.RaplaRepeatingType;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
+
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * The worker-class for uploading a new- or changed appointment from Rapla to
@@ -57,13 +33,11 @@ import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointment
  * @author lutz
  *
  */
-public class UploadRaplaAppointmentWorker extends EWSProxy {
+ class AddUpdateWorker extends EWSWorker {
 
 	private static final String LINE_BREAK = "\n";
 	private static final String BODY_ATTENDEE_LIST_OPENING_LINE = "The following resources participate in the appointment:"+LINE_BREAK;
-	private Appointment raplaAppointment;
-	private String bodyAttendeeList;
-    private String exchangeId;
+
 
     /**
 	 * The constructor
@@ -71,17 +45,11 @@ public class UploadRaplaAppointmentWorker extends EWSProxy {
 
 	 *
      *
-     *
-     * @param facade : {@link org.rapla.facade.ClientFacade}
      * @param appointment : {@link org.rapla.entities.domain.Appointment}
-     * @param exchangeId
      * @throws Exception
 	 */
-	public UploadRaplaAppointmentWorker(RaplaContext context, ClientFacade facade, Appointment appointment, String exchangeId) throws Exception{
-		super(context, facade, appointment);
-		setRaplaAppointment(appointment);
-		bodyAttendeeList = new String();
-        this.exchangeId = exchangeId;
+	public AddUpdateWorker(RaplaContext context, Appointment appointment) throws Exception{
+		super(context, appointment);
 	}
 
 	/**
@@ -91,22 +59,22 @@ public class UploadRaplaAppointmentWorker extends EWSProxy {
 	 * @throws Exception 
 	 * 
 	 */
-	public void perform() throws Exception {
+	public void perform(Appointment raplaAppointment, String exchangeId) throws Exception {
 
-		if (getRaplaAppointment() != null && getService() != null) {
-			microsoft.exchange.webservices.data.Appointment exchangeAppointment = getEquivalentExchangeAppointment(raplaAppointment);
+		if (raplaAppointment != null && getService() != null) {
+			microsoft.exchange.webservices.data.Appointment exchangeAppointment = getEquivalentExchangeAppointment(exchangeId, raplaAppointment);
 			
 			setExchangeRecurrence(raplaAppointment, exchangeAppointment);
 			
-			addRequiredAttendees(exchangeAppointment);
+			addRequiredAttendees(raplaAppointment, exchangeAppointment);
 			
-			setMessageBody(exchangeAppointment);
+			setMessageBody(appendAttendeeToBodyMessage(raplaAppointment.getOwner().getUsername()), exchangeAppointment);
 
-            addRoomResource(exchangeAppointment);
+            addRoomResource(raplaAppointment, exchangeAppointment);
 
             saveToExchangeServer(exchangeAppointment);
 
-			saveToStorageManager(exchangeAppointment);
+			saveToStorageManager(raplaAppointment, exchangeAppointment);
 			
 			removeRecurrenceExceptions(raplaAppointment, exchangeAppointment);
 			
@@ -119,14 +87,14 @@ public class UploadRaplaAppointmentWorker extends EWSProxy {
 	 * @throws ArgumentException
 	 * @throws Exception
 	 */
-	private microsoft.exchange.webservices.data.Appointment setExchangeRecurrence( Appointment raplaAppointment, microsoft.exchange.webservices.data.Appointment exchangeAppointment) throws ArgumentOutOfRangeException, ArgumentException, Exception {
+	private void setExchangeRecurrence( Appointment raplaAppointment, microsoft.exchange.webservices.data.Appointment exchangeAppointment) throws ArgumentOutOfRangeException, ArgumentException, Exception {
 	
 		Recurrence recurrence = getExchangeRecurrence(raplaAppointment);
 		if (recurrence != null) {
 			exchangeAppointment.setRecurrence(recurrence);
 		}
 		
-		return exchangeAppointment;
+
 	}
 
 	/**
@@ -135,34 +103,35 @@ public class UploadRaplaAppointmentWorker extends EWSProxy {
 	 * @throws ServiceLocalException
 	 * @throws Exception
 	 */
-	private microsoft.exchange.webservices.data.Appointment saveToExchangeServer( microsoft.exchange.webservices.data.Appointment exchangeAppointment) throws ServiceLocalException, Exception {
+	private void saveToExchangeServer( microsoft.exchange.webservices.data.Appointment exchangeAppointment) throws Exception {
 		// save the appointment to the server
 		if (exchangeAppointment.isNew()) {
-            SynchronisationManager.logInfo("Adding "+exchangeAppointment.getSubject());
+            getLogger().info("Adding " + exchangeAppointment.getSubject() +  " to exchange");
 			exchangeAppointment.save(SendInvitationsMode.SendOnlyToAll);
 		}
 		else{
-            SynchronisationManager.logInfo("Updating "+exchangeAppointment.getId()+ " "+exchangeAppointment.getSubject()+","+exchangeAppointment.getWhen());
+            getLogger().info("Updating " + exchangeAppointment.getId() + " " + exchangeAppointment.getSubject() + "," + exchangeAppointment.getWhen());
 			exchangeAppointment.update(ConflictResolutionMode.AlwaysOverwrite,SendInvitationsOrCancellationsMode.SendOnlyToAll);
 		}
 		
-		return exchangeAppointment;
+
 	}
 
 	/**
 	 * @param exchangeAppointment
 	 * @throws ServiceLocalException
 	 */
-	private void saveToStorageManager( microsoft.exchange.webservices.data.Appointment exchangeAppointment) throws ServiceLocalException {
+	private void saveToStorageManager(Appointment raplaAppointment, microsoft.exchange.webservices.data.Appointment exchangeAppointment) throws ServiceLocalException {
 		
-		String raplaUsername = getRaplaUser().getUsername();
+		final String raplaUsername = getRaplaUser().getUsername();
 		
 		ExchangeAppointmentStorage.getInstance().addAppointment(
-				getRaplaAppointment(),
+				raplaAppointment,
 				exchangeAppointment.getId().getUniqueId(), 
 				raplaUsername,
 				false);
 		ExchangeAppointmentStorage.getInstance().save();
+        getLogger().debug("Adding " + exchangeAppointment.getSubject() +" to local storage");
 	}
 	
 	/**
@@ -172,13 +141,13 @@ public class UploadRaplaAppointmentWorker extends EWSProxy {
 	 * @throws ArgumentException
 	 * @throws Exception
 	 */
-	private microsoft.exchange.webservices.data.Appointment getEquivalentExchangeAppointment(Appointment raplaAppointment) throws ArgumentOutOfRangeException, ArgumentException, Exception {
+	private microsoft.exchange.webservices.data.Appointment getEquivalentExchangeAppointment(String exchangeId, Appointment raplaAppointment) throws ArgumentOutOfRangeException, ArgumentException, Exception {
         microsoft.exchange.webservices.data.Appointment exchangeAppointment = null;
 		if (exchangeId != null && !exchangeId.isEmpty())  {
             try {
                 exchangeAppointment = ExchangeConnectorUtils.getExchangeAppointmentByID(getService(), exchangeId);
             } catch (Exception e) {
-                SynchronisationManager.logException(e);
+                getLogger().error(e.getMessage(), e);
             }
         }
         if (exchangeAppointment == null) {
@@ -208,7 +177,7 @@ public class UploadRaplaAppointmentWorker extends EWSProxy {
             // add category for filtering
             exchangeAppointment.getCategories().add(ExchangeConnectorPlugin.EXCHANGE_APPOINTMENT_CATEGORY);
             // add category for each event type
-            exchangeAppointment.getCategories().add(getFacade().getDynamicType(raplaAppointment.getReservation().getClassification().getType().getElementKey()).getName(Locale.getDefault()));
+            exchangeAppointment.getCategories().add(getClientFacade().getDynamicType(raplaAppointment.getReservation().getClassification().getType().getElementKey()).getName(Locale.getDefault()));
             // add rapla specific property
             exchangeAppointment.setExtendedProperty(raplaAppointmentPropertyDefinition, Boolean.TRUE);
         }
@@ -219,7 +188,7 @@ public class UploadRaplaAppointmentWorker extends EWSProxy {
 	 * @param exchangeAppointment
 	 * @throws Exception
 	 */
-	private void setMessageBody( microsoft.exchange.webservices.data.Appointment exchangeAppointment) throws Exception {
+	private void setMessageBody(String bodyAttendeeList, microsoft.exchange.webservices.data.Appointment exchangeAppointment) throws Exception {
 		String content = RAPLA_BODY_MESSAGE;
 		content += bodyAttendeeList.isEmpty() ? "" : bodyAttendeeList;
 		content += RAPLA_NOSYNC_KEYWORD;
@@ -231,7 +200,7 @@ public class UploadRaplaAppointmentWorker extends EWSProxy {
 	 * @throws ServiceLocalException
 	 * @throws Exception
 	 */
-	private void addRequiredAttendees( microsoft.exchange.webservices.data.Appointment exchangeAppointment) throws ServiceLocalException, Exception {
+	private void addRequiredAttendees(Appointment raplaAppointment, microsoft.exchange.webservices.data.Appointment exchangeAppointment) throws ServiceLocalException, Exception {
         // get all restricted resources
         final Set<Allocatable> allocatablePersons = ExchangeConnectorUtils.getAttachedPersonAllocatables(raplaAppointment);
         // join and check for mail address, if so, add to reservation
@@ -256,7 +225,7 @@ public class UploadRaplaAppointmentWorker extends EWSProxy {
      * @throws ServiceLocalException
      * @throws Exception
      */
-    private void addRoomResource( microsoft.exchange.webservices.data.Appointment exchangeAppointment) throws ServiceLocalException, Exception {
+    private void addRoomResource(Appointment raplaAppointment, microsoft.exchange.webservices.data.Appointment exchangeAppointment) throws ServiceLocalException, Exception {
         //todo: generify with option attributes
         //download from exchange as well!
 
@@ -303,11 +272,10 @@ public class UploadRaplaAppointmentWorker extends EWSProxy {
     }
 
 
-    private void appendAttendeeToBodyMessage(String currentUsersName) {
-		if(bodyAttendeeList.isEmpty()){
-			bodyAttendeeList = BODY_ATTENDEE_LIST_OPENING_LINE;
-		}
+    private String appendAttendeeToBodyMessage(String currentUsersName) {
+        String bodyAttendeeList = BODY_ATTENDEE_LIST_OPENING_LINE;
 		bodyAttendeeList += currentUsersName+LINE_BREAK;
+        return bodyAttendeeList;
 	}
 
 	/**
@@ -410,7 +378,7 @@ public class UploadRaplaAppointmentWorker extends EWSProxy {
 					String occurrenceDateString = dateFormat.format(occurrence.getStart());
 
 					if (exceptionDates.contains(occurrenceDateString)) {
-                        SynchronisationManager.logInfo("Removing exception for "+occurrence.getId().getUniqueId()+ " "+occurrence.toString());
+                        getLogger().info("Removing exception for " + occurrence.getId().getUniqueId() + " " + occurrence.toString());
 						occurrence.delete(DeleteMode.HardDelete, SendCancellationsMode.SendOnlyToAll);
 					}
 				}
@@ -420,31 +388,17 @@ public class UploadRaplaAppointmentWorker extends EWSProxy {
         }
 		return exchangeAppointment;
 	}
-	/**
-	 * @return the raplaAppointment
-	 */
-	private Appointment getRaplaAppointment() {
-		return raplaAppointment;
-	}
-
-	/**
-	 * @param raplaAppointment : {@link Appointment}
-	 *            the raplaAppointment to set
-	 */
-	private void setRaplaAppointment(Appointment raplaAppointment) {
-		this.raplaAppointment = raplaAppointment;
-	}
 
     protected CalendarOptions getCalendarOptions(User user) {
         RaplaConfiguration conf = null;
         try {
             if ( user != null)
             {
-                conf = (RaplaConfiguration) getFacade().getPreferences( user ).getEntry(CalendarOptionsImpl.CALENDAR_OPTIONS);
+                conf = getClientFacade().getPreferences(user).getEntry(CalendarOptionsImpl.CALENDAR_OPTIONS);
             }
             if ( conf == null)
             {
-                conf = (RaplaConfiguration)getFacade().getPreferences( null ).getEntry(CalendarOptionsImpl.CALENDAR_OPTIONS);
+                conf = getClientFacade().getPreferences( null ).getEntry(CalendarOptionsImpl.CALENDAR_OPTIONS);
             }
             if ( conf != null)
             {

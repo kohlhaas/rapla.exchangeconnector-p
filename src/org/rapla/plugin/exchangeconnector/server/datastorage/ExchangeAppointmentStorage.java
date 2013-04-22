@@ -85,7 +85,7 @@ public class ExchangeAppointmentStorage {
 	 * @param isExchangeItem : {@link Boolean} true if the appointment has been created in Outlook/Exchange, false if it has been created in Rapla
 	 */
 	public void addAppointment(int appointmentId, String exchangeId, String raplaUsername, boolean isExchangeItem) {
-		ExchangeAppointmentStorageObject appointmentStorage = new ExchangeAppointmentStorageObject(appointmentId, exchangeId, raplaUsername, isExchangeItem);
+		ExchangeAppointmentStorageObject appointmentStorage = new ExchangeAppointmentStorageObject(appointmentId, exchangeId, raplaUsername, isExchangeItem, false);
 		appointments.put(appointmentId, appointmentStorage);
 	}
 	
@@ -203,8 +203,8 @@ public class ExchangeAppointmentStorage {
 	 * @param appointment : {@link Appointment} the Rapla appointment to be found in the mapping table
 	 * @return {@link Boolean} true if the appointment has been created in Outlook/Exchange, false if it has been created in Rapla
 	 */
-	public boolean isExchangeItem(Appointment appointment) {
-		return isExchangeItem(ExchangeConnectorUtils.getAppointmentID(appointment));
+	public boolean isExternalAppointment(Appointment appointment) {
+		return isExternalAppointment(ExchangeConnectorUtils.getAppointmentID(appointment));
 	}
 	/**
 	 * check if a given Rapla {@link Appointment} originates from the Exchange Server
@@ -212,7 +212,7 @@ public class ExchangeAppointmentStorage {
 	 * @param appointmentId : {@link Integer} unique id of the Rapla {@link Appointment} the Rapla appointment to be found in the mapping table
 	 * @return {@link Boolean} true if the appointment has been created in Outlook/Exchange, false if it has been created in Rapla
 	 */
-	public boolean isExchangeItem(int appointmentId) {
+	public boolean isExternalAppointment(int appointmentId) {
 		ExchangeAppointmentStorageObject appointmentStorage = appointments.get(appointmentId);
 		return (appointmentStorage == null)?false:appointmentStorage.isExchangeItem();
 	}
@@ -291,7 +291,7 @@ public class ExchangeAppointmentStorage {
 	public Collection<Integer> getExchangeItemIds() {
 		HashSet<Integer> exchangeAppointmentIds = new HashSet<Integer>();
 		for (Integer key : appointments.keySet()) {
-			if (isExchangeItem(key)) {
+			if (isExternalAppointment(key)) {
 				exchangeAppointmentIds.add(key);
 			}
 		}

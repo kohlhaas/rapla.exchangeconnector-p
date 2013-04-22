@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.rapla.plugin.exchangeconnector.server;
+package org.rapla.plugin.exchangeconnector.server.worker;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -34,37 +34,29 @@ import org.rapla.entities.dynamictype.Classification;
 import org.rapla.entities.dynamictype.ClassificationFilter;
 import org.rapla.entities.dynamictype.DynamicType;
 import org.rapla.facade.ClientFacade;
+import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
+import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorUtils;
+import org.rapla.plugin.exchangeconnector.server.SynchronisationManager;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
+
 /**
  * This worker is used for the retrieval of new appointments from the Exchange Server
  *
  * @author lutz
  */
-public class DownloadExchangeAppointmentWorker extends EWSProxy {
+public class DownloadWorker extends EWSWorker {
     private Preferences preferences;
 
     /**
      * The constructor
      *
-     * @param clientFacade
      * @param raplaUsername
      * @throws Exception
      */
-    public DownloadExchangeAppointmentWorker(ClientFacade clientFacade, String raplaUsername) throws Exception {
-        super(null, clientFacade, raplaUsername);
-    }
-
-    /**
-     * The constructor
-     *
-     * @param clientFacade
-     * @param raplaUser
-     * @throws Exception
-     */
-    public DownloadExchangeAppointmentWorker(ClientFacade clientFacade, User raplaUser) throws Exception {
-        super(null, clientFacade, raplaUser);
+    public DownloadWorker(RaplaContext context, User raplaUsername) throws Exception {
+        super(context, raplaUsername);
     }
 
     /**
@@ -74,11 +66,11 @@ public class DownloadExchangeAppointmentWorker extends EWSProxy {
      *
      * @throws Exception
      */
-    public void perform() throws Exception {
+    public synchronized void perform() throws Exception {
 
-        getFacade().switchTo(getRaplaUser());
+        //getFacade().switchTo(getRaplaUser());
 
-        preferences = getFacade().getPreferences(getRaplaUser());
+        preferences = getClientFacade().getPreferences(getRaplaUser());
         FindItemsResults<Item> findItemResults = null;
         int nextPageOffset = 0;
         do {
@@ -143,7 +135,7 @@ public class DownloadExchangeAppointmentWorker extends EWSProxy {
         return newExchangeAppointments;
     }
 
-    private boolean isRaplaItem(Appointment appointment) throws Exception {
+    private synchronized boolean isRaplaItem(Appointment appointment) throws Exception {
         String bodyString = MessageBody.getStringFromMessageBody(appointment.getBody());
         if (bodyString != null && !bodyString.isEmpty())
             return bodyString.contains(RAPLA_NOSYNC_KEYWORD);
@@ -156,7 +148,7 @@ public class DownloadExchangeAppointmentWorker extends EWSProxy {
      * @return
      * @throws Exception
      */
-    private FindItemsResults<Item> getFindItemResults(int pageOffset) throws Exception {
+    private synchronized FindItemsResults<Item> getFindItemResults(int pageOffset) throws Exception {
 
         final ItemView downloadView = (pageOffset > 0) ? new ItemView(ExchangeConnectorPlugin.EXCHANGE_FINDITEMS_PAGESIZE, pageOffset) : new ItemView(ExchangeConnectorPlugin.EXCHANGE_FINDITEMS_PAGESIZE);
 
@@ -212,8 +204,8 @@ public class DownloadExchangeAppointmentWorker extends EWSProxy {
             ExchangeAppointmentStorage.getInstance().addAppointment(tmpAppointment, exchangeId, raplaUsername, true);
         }
         ExchangeAppointmentStorage.getInstance().save();
-        SynchronisationManager.logInfo("Adding appointment for "+raplaUsername+" from exchange: "+ raplaReservation);
-        getFacade().store(raplaReservation);
+        getLogger().info("Adding appointment for " + raplaUsername + " from exchange: " + raplaReservation);
+        getClientFacade().store(raplaReservation);
     }
 
     /**
@@ -223,7 +215,7 @@ public class DownloadExchangeAppointmentWorker extends EWSProxy {
      */
     private Reservation createEquivalentRaplaReservation(Appointment exchangeAppointment) throws Exception {
         ReservationImpl raplaReservation = null;
-        ClientFacade currentClientFacade = getFacade();
+        ClientFacade currentClientFacade = getClientFacade();
         DynamicType importEventType = ExchangeConnectorPlugin.getImportEventType(currentClientFacade);
 
         if (importEventType != null) {
@@ -255,7 +247,7 @@ public class DownloadExchangeAppointmentWorker extends EWSProxy {
                         }
                     }
                 } catch (RaplaException e) {
-                    SynchronisationManager.logException(e);
+                    getLogger().error(e.getMessage(), e);
                 }
             }
             // mask private titles
@@ -312,7 +304,7 @@ public class DownloadExchangeAppointmentWorker extends EWSProxy {
     private org.rapla.entities.domain.Appointment createRaplaAppointment(Appointment exchangeAppointment) throws Exception {
         Date startDate = ExchangeConnectorUtils.translateExchangeToRaplaTime(exchangeAppointment.getStart());
         Date endDate = ExchangeConnectorUtils.translateExchangeToRaplaTime(exchangeAppointment.getEnd());
-        org.rapla.entities.domain.Appointment raplaAppointment = getFacade().newAppointment(startDate, endDate);
+        org.rapla.entities.domain.Appointment raplaAppointment = getClientFacade().newAppointment(startDate, endDate);
 
         if (exchangeAppointment.getIsAllDayEvent()) {
             raplaAppointment.setWholeDays(true);

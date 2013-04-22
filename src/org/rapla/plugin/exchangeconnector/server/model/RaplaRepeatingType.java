@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.rapla.plugin.exchangeconnector.server;
+package org.rapla.plugin.exchangeconnector.server.model;
 
 import org.rapla.entities.domain.RepeatingType;
 

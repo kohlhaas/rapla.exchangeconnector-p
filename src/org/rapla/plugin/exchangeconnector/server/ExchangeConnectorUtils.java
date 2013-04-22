@@ -1,21 +1,11 @@
 package org.rapla.plugin.exchangeconnector.server;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.SimpleTimeZone;
-
 import microsoft.exchange.webservices.data.ExchangeService;
 import microsoft.exchange.webservices.data.ItemId;
 import microsoft.exchange.webservices.data.ServiceResponseException;
 import net.fortuna.ical4j.model.TimeZoneRegistry;
 import net.fortuna.ical4j.model.TimeZoneRegistryFactory;
 import net.fortuna.ical4j.model.component.VTimeZone;
-
 import org.rapla.components.util.Assert;
 import org.rapla.entities.User;
 import org.rapla.entities.domain.Allocatable;
@@ -25,13 +15,12 @@ import org.rapla.entities.domain.internal.AppointmentImpl;
 import org.rapla.entities.domain.internal.ReservationImpl;
 import org.rapla.entities.storage.RefEntity;
 import org.rapla.entities.storage.internal.SimpleIdentifier;
-import org.rapla.facade.AllocationChangeEvent;
 import org.rapla.facade.ClientFacade;
-import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
-import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 import org.rapla.storage.impl.AbstractCachableOperator;
+
+import java.util.*;
 
 public class ExchangeConnectorUtils {
     private static final SimpleTimeZone gmt = new SimpleTimeZone(0, "GMT");
@@ -152,30 +141,6 @@ public class ExchangeConnectorUtils {
 //		return false;
     }*/
 
-    /**
-     * Method to delete an Exchange {@link microsoft.exchange.webservices.data.Appointment} with a particular exchange id from the Exchange Server
-     *
-     * @param clientFacade
-     * @param deleteAppointments : {@link String} the unique id of the {@link microsoft.exchange.webservices.data.Appointment} on the Exchange Server
-     * @param addToDeleteList    : {@link Boolean} flag, if this appointment should be remembered in the "to delete" list in case deleting the item from the Exchange Server fails
-     * @throws Exception
-     * @see org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage
-     */
-    public static void deleteAppointments(RaplaContext context, final ClientFacade clientFacade, final HashSet<SimpleIdentifier> deleteAppointments, boolean addToDeleteList) throws Exception {
-        for (SimpleIdentifier simpleIdentifier : deleteAppointments) {
-            if (ExchangeAppointmentStorage.getInstance().appointmentExists(simpleIdentifier.getKey())
-                    && !ExchangeAppointmentStorage.getInstance().isExchangeItem(simpleIdentifier.getKey())) {
-
-                if (addToDeleteList) {
-                    ExchangeAppointmentStorage.getInstance().setDeleted(simpleIdentifier.getKey());
-                    ExchangeAppointmentStorage.getInstance().save();
-                }
-                final String raplaUsername = ExchangeAppointmentStorage.getInstance().getRaplaUsername(simpleIdentifier.getKey());
-                DeleteRaplaAppointmentWorker deleteRaplaAppointmentWorker = new DeleteRaplaAppointmentWorker(context, clientFacade, raplaUsername, simpleIdentifier);
-                deleteRaplaAppointmentWorker.perform();
-            }
-        }
-    }
 
     public static SimpleIdentifier getReservationID(Reservation newReservation) {
         Object oid = ((ReservationImpl) newReservation).getId();
@@ -231,13 +196,13 @@ public class ExchangeConnectorUtils {
     public static Date translateExchangeToRaplaTime(Date start) {
         return translateExchangeToRaplaTime(start, timezone);
     }
-
+/*
     public static void updateAppointment(RaplaContext context, ClientFacade clientFacade, Appointment appointment, String exchangeId) throws Exception {
         SynchronisationManager.logInfo("add/updating " + appointment + " with exchangeid  " + exchangeId);
 
         if (appointment.getStart().after(ExchangeConnectorPlugin.getSynchingPeriodPast(new Date())) && appointment.getStart().before(ExchangeConnectorPlugin.getSynchingPeriodFuture(new Date()))) {
-            if (!ExchangeAppointmentStorage.getInstance().isExchangeItem(appointment)) {
-                UploadRaplaAppointmentWorker worker = new UploadRaplaAppointmentWorker(
+            if (!ExchangeAppointmentStorage.getInstance().isExternalAppointment(appointment)) {
+                AddUpdateWorker worker = new AddUpdateWorker(
                         context, clientFacade,
                         appointment,
                         exchangeId);
@@ -249,24 +214,21 @@ public class ExchangeConnectorUtils {
     public static void addAppointment(ClientFacade clientFacade, SimpleIdentifier appointment) throws Exception {
         //we have to chack for update since an add event is even invoked when adding a second (!) resource
 //        updateAppointment(clientFacade, appointment, ExchangeAppointmentStorage.getInstance().getExchangeId(appointment.getKey()));
-    }
+    }*/
 
-    public static void deleteAppointment(RaplaContext context, ClientFacade clientFacade, SimpleIdentifier appointment) throws Exception {
-        final HashSet<SimpleIdentifier> deleteAppointments = new HashSet<SimpleIdentifier>();
-        deleteAppointments.add(appointment);
-        deleteAppointments(context, clientFacade, deleteAppointments, true);
-    }
+
+/*
+    */
 
     /**
      * returns true if appointment has synchronized attribute
      *
-     * @param oldAppointment
+     * @param service
      * @return
-     */
+     *//*
     public static boolean isSynchronized(Appointment oldAppointment) {
         return false;  //To change body of created methods use File | Settings | File Templates.
-    }
-
+    }*/
     public static microsoft.exchange.webservices.data.Appointment getExchangeAppointmentByID(ExchangeService service, String exchangeId) throws Exception {
         try {
             return microsoft.exchange.webservices.data.Appointment.bind(service, new ItemId(exchangeId));
@@ -280,7 +242,7 @@ public class ExchangeConnectorUtils {
 
     }
 
-    public static void synchronizeAppointmentRequest(RaplaContext context, ClientFacade clientFacade, AllocationChangeEvent.Type changeEvent, SimpleIdentifier raplaIdentifier) throws Exception {
+   /* public static void synchronizeAppointmentRequest(RaplaContext context, ClientFacade clientFacade, AllocationChangeEvent.Type changeEvent, SimpleIdentifier raplaIdentifier) throws Exception {
         final Appointment appointment = (Appointment) getEntityBySimpleIdentifier(raplaIdentifier, clientFacade);
         if (appointment != null) {
             final String exchangeId = ExchangeAppointmentStorage.getInstance().getExchangeId(raplaIdentifier.getKey());
@@ -291,7 +253,7 @@ public class ExchangeConnectorUtils {
         }
 
 
-    }
+    }*/
 
     public static List<User> getAppointmentUsers(Appointment raplaAppointment, ClientFacade clientFacade) throws RaplaException {
         // get all restricted resources
@@ -316,7 +278,7 @@ public class ExchangeConnectorUtils {
         return results;
     }
 
-    static Set<Allocatable> getAttachedPersonAllocatables(Appointment raplaAppointment) {
+    public static Set<Allocatable> getAttachedPersonAllocatables(Appointment raplaAppointment) {
         final Allocatable[] restrictedAllocatables = raplaAppointment.getReservation().getRestrictedAllocatables(raplaAppointment);
         // get all non restricted resources
         final Allocatable[] persons = raplaAppointment.getReservation().getPersons();

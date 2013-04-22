@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.rapla.plugin.exchangeconnector.server;
+package org.rapla.plugin.exchangeconnector.server.worker;
 
 import java.text.SimpleDateFormat;
 
@@ -17,6 +17,9 @@ import org.rapla.facade.ClientFacade;
 import org.rapla.facade.RaplaComponent;
 import org.rapla.framework.RaplaContext;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
+import org.rapla.plugin.exchangeconnector.server.EWSConnector;
+import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorUtils;
+import org.rapla.plugin.exchangeconnector.server.SynchronisationManager;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAccountInformationStorage;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 
@@ -26,26 +29,23 @@ import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointment
  * @author lutz
  */
 
-class EWSProxy extends RaplaComponent {
+public class EWSWorker extends RaplaComponent {
 
     protected static final String RAPLA_NOSYNC_KEYWORD = "<==8NO_SYNC8==>";
     protected static final String RAPLA_BODY_MESSAGE = "Please do not change this item, to prevent inconsistencies!\n\n\n";
     public static SimpleDateFormat EWS_DEFAULT_FORMATTER;
     public static ExtendedPropertyDefinition raplaAppointmentPropertyDefinition;
     private ExchangeService service;
-    private ClientFacade facade;
     private User raplaUser;
 
     /**
      * The constructor
      *
-     * @param facade    : {@link ClientFacade}
      * @param raplaUser : {@link User}
      * @throws Exception
      */
-    public EWSProxy(RaplaContext context, ClientFacade facade, User raplaUser) throws Exception {
+    public EWSWorker(RaplaContext context, User raplaUser) throws Exception {
         super(context);
-        setFacade(facade);
         setRaplaUser(raplaUser);
         setService(raplaUser);
         initProxy();
@@ -53,22 +53,10 @@ class EWSProxy extends RaplaComponent {
 
 
     /**
-     * The constructor
-     *
-     * @param clientFacade  : {@link ClientFacade}
-     * @param raplaUsername : {@link String}
-     * @throws Exception
-     */
-    public EWSProxy(RaplaContext context, ClientFacade clientFacade, String raplaUsername) throws Exception {
-        this(context, clientFacade, clientFacade.getUser(raplaUsername));
-    }
-
-    /**
-     * @param clientFacade
      * @param appointment
      * @throws Exception
      */
-    public EWSProxy(RaplaContext context, ClientFacade clientFacade, Appointment appointment) throws Exception {
+    public EWSWorker(RaplaContext context, Appointment appointment) throws Exception {
         super(context);
         // see if rapla user is stored with appointment in exchange db
         // inviting user is the one who is going to authenticate against exchange
@@ -76,17 +64,16 @@ class EWSProxy extends RaplaComponent {
         // so we are just looking for credentials of any person resource in this appointment
         String invitingUserName = ExchangeAppointmentStorage.getInstance().getRaplaUsername(appointment);
         if (invitingUserName == null || invitingUserName.isEmpty()) {
-            for (User candidateUser : ExchangeConnectorUtils.getAppointmentUsers(appointment, clientFacade)) {
+            for (User candidateUser : ExchangeConnectorUtils.getAppointmentUsers(appointment, getClientFacade())) {
                 if (ExchangeAccountInformationStorage.getInstance().hasUser(candidateUser)) {
                     invitingUserName = candidateUser.getUsername();
                     break;
                 }
             }
         }
-        if (!invitingUserName.isEmpty()) {
-            setFacade(clientFacade);
+        if (invitingUserName != null && !invitingUserName.isEmpty()) {
             setService(invitingUserName);
-            setRaplaUser(clientFacade.getUser(invitingUserName));
+            setRaplaUser(getClientFacade().getUser(invitingUserName));
             initProxy();
         }
     }
@@ -99,7 +86,7 @@ class EWSProxy extends RaplaComponent {
         try {
             raplaAppointmentPropertyDefinition = new ExtendedPropertyDefinition(DefaultExtendedPropertySet.Appointment, "isRaplaMeeting", MapiPropertyType.Boolean);
         } catch (Exception e) {
-            SynchronisationManager.logException(e);
+            getLogger().error(e.getMessage(),e);
         }
     }
 
@@ -107,7 +94,7 @@ class EWSProxy extends RaplaComponent {
     /**
      * @return {@link ExchangeService}
      */
-    protected ExchangeService getService() {
+    public ExchangeService getService() {
         return this.service;
     }
 
@@ -150,20 +137,6 @@ class EWSProxy extends RaplaComponent {
     private void setService(WebCredentials credentials) throws Exception {
         setService(new EWSConnector(ExchangeConnectorPlugin.EXCHANGE_WS_FQDN, credentials).getService());
 
-    }
-
-    /**
-     * @return {@link ClientFacade} the facade
-     */
-    protected ClientFacade getFacade() {
-        return facade;
-    }
-
-    /**
-     * @param facade : {@link ClientFacade} the facade to set
-     */
-    private void setFacade(ClientFacade facade) {
-        this.facade = facade;
     }
 
     /**

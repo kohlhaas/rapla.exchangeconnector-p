@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.rapla.plugin.exchangeconnector.server;
+package org.rapla.plugin.exchangeconnector.server.model;
 
 import microsoft.exchange.webservices.data.Recurrence;
 import microsoft.exchange.webservices.data.Recurrence.DailyPattern;
