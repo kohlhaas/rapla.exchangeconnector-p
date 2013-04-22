@@ -14,6 +14,8 @@ import microsoft.exchange.webservices.data.WebCredentials;
 import org.rapla.entities.User;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.facade.ClientFacade;
+import org.rapla.facade.RaplaComponent;
+import org.rapla.framework.RaplaContext;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAccountInformationStorage;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
@@ -24,7 +26,7 @@ import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointment
  * @author lutz
  */
 
-class EWSProxy {
+class EWSProxy extends RaplaComponent {
 
     protected static final String RAPLA_NOSYNC_KEYWORD = "<==8NO_SYNC8==>";
     protected static final String RAPLA_BODY_MESSAGE = "Please do not change this item, to prevent inconsistencies!\n\n\n";
@@ -41,8 +43,8 @@ class EWSProxy {
      * @param raplaUser : {@link User}
      * @throws Exception
      */
-    public EWSProxy(ClientFacade facade, User raplaUser) throws Exception {
-        super();
+    public EWSProxy(RaplaContext context, ClientFacade facade, User raplaUser) throws Exception {
+        super(context);
         setFacade(facade);
         setRaplaUser(raplaUser);
         setService(raplaUser);
@@ -57,8 +59,8 @@ class EWSProxy {
      * @param raplaUsername : {@link String}
      * @throws Exception
      */
-    public EWSProxy(ClientFacade clientFacade, String raplaUsername) throws Exception {
-        this(clientFacade, clientFacade.getUser(raplaUsername));
+    public EWSProxy(RaplaContext context, ClientFacade clientFacade, String raplaUsername) throws Exception {
+        this(context, clientFacade, clientFacade.getUser(raplaUsername));
     }
 
     /**
@@ -66,7 +68,8 @@ class EWSProxy {
      * @param appointment
      * @throws Exception
      */
-    public EWSProxy(ClientFacade clientFacade, Appointment appointment) throws Exception {
+    public EWSProxy(RaplaContext context, ClientFacade clientFacade, Appointment appointment) throws Exception {
+        super(context);
         // see if rapla user is stored with appointment in exchange db
         // inviting user is the one who is going to authenticate against exchange
         // so might be the current user, but also a user who just moves it

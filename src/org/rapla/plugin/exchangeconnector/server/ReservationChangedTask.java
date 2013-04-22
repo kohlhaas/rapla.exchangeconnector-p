@@ -10,6 +10,7 @@ import org.rapla.entities.dynamictype.DynamicType;
 import org.rapla.entities.storage.internal.SimpleIdentifier;
 import org.rapla.facade.ClientFacade;
 import org.rapla.facade.ModificationEvent;
+import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
@@ -22,6 +23,11 @@ import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointment
  * To change this template use File | Settings | File Templates.
  */
 class ReservationChangedTask {
+    private RaplaContext context;
+
+    ReservationChangedTask(RaplaContext context) {
+        this.context = context;
+    }
     /*   public synchronized void syncReservations(ClientFacade clientFacade, ModificationEvent evt) {
         Set<Reservation> reservationSet = new HashSet<Reservation>();
         addOrUpdateReservations(clientFacade, evt.getChanged(reservationSet));
@@ -68,7 +74,7 @@ class ReservationChangedTask {
         try {
             final SimpleIdentifier appointmentSID = ExchangeConnectorUtils.getAppointmentSID(appointment);
             if (appointment != null) {
-                ExchangeConnectorUtils.deleteAppointment(clientFacade, appointmentSID);
+                ExchangeConnectorUtils.deleteAppointment(context, clientFacade, appointmentSID);
             }
         } catch (Exception e) {
             throw new RaplaException(e);
@@ -92,7 +98,7 @@ class ReservationChangedTask {
             if (appointment != null) {
                 final String exchangeId = ExchangeAppointmentStorage.getInstance().getExchangeId(appointmentSID.getKey());
                 final UploadRaplaAppointmentWorker worker = new UploadRaplaAppointmentWorker(
-                            clientFacade,
+                            context, clientFacade,
                             appointment,
                             exchangeId);
                 worker.perform();

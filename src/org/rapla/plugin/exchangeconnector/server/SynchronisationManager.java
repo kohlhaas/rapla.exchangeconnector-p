@@ -113,10 +113,10 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 	 * @see org.rapla.facade.AllocationChangeListener#changed(org.rapla.facade.AllocationChangeEvent[])
 	 */
 	public synchronized void changed(AllocationChangeEvent[] changeEvents) {
-        SynchronisationManager.logInfo("Invoked change handler for " + changeEvents.length + " events");
-		Thread changeHandlerThread = new Thread(new ChangeHandler(changeEvents, clientFacade), "ChangeHandlerThread");
+       /* SynchronisationManager.logInfo("Invoked change handler for " + changeEvents.length + " events");
+		Thread changeHandlerThread = new Thread(new ChangeHandler( changeEvents, clientFacade), "ChangeHandlerThread");
 		//changeHandlerThread.start();
-		changeHandlerThread.run();
+		changeHandlerThread.run();*/
 	}
 	
 	public String addExchangeUser(String raplaUsername, String exchangeUsername, String exchangePassword, Boolean downloadFromExchange) throws RaplaException {
@@ -140,7 +140,7 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 
 	private void syncUser(String raplaUsername) throws RaplaException {
         SynchronisationManager.logInfo("Invoked change sync for user "+raplaUsername);
-        Thread thread = new Thread(new SyncUserHandler(clientFacade, clientFacade.getUser(raplaUsername)), "SyncUserThread");
+        Thread thread = new Thread(new SyncUserHandler(getContext(),clientFacade, clientFacade.getUser(raplaUsername)), "SyncUserThread");
 		//thread.start();
 		thread.run();
 	}
@@ -176,7 +176,7 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 
     public synchronized void dataChanged(ModificationEvent evt) throws RaplaException {
         SynchronisationManager.logInfo("Invoked data change handler for " + evt.getChanged().size() + " objects");
-        final ReservationChangedTask reservationChangedTask = new ReservationChangedTask();
+        final ReservationChangedTask reservationChangedTask = new ReservationChangedTask(getContext());
         reservationChangedTask.synchronize(clientFacade, evt);
 
 /*
@@ -203,7 +203,7 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
     public boolean isExchangeAvailable() throws RaplaException {
         final EWSProxy ewsProxy;
         try {
-            ewsProxy = new EWSProxy(clientFacade, getUser());
+            ewsProxy = new EWSProxy(getContext(), clientFacade, getUser());
 
         } catch (Exception e) {
             throw new RaplaException(e);

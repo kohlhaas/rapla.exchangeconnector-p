@@ -9,6 +9,7 @@ import org.rapla.entities.User;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.Reservation;
 import org.rapla.facade.ClientFacade;
+import org.rapla.framework.RaplaContext;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 
@@ -18,8 +19,8 @@ import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointment
  */
 public class SyncUserHandler extends SynchronisationHandler implements Runnable {
 	User raplaUser;
-	public SyncUserHandler(ClientFacade clientFacade, User raplaUser) {
-		super(clientFacade);
+	public SyncUserHandler(RaplaContext context, ClientFacade clientFacade, User raplaUser) {
+		super(context, clientFacade);
 		this.raplaUser = raplaUser;
 	}
 
@@ -45,12 +46,13 @@ public class SyncUserHandler extends SynchronisationHandler implements Runnable 
                                     .getUsername();
                         }
                         DeleteRaplaAppointmentWorker deleteRaplaAppointmentWorker = new DeleteRaplaAppointmentWorker(
+                                getContext(),
                                 clientFacade,
                                 appointmentOwnerUsernameOnExchange,
                                 ExchangeConnectorUtils.getAppointmentSID(appointment));
                         deleteRaplaAppointmentWorker.perform();
                     }
-                    UploadRaplaAppointmentWorker uploadRaplaAppointmentWorker = new UploadRaplaAppointmentWorker(clientFacade, appointment, null);
+                    UploadRaplaAppointmentWorker uploadRaplaAppointmentWorker = new UploadRaplaAppointmentWorker(getContext(), clientFacade, appointment, null);
                     uploadRaplaAppointmentWorker.perform();
                 }
             }

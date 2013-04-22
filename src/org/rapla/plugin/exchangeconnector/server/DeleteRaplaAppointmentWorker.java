@@ -11,6 +11,7 @@ import microsoft.exchange.webservices.data.ServiceResponseException;
 
 import org.rapla.entities.storage.internal.SimpleIdentifier;
 import org.rapla.facade.ClientFacade;
+import org.rapla.framework.RaplaContext;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 
 /**
@@ -32,8 +33,8 @@ public class DeleteRaplaAppointmentWorker extends EWSProxy {
      * @param raplaAppointmentIdentifier
      * @throws Exception
 	 */
-	public DeleteRaplaAppointmentWorker(ClientFacade clientFacade, String raplaUsername, SimpleIdentifier raplaAppointmentIdentifier) throws Exception {
-		super(clientFacade, raplaUsername);
+	public DeleteRaplaAppointmentWorker(RaplaContext context, ClientFacade clientFacade, String raplaUsername, SimpleIdentifier raplaAppointmentIdentifier) throws Exception {
+		super(context, clientFacade, raplaUsername);
 		this.identifier = raplaAppointmentIdentifier;
 	}
 

@@ -35,7 +35,7 @@ import org.rapla.plugin.exchangeconnector.server.SynchronisationManager;
  */
 public class ExchangeAccountInformationStorage {
 	private String storageFilePath = "";
-	private static String DEFAULT_STORAGE_FILE_PATH = "webapp/WEB-INF/accountManager.dat";
+	private static String DEFAULT_STORAGE_FILE_PATH = "data/accountManager.dat";
 	
 	private HashMap<String, ExchangeAccountInformationObject> accountInformation;
 	

@@ -22,15 +22,10 @@ public class ChangeHandler extends SynchronisationHandler {
      */
 
 
-    public ChangeHandler(AllocationChangeEvent[] changeEvents, ClientFacade clientFacade) {
-        super(clientFacade);
-     //   this.changeEvents = changeEvents;
-       // changedReservation = changeEvents[0].getNewReservation();
 
-    }
 
     public ChangeHandler(ModificationEvent evt, ClientFacade clientFacade) {
-        super(clientFacade);
+        super(null, clientFacade);
 
         /*this.modificationEvent  = evt;
         for (RaplaObject raplaObject : evt.getChanged()) {

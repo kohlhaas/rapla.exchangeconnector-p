@@ -27,6 +27,7 @@ import org.rapla.entities.storage.RefEntity;
 import org.rapla.entities.storage.internal.SimpleIdentifier;
 import org.rapla.facade.AllocationChangeEvent;
 import org.rapla.facade.ClientFacade;
+import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
@@ -54,7 +55,7 @@ public class ExchangeConnectorUtils {
             }
         }
         Assert.notNull(timezone);
-        SynchronisationManager.logInfo("Using timezone: " + timezone);
+        SynchronisationManager.logInfo("Using timezone: " + timezone.getDisplayName());
     }
 
     public static Appointment getAppointmentById(int id, ClientFacade facade) {
@@ -160,7 +161,7 @@ public class ExchangeConnectorUtils {
      * @throws Exception
      * @see org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage
      */
-    public static void deleteAppointments(final ClientFacade clientFacade, final HashSet<SimpleIdentifier> deleteAppointments, boolean addToDeleteList) throws Exception {
+    public static void deleteAppointments(RaplaContext context, final ClientFacade clientFacade, final HashSet<SimpleIdentifier> deleteAppointments, boolean addToDeleteList) throws Exception {
         for (SimpleIdentifier simpleIdentifier : deleteAppointments) {
             if (ExchangeAppointmentStorage.getInstance().appointmentExists(simpleIdentifier.getKey())
                     && !ExchangeAppointmentStorage.getInstance().isExchangeItem(simpleIdentifier.getKey())) {
@@ -170,7 +171,7 @@ public class ExchangeConnectorUtils {
                     ExchangeAppointmentStorage.getInstance().save();
                 }
                 final String raplaUsername = ExchangeAppointmentStorage.getInstance().getRaplaUsername(simpleIdentifier.getKey());
-                DeleteRaplaAppointmentWorker deleteRaplaAppointmentWorker = new DeleteRaplaAppointmentWorker(clientFacade, raplaUsername, simpleIdentifier);
+                DeleteRaplaAppointmentWorker deleteRaplaAppointmentWorker = new DeleteRaplaAppointmentWorker(context, clientFacade, raplaUsername, simpleIdentifier);
                 deleteRaplaAppointmentWorker.perform();
             }
         }
@@ -231,13 +232,13 @@ public class ExchangeConnectorUtils {
         return translateExchangeToRaplaTime(start, timezone);
     }
 
-    public static void updateAppointment(ClientFacade clientFacade, Appointment appointment, String exchangeId) throws Exception {
+    public static void updateAppointment(RaplaContext context, ClientFacade clientFacade, Appointment appointment, String exchangeId) throws Exception {
         SynchronisationManager.logInfo("add/updating " + appointment + " with exchangeid  " + exchangeId);
 
         if (appointment.getStart().after(ExchangeConnectorPlugin.getSynchingPeriodPast(new Date())) && appointment.getStart().before(ExchangeConnectorPlugin.getSynchingPeriodFuture(new Date()))) {
             if (!ExchangeAppointmentStorage.getInstance().isExchangeItem(appointment)) {
                 UploadRaplaAppointmentWorker worker = new UploadRaplaAppointmentWorker(
-                        clientFacade,
+                        context, clientFacade,
                         appointment,
                         exchangeId);
                 worker.perform();
@@ -250,10 +251,10 @@ public class ExchangeConnectorUtils {
 //        updateAppointment(clientFacade, appointment, ExchangeAppointmentStorage.getInstance().getExchangeId(appointment.getKey()));
     }
 
-    public static void deleteAppointment(ClientFacade clientFacade, SimpleIdentifier appointment) throws Exception {
+    public static void deleteAppointment(RaplaContext context, ClientFacade clientFacade, SimpleIdentifier appointment) throws Exception {
         final HashSet<SimpleIdentifier> deleteAppointments = new HashSet<SimpleIdentifier>();
         deleteAppointments.add(appointment);
-        deleteAppointments(clientFacade, deleteAppointments, true);
+        deleteAppointments(context, clientFacade, deleteAppointments, true);
     }
 
     /**
@@ -279,14 +280,14 @@ public class ExchangeConnectorUtils {
 
     }
 
-    public static void synchronizeAppointmentRequest(ClientFacade clientFacade, AllocationChangeEvent.Type changeEvent, SimpleIdentifier raplaIdentifier) throws Exception {
+    public static void synchronizeAppointmentRequest(RaplaContext context, ClientFacade clientFacade, AllocationChangeEvent.Type changeEvent, SimpleIdentifier raplaIdentifier) throws Exception {
         final Appointment appointment = (Appointment) getEntityBySimpleIdentifier(raplaIdentifier, clientFacade);
         if (appointment != null) {
             final String exchangeId = ExchangeAppointmentStorage.getInstance().getExchangeId(raplaIdentifier.getKey());
             if (exchangeId != null && !"".equals(exchangeId))
-                updateAppointment(clientFacade, appointment, exchangeId);
+                updateAppointment(context, clientFacade, appointment, exchangeId);
         } else {
-            deleteAppointment(clientFacade, raplaIdentifier);
+            deleteAppointment(context, clientFacade, raplaIdentifier);
         }
 
 

@@ -27,7 +27,7 @@ import org.rapla.plugin.exchangeconnector.server.SynchronisationManager;
  */
 public class ExchangeAppointmentStorage {
 	private String storageFilePath = "";
-	private static String DEFAULT_STORAGE_FILE_PATH = "webapp/WEB-INF/exchangeConnector.dat";
+	private static String DEFAULT_STORAGE_FILE_PATH = "data/exchangeConnector.dat";
 	
 	private HashMap<Integer, ExchangeAppointmentStorageObject> appointments = new HashMap<Integer, ExchangeAppointmentStorageObject>();
 	

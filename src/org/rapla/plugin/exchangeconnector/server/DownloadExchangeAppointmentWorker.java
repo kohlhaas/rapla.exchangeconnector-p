@@ -53,7 +53,7 @@ public class DownloadExchangeAppointmentWorker extends EWSProxy {
      * @throws Exception
      */
     public DownloadExchangeAppointmentWorker(ClientFacade clientFacade, String raplaUsername) throws Exception {
-        super(clientFacade, raplaUsername);
+        super(null, clientFacade, raplaUsername);
     }
 
     /**
@@ -64,7 +64,7 @@ public class DownloadExchangeAppointmentWorker extends EWSProxy {
      * @throws Exception
      */
     public DownloadExchangeAppointmentWorker(ClientFacade clientFacade, User raplaUser) throws Exception {
-        super(clientFacade, raplaUser);
+        super(null, clientFacade, raplaUser);
     }
 
     /**

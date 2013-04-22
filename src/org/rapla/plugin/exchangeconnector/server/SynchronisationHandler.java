@@ -10,6 +10,7 @@ import java.util.TimerTask;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.Reservation;
 import org.rapla.facade.ClientFacade;
+import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
@@ -18,14 +19,20 @@ import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointment
  * @author lutz
  */
 public abstract class SynchronisationHandler extends TimerTask implements Runnable {
+    public RaplaContext getContext() {
+        return context;
+    }
+
+    private final RaplaContext context;
     protected ClientFacade clientFacade;
 
     /**
      * @param clientFacade
      */
-    public SynchronisationHandler(ClientFacade clientFacade) {
+    public SynchronisationHandler(RaplaContext context, ClientFacade clientFacade) {
         super();
         this.clientFacade = clientFacade;
+        this.context = context;
     }
 
     protected synchronized void deleteExchangeItemsFromRapla(ClientFacade clientFacade) {
@@ -83,11 +90,11 @@ public abstract class SynchronisationHandler extends TimerTask implements Runnab
      * @param appointment : {@link Appointment} to be uploaded to the Exchange Server
      * @throws Exception
      */
-    protected synchronized void uploadAppointment(ClientFacade clientFacade, Appointment appointment) throws Exception {
+    protected synchronized void uploadAppointment( ClientFacade clientFacade, Appointment appointment) throws Exception {
         // exchange items are appointments which have been downloaded from the exchange server to rapla
         // thus they will not be synchronized back to the exchange server and are ignored
         if (!ExchangeAppointmentStorage.getInstance().isExchangeItem(appointment)) {
-            UploadRaplaAppointmentWorker worker = new UploadRaplaAppointmentWorker(clientFacade, appointment, null);
+            UploadRaplaAppointmentWorker worker = new UploadRaplaAppointmentWorker(context, clientFacade, appointment, null);
             worker.perform();
         }
     }

@@ -24,7 +24,7 @@ public class CompleteReconciliationHandler extends SynchronisationHandler {
      * @param clientFacade
      */
     public CompleteReconciliationHandler(ClientFacade clientFacade) {
-        super(clientFacade);
+        super(null,clientFacade);
     }
 
     public void run() {
@@ -70,7 +70,7 @@ public class CompleteReconciliationHandler extends SynchronisationHandler {
                 // only upload those which weren't added by Exchange
                 if (importEventType != null && !reservation.getClassification().getType().getElementKey().equals(importEventType.getElementKey())) {
                     for (Appointment appointment : reservation.getAppointments()) {
-                        UploadRaplaAppointmentWorker worker = new UploadRaplaAppointmentWorker(clientFacade, appointment, null);
+                        UploadRaplaAppointmentWorker worker = new UploadRaplaAppointmentWorker(null, clientFacade, appointment, null);
                         worker.perform();
                     }
                 }
@@ -84,7 +84,7 @@ public class CompleteReconciliationHandler extends SynchronisationHandler {
     private void deleteAll() throws Exception {
         for (Appointment appointment : ExchangeAppointmentStorage.getInstance().getDeletedItems()) {
             String raplaUsername = ExchangeAppointmentStorage.getInstance().getRaplaUsername(appointment);
-            DeleteRaplaAppointmentWorker worker = new DeleteRaplaAppointmentWorker(clientFacade, raplaUsername,
+            DeleteRaplaAppointmentWorker worker = new DeleteRaplaAppointmentWorker(null, clientFacade, raplaUsername,
                     ExchangeConnectorUtils.getAppointmentSID(appointment));
             worker.perform();
         }

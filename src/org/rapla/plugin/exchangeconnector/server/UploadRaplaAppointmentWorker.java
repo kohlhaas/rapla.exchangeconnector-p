@@ -41,6 +41,7 @@ import org.rapla.entities.dynamictype.Classification;
 import org.rapla.facade.CalendarOptions;
 import org.rapla.facade.ClientFacade;
 import org.rapla.facade.internal.CalendarOptionsImpl;
+import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
@@ -76,8 +77,8 @@ public class UploadRaplaAppointmentWorker extends EWSProxy {
      * @param exchangeId
      * @throws Exception
 	 */
-	public UploadRaplaAppointmentWorker(ClientFacade facade, Appointment appointment, String exchangeId) throws Exception{
-		super(facade, appointment);
+	public UploadRaplaAppointmentWorker(RaplaContext context, ClientFacade facade, Appointment appointment, String exchangeId) throws Exception{
+		super(context, facade, appointment);
 		setRaplaAppointment(appointment);
 		bodyAttendeeList = new String();
         this.exchangeId = exchangeId;
@@ -452,7 +453,7 @@ public class UploadRaplaAppointmentWorker extends EWSProxy {
         } catch (RaplaException ex) {
 
         }
-        return null;
+        return getService( CalendarOptions.class);
     }
 
 

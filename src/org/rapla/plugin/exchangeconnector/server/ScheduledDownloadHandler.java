@@ -18,7 +18,7 @@ public class ScheduledDownloadHandler extends SynchronisationHandler {
 	 * @param clientFacade
 	 */
 	public ScheduledDownloadHandler(ClientFacade clientFacade) {
-		super(clientFacade);
+		super(null, clientFacade);
 	}
 
 	/* (non-Javadoc)
