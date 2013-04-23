@@ -4,6 +4,7 @@
 package org.rapla.plugin.exchangeconnector.server;
 
 import org.rapla.framework.RaplaException;
+import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 import org.rapla.server.RemoteMethodFactory;
 import org.rapla.server.RemoteSession;
 

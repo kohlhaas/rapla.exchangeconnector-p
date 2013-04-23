@@ -1,4 +1,4 @@
-package org.rapla.plugin.exchangeconnector.server;
+package org.rapla.plugin.exchangeconnector;
 
 import org.rapla.entities.User;
 import org.rapla.framework.RaplaException;
