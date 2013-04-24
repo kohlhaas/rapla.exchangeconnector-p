@@ -154,8 +154,7 @@ public class AppointmentTask extends RaplaComponent {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            SynchronisationManager.logException(e);
+            getLogger().error(e.getMessage(),e);
         }
 
     }

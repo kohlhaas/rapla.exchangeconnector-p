@@ -82,21 +82,15 @@ public class ExchangeAccountInformationStorage {
 	 * @param downloadFromExchange : {@link Boolean} true if the user wants to download the {@link Appointment}s from Exchange to the Rapla System
 	 * @return true : {@link Boolean} if the information has been added to the dataset
 	 */
-	public boolean addAccount(String raplaUsername,String exchangeUsername, String exchangePassword, boolean downloadFromExchange, boolean testConnection) {
+	public void addAccount(String raplaUsername,String exchangeUsername, String exchangePassword, boolean downloadFromExchange, boolean testConnection) throws Exception {
 		ExchangeAccountInformationObject accountInformationObject = new ExchangeAccountInformationObject(raplaUsername, exchangeUsername, exchangePassword, downloadFromExchange);
-		try {
 			if(testConnection) {
 				String smtpAddress = retrieveSMTPAddress(accountInformationObject);
 				accountInformationObject.setSMTPAddress(smtpAddress);
 			}
 			accountInformation.put(raplaUsername, accountInformationObject);
 			save();
-		} catch (Exception e) {
-			e.printStackTrace();
-			SynchronisationManager.logException(e);
-			return false;
-		}
-		return true;			
+
 	}
 	
 	/**
@@ -108,13 +102,13 @@ public class ExchangeAccountInformationStorage {
 	 * @param testConnection : {@link Boolean}
 	 * @param downloadFromExchange : {@link Boolean} true if the user wants to download the {@link Appointment}s from Exchange to the Rapla System
 	 * @return true : {@link Boolean} if the information has been added to the dataset
-	 */
-	public boolean addAccount(User raplaUser, String exchangeUsername, String exchangePassword, boolean downloadFromExchange, boolean testConnection) {
+	 *//*
+	public void addAccount(User raplaUser, String exchangeUsername, String exchangePassword, boolean downloadFromExchange, boolean testConnection) throws Exception {
 		// prohibit adding "null" user objects
 		if(raplaUser == null)
-			return false;
-		return addAccount(raplaUser.getUsername(), exchangeUsername, exchangePassword, downloadFromExchange, testConnection);
-	}
+			return;
+		addAccount(raplaUser.getUsername(), exchangeUsername, exchangePassword, downloadFromExchange, testConnection);
+	}*/
 	
 	/**
 	 * Adds a further account to the data
@@ -125,8 +119,8 @@ public class ExchangeAccountInformationStorage {
 	 * @param downloadFromExchange : {@link Boolean} true if the user wants to download the {@link Appointment}s from Exchange to the Rapla System
 	 * @return true : {@link Boolean} if the information has been added to the dataset
 	 */
-	public boolean addAccount(String raplaUsername,String exchangeUsername, String exchangePassword, boolean downloadFromExchange) {
-		return addAccount(raplaUsername, exchangeUsername, exchangePassword, downloadFromExchange, true);			
+	public void addAccount(String raplaUsername,String exchangeUsername, String exchangePassword, boolean downloadFromExchange) throws Exception {
+		addAccount(raplaUsername, exchangeUsername, exchangePassword, downloadFromExchange, true);
 	}
 	
 	/**
@@ -164,7 +158,7 @@ public class ExchangeAccountInformationStorage {
 	 * @param raplaUsername : {@link String}
 	 * @return {@link WebCredentials}
 	 */
-	public WebCredentials getWebCredentialsForRaplaUser(String raplaUsername){
+	public WebCredentials getWebCredentialsForRaplaUser(String raplaUsername) throws Exception {
 		WebCredentials returnVal = null;
 		if(accountInformation.containsKey(raplaUsername))
 			returnVal = accountInformation.get(raplaUsername).getCredentials();
@@ -177,7 +171,7 @@ public class ExchangeAccountInformationStorage {
 	 * @param raplaUser : {@link User}
 	 * @return {@link WebCredentials}
 	 */
-	public WebCredentials getWebCredentialsForRaplaUser(User raplaUser){
+	public WebCredentials getWebCredentialsForRaplaUser(User raplaUser) throws Exception {
 		if (raplaUser != null) {
 			return getWebCredentialsForRaplaUser(raplaUser.getUsername());
 		}
@@ -191,7 +185,7 @@ public class ExchangeAccountInformationStorage {
 	 * 
 	 * @return {@link WebCredentials}
 	 */
-	public Collection<WebCredentials> getAllWebCredentials(){
+	public Collection<WebCredentials> getAllWebCredentials() throws Exception {
 		Collection<WebCredentials> returnVal = new ArrayList<WebCredentials>();
 		for (ExchangeAccountInformationObject accountInformation : this.accountInformation.values()) {
 			returnVal.add(accountInformation.getCredentials());

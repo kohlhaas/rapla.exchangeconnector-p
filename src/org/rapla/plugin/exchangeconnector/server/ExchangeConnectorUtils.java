@@ -44,6 +44,7 @@ public class ExchangeConnectorUtils {
             }
         }
         Assert.notNull(timezone);
+
         SynchronisationManager.logInfo("Using timezone: " + timezone.getDisplayName());
     }
 

@@ -39,7 +39,7 @@ public class ExchangeAccountInformationObject implements Serializable {
 	 * @param downloadFromExchange : {@link Boolean} 
 	 * @param smtpAddress : {@link String}
 	 */
-	public ExchangeAccountInformationObject(String raplaUsername, String exchangeUsername,String exchangePassword, boolean downloadFromExchange, String smtpAddress) {
+	public ExchangeAccountInformationObject(String raplaUsername, String exchangeUsername,String exchangePassword, boolean downloadFromExchange, String smtpAddress) throws Exception {
 		this(raplaUsername,exchangeUsername, exchangePassword, downloadFromExchange);
 		setSMTPAddress(smtpAddress);
 	}
@@ -52,16 +52,13 @@ public class ExchangeAccountInformationObject implements Serializable {
 	 * @param exchangePassword : {@link String}
 	 * @param downloadFromExchange : {@link Boolean}
 	 */
-	public ExchangeAccountInformationObject(String raplaUsername, String exchangeUsername,String exchangePassword, boolean downloadFromExchange) {
+	public ExchangeAccountInformationObject(String raplaUsername, String exchangeUsername,String exchangePassword, boolean downloadFromExchange) throws Exception {
 		super();
-		try {
 			setRaplaUsername(raplaUsername);
 			setExchangeUsername(exchangeUsername);
 			setDownloadFromExchange(downloadFromExchange);
 			setExchangePassword(new String(getBytes()),exchangePassword);
-		} catch (Exception e) {
-			SynchronisationManager.logException(e);
-		}
+
 	}
 	/**
 	 * @return {@link Boolean} true if private {@link Appointment}s (from Exchange) should be downloaded to the Rapla system
@@ -153,13 +150,9 @@ public class ExchangeAccountInformationObject implements Serializable {
 	/**
 	 * @return {@link WebCredentials}
 	 */
-	public WebCredentials getCredentials(){
-		try {
+	public WebCredentials getCredentials() throws Exception {
 			return new WebCredentials(getExchangeUsername(), getExchangePassword().getExchangePassword());
-		} catch (Exception e) {
-			SynchronisationManager.logException(e);
-			return null;
-		}
+
 		
 	}
 }

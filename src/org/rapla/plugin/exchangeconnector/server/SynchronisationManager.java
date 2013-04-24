@@ -63,9 +63,9 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 	/**
 	 * @param e
 	 */
-	public static void logException(Exception e){
+	/*public static void logException(Exception e){
 		SynchronisationManager.getInstance().getLogger().error("Exception in the ExchangeConnector Plugin: ", e);
-	}
+	}*/
 
 	/**
 	 * This method is called when an appointment change has been triggered
@@ -78,26 +78,26 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 	}
 	
 	public String addExchangeUser(String raplaUsername, String exchangeUsername, String exchangePassword, Boolean downloadFromExchange) throws RaplaException {
-        getLogger().debug("Invoked add exchange user for rapla " + raplaUsername+" with exchange user "+exchangeUsername);
-		boolean success = ExchangeAccountInformationStorage.getInstance().addAccount(raplaUsername, exchangeUsername, exchangePassword, downloadFromExchange);
-		String returnMessage;
-		if(success) {
+        getLogger().debug("Invoked add exchange user for rapla " + raplaUsername + " with exchange user " + exchangeUsername);
+        String returnMessage;
+
 			// Synchronize this user after registering
 			try {
-				syncUser(raplaUsername);
-			} catch (RaplaException e) {
-				logException(e);
+                ExchangeAccountInformationStorage.getInstance().addAccount(raplaUsername, exchangeUsername, exchangePassword, downloadFromExchange);
+
+                syncUser(raplaUsername);
+                returnMessage = "Your registration was successful! " + ExchangeAccountInformationStorage.getInstance().getSMTPAddressForRaplaUser(raplaUsername);
+
+            } catch (RaplaException e) {
+                returnMessage = "An error occurred - You are not registred!";
+
+                getLogger().error(e.getMessage(),e);
 			} 
-			returnMessage = "Your registration was successful! " + ExchangeAccountInformationStorage.getInstance().getSMTPAddressForRaplaUser(raplaUsername);
-		}
-		else {
-			returnMessage = "An error occurred - You are not registred!";
-		}
 		return returnMessage;
 	}
 
 	private void syncUser(String raplaUsername) throws RaplaException {
-        getLogger().debug("Invoked change sync for user "+raplaUsername);
+        getLogger().debug("Invoked change sync for user " + raplaUsername);
         final AppointmentTask task = new AppointmentTask(getContext());
         task.downloadUserAppointments(getUser());
         
@@ -154,7 +154,7 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
     }
 */
 
-    public static void logInfo(String s) {
+   public static void logInfo(String s) {
         getInstance().getLogger().info("Exchange Connector Plugin: " +s);
     }
 

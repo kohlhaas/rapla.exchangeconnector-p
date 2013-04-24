@@ -2,11 +2,7 @@ package org.rapla.plugin.exchangeconnector.server;
 
 import java.net.URI;
 
-import microsoft.exchange.webservices.data.ExchangeService;
-import microsoft.exchange.webservices.data.ExchangeVersion;
-import microsoft.exchange.webservices.data.NameResolutionCollection;
-import microsoft.exchange.webservices.data.ResolveNameSearchLocation;
-import microsoft.exchange.webservices.data.WebCredentials;
+import microsoft.exchange.webservices.data.*;
 
 import org.rapla.components.util.DateTools;
 
@@ -125,18 +121,14 @@ public class EWSConnector {
      *
      * @return : {@link String}
      */
-    public String getSMPTAddress() {
+    public String getSMPTAddress() throws ArgumentOutOfRangeException {
         String returnVal = new String();
 
-        try {
             NameResolutionCollection nameResolutionCollection = getService().resolveName(getUserName(), ResolveNameSearchLocation.DirectoryOnly, true);
             if (nameResolutionCollection.getCount() == 1) {
                 returnVal = nameResolutionCollection.nameResolutionCollection(0).getMailbox().getAddress();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            SynchronisationManager.logException(e);
-        }
+
         return returnVal;
     }
 }
