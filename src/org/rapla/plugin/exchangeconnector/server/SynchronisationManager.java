@@ -77,7 +77,7 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 
 	}
 	
-	public String addExchangeUser(String raplaUsername, String exchangeUsername, String exchangePassword, Boolean downloadFromExchange) throws RaplaException {
+	public String addExchangeUser(String raplaUsername, String exchangeUsername, String exchangePassword, Boolean downloadFromExchange) {
         getLogger().debug("Invoked add exchange user for rapla " + raplaUsername + " with exchange user " + exchangeUsername);
         String returnMessage;
 
@@ -88,8 +88,8 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
                 syncUser(raplaUsername);
                 returnMessage = "Your registration was successful! " + ExchangeAccountInformationStorage.getInstance().getSMTPAddressForRaplaUser(raplaUsername);
 
-            } catch (RaplaException e) {
-                returnMessage = "An error occurred - You are not registred!";
+            } catch (Exception e) {
+                returnMessage = "An error occurred - You are not registered!";
 
                 getLogger().error(e.getMessage(),e);
 			} 
@@ -99,7 +99,7 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 	private void syncUser(String raplaUsername) throws RaplaException {
         getLogger().debug("Invoked change sync for user " + raplaUsername);
         final AppointmentTask task = new AppointmentTask(getContext());
-        task.downloadUserAppointments(getUser());
+        task.downloadUserAppointments(getClientFacade().getUser(raplaUsername));
         
 	}
 

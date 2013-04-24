@@ -92,7 +92,7 @@ public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceCo
      */
     public static final String EXCHANGE_APPOINTMENT_CATEGORY_KEY = "exchange.default.category";
     public static String EXCHANGE_APPOINTMENT_CATEGORY;
-    private static final String DEFAULT_EXCHANGE_APPOINTMENT_CATEGORY = "DHBW";
+    private static final String DEFAULT_EXCHANGE_APPOINTMENT_CATEGORY = "RAPLA";
 
     /** user option */
     public static final String EXCHANGE_EXPECT_RESPONSE_KEY = "exchange.response.expected";

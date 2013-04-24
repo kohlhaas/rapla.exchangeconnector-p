@@ -121,7 +121,7 @@ public class EWSConnector {
      *
      * @return : {@link String}
      */
-    public String getSMPTAddress() throws ArgumentOutOfRangeException {
+    public String getSMPTAddress() throws Exception{
         String returnVal = new String();
 
             NameResolutionCollection nameResolutionCollection = getService().resolveName(getUserName(), ResolveNameSearchLocation.DirectoryOnly, true);
