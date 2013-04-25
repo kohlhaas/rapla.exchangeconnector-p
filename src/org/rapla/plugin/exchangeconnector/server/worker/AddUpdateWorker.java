@@ -65,7 +65,7 @@ class AddUpdateWorker extends EWSWorker {
 
             addRequiredAttendees(raplaAppointment, exchangeAppointment);
 
-            setMessageBody(appendAttendeeToBodyMessage(raplaAppointment.getOwner().getUsername()), exchangeAppointment);
+            setMessageBody(appendAttendeeToBodyMessage(raplaAppointment.getOwner().getUsername()+LINE_BREAK+getStringForRessources(raplaAppointment)), exchangeAppointment);
 
             addRoomResource(raplaAppointment, exchangeAppointment);
 
@@ -267,9 +267,7 @@ class AddUpdateWorker extends EWSWorker {
     }
 
     /**
-     * @param exchangeAppointment
-     * @throws ServiceLocalException
-     * @throws Exception
+     * @param raplaAppointment
      */
     private String getStringForRessources(Appointment raplaAppointment) {
         StringBuilder result = new StringBuilder();
@@ -281,7 +279,7 @@ class AddUpdateWorker extends EWSWorker {
         for (Allocatable restrictedAllocatable : resources) {
             if (!restrictedAllocatable.isPerson()) {
                 final String name = restrictedAllocatable.getName(Locale.getDefault());
-                result.append(name).append("\n");
+                result.append(name).append(LINE_BREAK);
             }
         }
         return result.toString();
