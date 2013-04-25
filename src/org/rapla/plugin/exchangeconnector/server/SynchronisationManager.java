@@ -10,12 +10,12 @@ import org.rapla.facade.ModificationListener;
 import org.rapla.facade.RaplaComponent;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
-import org.rapla.plugin.ServerExtension;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAccountInformationStorage;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 import org.rapla.plugin.exchangeconnector.server.worker.AppointmentTask;
 import org.rapla.plugin.exchangeconnector.server.worker.EWSWorker;
+import org.rapla.server.ServerExtension;
 
 /**    
  * @author Alex Heil, Dominik Joder, Lutz Bergendahl, Matthias Hundt
