@@ -4,6 +4,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 import org.rapla.client.ClientServiceContainer;
+import org.rapla.client.RaplaClientExtensionPoints;
 import org.rapla.components.xmlbundle.I18nBundle;
 import org.rapla.components.xmlbundle.impl.I18nBundleImpl;
 import org.rapla.entities.domain.Appointment;
@@ -17,7 +18,6 @@ import org.rapla.framework.PluginDescriptor;
 import org.rapla.framework.RaplaContextException;
 import org.rapla.framework.RaplaException;
 import org.rapla.framework.TypedComponentRole;
-import org.rapla.plugin.RaplaClientExtensionPoints;
 import org.rapla.plugin.exchangeconnector.client.ExchangeConnectorAdminOptions;
 import org.rapla.plugin.exchangeconnector.client.ExchangeConnectorUserOptions;
 
