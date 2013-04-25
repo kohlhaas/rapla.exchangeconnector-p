@@ -230,7 +230,7 @@ public class DownloadWorker extends EWSWorker {
             for (Attendee resource : resources) {
                 final String address = resource.getAddress();
                 try {
-                    final DynamicType roomType = currentClientFacade.getDynamicType(ExchangeConnectorPlugin.RAPLA_ROOM_RESOURCE);
+                    final DynamicType roomType = currentClientFacade.getDynamicType(ExchangeConnectorPlugin.ROOM_TYPE);
                     final Allocatable[] allocatables = currentClientFacade.getAllocatables(
                             new ClassificationFilter[]{
                                     roomType.newClassificationFilter()

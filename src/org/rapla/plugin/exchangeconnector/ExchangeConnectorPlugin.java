@@ -131,7 +131,10 @@ public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceCo
     /*
     admin option, combobox
      */
-    public static final String RAPLA_ROOM_RESOURCE = "roomResource";
+
+    public static final String ROOM_TYPE_KEY = "rapla.room.type";
+    public static final String DEFAULT_ROOM_TYPE = "roomResource";
+    public static String ROOM_TYPE = DEFAULT_ROOM_TYPE;
 
     public String toString() {
         return "Exchange-Connector";
@@ -156,6 +159,7 @@ public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceCo
         SYNCING_PERIOD_FUTURE = config.getChild(SYNCING_PERIOD_FUTURE_KEY).getValueAsInteger(DEFAULT_SYNCING_PERIOD_FUTURE);
         PULL_FREQUENCY = config.getChild(PULL_FREQUENCY_KEY).getValueAsInteger(DEFAULT_PULL_FREQUENCY);
         IMPORT_EVENT_TYPE = config.getChild(IMPORT_EVENT_TYPE_KEY).getValue(DEFAULT_IMPORT_EVENT_TYPE);
+        ROOM_TYPE = config.getChild(ROOM_TYPE_KEY).getValue(DEFAULT_ROOM_TYPE);
         TIMEZONE = config.getChild(TIMEZONE_KEY).getValue(DEFAULT_TIMEZONE);
 
         RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL = config.getChild(RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL_KEY).getValue(DEFAULT_RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL);
@@ -177,6 +181,7 @@ public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceCo
         newConfig.getMutableChild(ExchangeConnectorPlugin.SYNCING_PERIOD_FUTURE_KEY, true).setValue(SYNCING_PERIOD_FUTURE);
         newConfig.getMutableChild(ExchangeConnectorPlugin.PULL_FREQUENCY_KEY, true).setValue(PULL_FREQUENCY);
         newConfig.getMutableChild(ExchangeConnectorPlugin.IMPORT_EVENT_TYPE_KEY, true).setValue(IMPORT_EVENT_TYPE);
+        newConfig.getMutableChild(ExchangeConnectorPlugin.ROOM_TYPE_KEY, true).setValue(ROOM_TYPE);
         newConfig.getMutableChild(ExchangeConnectorPlugin.TIMEZONE_KEY, true).setValue(TIMEZONE);
         newConfig.getMutableChild(ExchangeConnectorPlugin.EXCHANGE_INCOMING_FILTER_CATEGORY_KEY, true).setValue(EXCHANGE_INCOMING_FILTER_CATEGORY);
 
@@ -193,6 +198,9 @@ public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceCo
     }
 
     public static DynamicType getImportEventType(ClientFacade currentClientFacade) throws RaplaException {
+        return currentClientFacade.getDynamicType(ExchangeConnectorPlugin.IMPORT_EVENT_TYPE);
+/*
+
         final DynamicType[] dynamicTypes = currentClientFacade.getDynamicTypes(DynamicTypeAnnotations.VALUE_CLASSIFICATION_TYPE_RESERVATION);
         for (DynamicType dynamicType : dynamicTypes) {
             if (dynamicType.getElementKey().equals(ExchangeConnectorPlugin.IMPORT_EVENT_TYPE)) {
@@ -202,8 +210,21 @@ public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceCo
         }
 
         return null;
+*/
     }
 
+    public static DynamicType getRoomType(ClientFacade currentClientFacade) throws RaplaException {
+        return currentClientFacade.getDynamicType(ExchangeConnectorPlugin.ROOM_TYPE);
+        /*final DynamicType[] dynamicTypes = currentClientFacade.getDynamicTypes(DynamicTypeAnnotations.VALUE_CLASSIFICATION_TYPE_RESOURCE);
+        for (DynamicType dynamicType : dynamicTypes) {
+            if (dynamicType.getElementKey().equals(ExchangeConnectorPlugin.ROOM_TYPE)) {
+                return dynamicType;
+
+            }
+        }
+
+        return null;*/
+    }
 
 
 

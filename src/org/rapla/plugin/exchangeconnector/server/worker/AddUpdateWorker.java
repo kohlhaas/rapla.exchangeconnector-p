@@ -10,6 +10,7 @@ import org.rapla.entities.domain.Allocatable;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.Repeating;
 import org.rapla.entities.dynamictype.Classification;
+import org.rapla.entities.dynamictype.DynamicType;
 import org.rapla.facade.CalendarOptions;
 import org.rapla.facade.internal.CalendarOptionsImpl;
 import org.rapla.framework.RaplaContext;
@@ -221,6 +222,8 @@ class AddUpdateWorker extends EWSWorker {
      * @throws Exception
      */
     private void addRoomResource(Appointment raplaAppointment, microsoft.exchange.webservices.data.Appointment exchangeAppointment) throws ServiceLocalException, Exception {
+        final DynamicType roomType = ExchangeConnectorPlugin.getRoomType(getClientFacade());
+
         //todo: generify with option attributes
         //download from exchange as well!
 
@@ -234,10 +237,11 @@ class AddUpdateWorker extends EWSWorker {
         for (Allocatable restrictedAllocatable : resources) {
             if (!restrictedAllocatable.isPerson()) {
                 final String name = restrictedAllocatable.getName(Locale.getDefault());
+                final Classification classification = restrictedAllocatable.getClassification();
+                if (!classification.getType().equals(roomType))
+                    continue;
+
                 try {
-                    final Classification classification = restrictedAllocatable.getClassification();
-                    //todo: define room resource type in plugin and check for rooms here
-                    //if (classification.getType().equals(ExchangeConnectorPlugin.XXXX)
                     final Object email = classification.getValue(ExchangeConnectorPlugin.RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL);
                     if (email != null && !email.toString().isEmpty()) {
                         final Attendee attendee = new Attendee(email.toString());

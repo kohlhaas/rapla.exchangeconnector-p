@@ -71,4 +71,9 @@
         <text lang="de">Nur Veranstaltungen dieser Art werden nach Exchange übertragen</text>
     </entry>
 
+    <entry key="event.roomtype">
+        <text lang="en">Choose room types to be used for location</text>
+        <text lang="de">Nur Ressourcen dieses Typs werden als Raumressource interpretiert</text>
+    </entry>
+
 </resources>

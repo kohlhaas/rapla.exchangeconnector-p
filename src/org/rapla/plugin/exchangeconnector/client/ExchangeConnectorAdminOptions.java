@@ -48,6 +48,8 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 	private JLabel exchangeWebServiceFQDNLabel;// = new JLabel("Exchange-Webservice FQDN");
     private JLabel eventTypeLabel;
     private JComboBox cbEventTypes;
+    private JLabel roomResourceTypeLabel;
+    private JComboBox cbRoomTypes;
 
     public ExchangeConnectorAdminOptions( RaplaContext raplaContext ) throws Exception
     {
@@ -78,6 +80,8 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
         this.eventTypeLabel = new JLabel(getString("event.raplatype"));
         this.cbEventTypes = new JComboBox();
 
+        this.roomResourceTypeLabel = new JLabel(getString("event.roomtype"));
+        this.cbRoomTypes = new JComboBox();
 
     }
 
@@ -106,10 +110,12 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
         content.add(syncIntervalFuture, "3,8");
 		content.add(pullFrequencyLabel, "1,10");
         content.add(pullFrequency, "3,10");
-        content.add(syncallButton, "1,12");
-        content.add(infoBox, "3,12");
+//        content.add(syncallButton, "1,12");
+//        content.add(infoBox, "3,12");
         content.add(eventTypeLabel, "1,14");
         content.add(cbEventTypes, "3,14");
+        content.add(roomResourceTypeLabel, "1,16");
+        content.add(cbRoomTypes, "3,16");
 
         syncallButton.addActionListener(this);
         
@@ -130,6 +136,8 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 		ExchangeConnectorPlugin.SYNCING_PERIOD_FUTURE= syncIntervalFuture.getNumber().intValue();
 		ExchangeConnectorPlugin.PULL_FREQUENCY = pullFrequency.getNumber().intValue();
         ExchangeConnectorPlugin.IMPORT_EVENT_TYPE = ((StringWrapper<DynamicType>)cbEventTypes.getSelectedItem()).forObject.getElementKey();
+        ExchangeConnectorPlugin.ROOM_TYPE = ((StringWrapper<DynamicType>)cbRoomTypes.getSelectedItem()).forObject.getElementKey();
+
 
 
 	}
@@ -143,7 +151,16 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
                 DynamicType dynamicType = dynamicTypes[i];
                 eventTypes[i] = new StringWrapper<DynamicType>(dynamicType);
             }
+            dynamicTypes = getClientFacade().getDynamicTypes(DynamicTypeAnnotations.VALUE_CLASSIFICATION_TYPE_RESOURCE);
+            StringWrapper<DynamicType> [] roomTypes= new StringWrapper [dynamicTypes.length];
+            for (int i = 0, dynamicTypesLength = dynamicTypes.length; i < dynamicTypesLength; i++) {
+                DynamicType dynamicType = dynamicTypes[i];
+                roomTypes[i] = new StringWrapper<DynamicType>(dynamicType);
+            }
+
+
             this.cbEventTypes.setModel(new DefaultComboBoxModel(eventTypes));
+            this.cbRoomTypes.setModel(new DefaultComboBoxModel(roomTypes));
         } catch (RaplaException e) {
         }
 
@@ -156,6 +173,10 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 		pullFrequency.setNumber(ExchangeConnectorPlugin.PULL_FREQUENCY);
         try {
             cbEventTypes.setSelectedItem(new StringWrapper<DynamicType>(ExchangeConnectorPlugin.getImportEventType(getClientFacade())));
+        } catch (RaplaException e) {
+        }
+        try {
+            cbRoomTypes.setSelectedItem(new StringWrapper<DynamicType>(ExchangeConnectorPlugin.getRoomType(getClientFacade())));
         } catch (RaplaException e) {
         }
     }
