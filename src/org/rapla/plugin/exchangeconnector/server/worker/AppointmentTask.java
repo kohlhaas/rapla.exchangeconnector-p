@@ -123,7 +123,7 @@ public class AppointmentTask extends RaplaComponent {
             if (importEventType != null && reservationType.getElementKey().equals(importEventType.getElementKey())) {
                 getLogger().info("Skipping appointment of type " + reservationType + " because is type of item pulled from exchange");
             } else {
-                final String exportableTypes = clientFacade.getPreferences(appointment.getOwner()).getEntryAsString(ExchangeConnectorPlugin.EXPORT_EVENT_TYPE_KEY);
+                final String exportableTypes = clientFacade.getPreferences(appointment.getOwner()).getEntryAsString(ExchangeConnectorPlugin.EXPORT_EVENT_TYPE_KEY, null);
                 if (exportableTypes == null) {
                     getLogger().info("Skipping appointment of type " + reservationType + " because filter is not defined");
                 } else {

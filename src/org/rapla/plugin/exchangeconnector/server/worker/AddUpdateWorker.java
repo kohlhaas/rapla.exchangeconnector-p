@@ -417,7 +417,7 @@ class AddUpdateWorker extends EWSWorker {
                 conf = getClientFacade().getPreferences(null).getEntry(CalendarOptionsImpl.CALENDAR_OPTIONS);
             }
             if (conf != null) {
-                return new CalendarOptionsImpl(conf.getConfig());
+                return new CalendarOptionsImpl(conf );
             }
         } catch (RaplaException ex) {
 
