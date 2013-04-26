@@ -214,13 +214,13 @@ public class DownloadWorker extends EWSWorker {
      * @throws Exception
      */
     private Reservation createEquivalentRaplaReservation(Appointment exchangeAppointment) throws Exception {
-        ReservationImpl raplaReservation = null;
+        Reservation raplaReservation = null;
         ClientFacade currentClientFacade = getClientFacade();
         DynamicType importEventType = ExchangeConnectorPlugin.getImportEventType(currentClientFacade);
 
         if (importEventType != null) {
             final Classification classification = importEventType.newClassification();
-            raplaReservation = (ReservationImpl) currentClientFacade.newReservation();
+            raplaReservation = currentClientFacade.newReservation(getRaplaUser());
 
             raplaReservation.setClassification(classification);
             raplaReservation.setOwner(getRaplaUser());
@@ -251,13 +251,14 @@ public class DownloadWorker extends EWSWorker {
                 }
             }
             // mask private titles
-            if (exchangeAppointment.getSensitivity().equals(Sensitivity.Private)) {
+            if (exchangeAppointment.getSensitivity().equals(Sensitivity.Private) || ExchangeConnectorPlugin.EXCHANGE_ALWAYS_PRIVATE) {
                 raplaReservation.getClassification().setValue(ExchangeConnectorPlugin.RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE, ExchangeConnectorPlugin.EXCHANGE_APPOINTMENT_PRIVATE_NAME_IN_RAPLA);
             } else {
                 raplaReservation.getClassification().setValue(ExchangeConnectorPlugin.RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE, exchangeAppointment.getSubject());
             }
 
-            raplaReservation.addAllocatable(getRaplaUser().getPerson());
+            if (getRaplaUser().getPerson() != null)
+                raplaReservation.addAllocatable(getRaplaUser().getPerson());
 
             boolean isRecurring;
 
@@ -304,7 +305,7 @@ public class DownloadWorker extends EWSWorker {
     private org.rapla.entities.domain.Appointment createRaplaAppointment(Appointment exchangeAppointment) throws Exception {
         Date startDate = ExchangeConnectorUtils.translateExchangeToRaplaTime(exchangeAppointment.getStart());
         Date endDate = ExchangeConnectorUtils.translateExchangeToRaplaTime(exchangeAppointment.getEnd());
-        org.rapla.entities.domain.Appointment raplaAppointment = getClientFacade().newAppointment(startDate, endDate);
+        org.rapla.entities.domain.Appointment raplaAppointment = getClientFacade().newAppointment(startDate, endDate, getRaplaUser());
 
         if (exchangeAppointment.getIsAllDayEvent()) {
             raplaAppointment.setWholeDays(true);

@@ -39,7 +39,7 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 		clientFacade.addAllocationChangedListener(this);
 
         final Timer scheduledDownloadTimer = new Timer("ScheduledDownloadThread",true);
-        scheduledDownloadTimer.schedule(new ScheduledDownloadHandler(context, clientFacade), 30000, ExchangeConnectorPlugin.PULL_FREQUENCY*1000);
+        scheduledDownloadTimer.schedule(new ScheduledDownloadHandler(context, clientFacade, getLogger()), 30000, ExchangeConnectorPlugin.PULL_FREQUENCY*1000);
 	}
 
 

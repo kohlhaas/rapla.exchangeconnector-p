@@ -9,6 +9,8 @@ import org.rapla.entities.domain.Reservation;
 import org.rapla.facade.ClientFacade;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
+
+import org.rapla.framework.logger.Logger;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAccountInformationStorage;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 import org.rapla.plugin.exchangeconnector.server.worker.DownloadWorker;
@@ -24,13 +26,16 @@ public class ScheduledDownloadHandler extends TimerTask {
 
     private final RaplaContext context;
     private final ClientFacade clientFacade;
-	/**
+    private final Logger logger;
+
+    /**
 	 * @param clientFacade
 	 */
-	public ScheduledDownloadHandler(RaplaContext context,ClientFacade clientFacade) {
+	public ScheduledDownloadHandler(RaplaContext context, ClientFacade clientFacade, Logger logger) {
 		super();
         this.context = context;
         this.clientFacade = clientFacade;
+        this.logger = logger;
 
 	}
 
@@ -43,6 +48,7 @@ public class ScheduledDownloadHandler extends TimerTask {
 			deleteExchangeItemsFromRapla();
 			downloadExchangeAppointments();
 		} catch (Exception e) {
+            logger.error(e.getMessage(), e);
 
 		}
 	}

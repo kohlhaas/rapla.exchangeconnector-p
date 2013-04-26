@@ -3,6 +3,10 @@ package org.rapla.plugin.exchangeconnector.client;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import javax.swing.DefaultComboBoxModel;
@@ -17,6 +21,8 @@ import javax.swing.JTextField;
 
 import org.rapla.components.calendar.RaplaNumber;
 import org.rapla.components.layout.TableLayout;
+import org.rapla.entities.dynamictype.Attribute;
+import org.rapla.entities.dynamictype.AttributeType;
 import org.rapla.entities.dynamictype.DynamicType;
 import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
 import org.rapla.framework.Configuration;
@@ -25,57 +31,63 @@ import org.rapla.framework.PluginDescriptor;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.gui.DefaultPluginOption;
+import org.rapla.gui.internal.common.NamedListCellRenderer;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 
 
-public class ExchangeConnectorAdminOptions extends DefaultPluginOption implements ActionListener{
-	
-	private JCheckBox enableSynchronisationBox;// = new JCheckBox();
-	private JTextField exchangeWebServiceFQDNTextField ;//= new JTextField();
-	private JTextField categoryForRaplaAppointmentsOnExchangeTextField ;//= new JTextField();
-	private RaplaNumber syncIntervalPast;// = new RaplaNumber();
-	private RaplaNumber syncIntervalFuture;// = new RaplaNumber();
-	private RaplaNumber pullFrequency;// = new RaplaNumber();
-	private JButton syncallButton;// = new JButton("(Re-)Sync all");
-	private JTextArea infoBox ;//= new JTextArea( "Syncronize all Appointments in chosen\n" + "period of time for all user accounts,\n" + "on which syncing is enabled.");
+public class ExchangeConnectorAdminOptions extends DefaultPluginOption implements ActionListener {
 
-	private JLabel enableSynchronisationLabel;// = new JLabel("Provide syncing to MS Exchange Server");
-	private JLabel syncIntervalFutureLabel;// = new JLabel("Synchronise months in future");
-	private JLabel pullFrequencyLabel;//= new JLabel("Pull appointments from Exchange in seconds");
-	private JLabel syncIntervalPastLabel;// = new JLabel("Synchronise months in past");
-	private JLabel categoryForRaplaAppointmentsOnExchangeLabel;// = new JLabel("Default Category on Exchange");
-	private JLabel exchangeWebServiceFQDNLabel;// = new JLabel("Exchange-Webservice FQDN");
+    private JCheckBox enableSynchronisationBox;// = new JCheckBox();
+    private JTextField exchangeWebServiceFQDNTextField;//= new JTextField();
+    private JTextField categoryForRaplaAppointmentsOnExchangeTextField;//= new JTextField();
+    private RaplaNumber syncIntervalPast;// = new RaplaNumber();
+    private RaplaNumber syncIntervalFuture;// = new RaplaNumber();
+    private RaplaNumber pullFrequency;// = new RaplaNumber();
+    private JButton syncallButton;// = new JButton("(Re-)Sync all");
+    private JTextArea infoBox;//= new JTextArea( "Syncronize all Appointments in chosen\n" + "period of time for all user accounts,\n" + "on which syncing is enabled.");
+
+    private JLabel enableSynchronisationLabel;// = new JLabel("Provide syncing to MS Exchange Server");
+    private JLabel syncIntervalFutureLabel;// = new JLabel("Synchronise months in future");
+    private JLabel pullFrequencyLabel;//= new JLabel("Pull appointments from Exchange in seconds");
+    private JLabel syncIntervalPastLabel;// = new JLabel("Synchronise months in past");
+    private JLabel categoryForRaplaAppointmentsOnExchangeLabel;// = new JLabel("Default Category on Exchange");
+    private JLabel exchangeWebServiceFQDNLabel;// = new JLabel("Exchange-Webservice FQDN");
     private JLabel eventTypeLabel;
     private JComboBox cbEventTypes;
     private JLabel roomResourceTypeLabel;
     private JComboBox cbRoomTypes;
+    private JLabel raplaEventTitleAttributeLabel;
+    private JComboBox cbEventTitleAttribute;
+    private JLabel raplaRessourceEmailAttributeLabel;
+    private JTextField cbRaplaRessourceEmailAttribute;
+    private JLabel importAlwaysPrivateLabel;
+    private JCheckBox chkAlwaysPrivate;
 
-    public ExchangeConnectorAdminOptions( RaplaContext raplaContext ) throws Exception
-    {
-        super( raplaContext );
+    public ExchangeConnectorAdminOptions(RaplaContext raplaContext) throws Exception {
+        super(raplaContext);
         setChildBundleName(ExchangeConnectorPlugin.RESOURCE_FILE);
         initJComponents();
 
     }
- 
+
 
     private void initJComponents() {
-    	this.enableSynchronisationBox = new JCheckBox();
-    	this.exchangeWebServiceFQDNTextField = new JTextField();
-    	this.categoryForRaplaAppointmentsOnExchangeTextField = new JTextField();
-    	this.syncIntervalPast = new RaplaNumber();
-    	this.syncIntervalFuture = new RaplaNumber();
-    	this.pullFrequency = new RaplaNumber();
-    	this.syncallButton = new JButton(getString("button.sync"));
-    	this.infoBox = new JTextArea(getString("infobox.sync"));
+        this.enableSynchronisationBox = new JCheckBox();
+        this.exchangeWebServiceFQDNTextField = new JTextField();
+        this.categoryForRaplaAppointmentsOnExchangeTextField = new JTextField();
+        this.syncIntervalPast = new RaplaNumber();
+        this.syncIntervalFuture = new RaplaNumber();
+        this.pullFrequency = new RaplaNumber();
+        this.syncallButton = new JButton(getString("button.sync"));
+        this.infoBox = new JTextArea(getString("infobox.sync"));
 
-    	this.enableSynchronisationLabel = new JLabel(getString("sync.msexchange"));
-    	this.syncIntervalFutureLabel = new JLabel(getString("sync.future"));
-    	this.pullFrequencyLabel = new JLabel(getString("server.frequency"));
-    	this.syncIntervalPastLabel = new JLabel(getString("sync.past"));
-    	this.categoryForRaplaAppointmentsOnExchangeLabel = new JLabel(getString("appointment.category"));
-    	this.exchangeWebServiceFQDNLabel = new JLabel(getString("msexchange.hosturl"));
+        this.enableSynchronisationLabel = new JLabel(getString("sync.msexchange"));
+        this.syncIntervalFutureLabel = new JLabel(getString("sync.future"));
+        this.pullFrequencyLabel = new JLabel(getString("server.frequency"));
+        this.syncIntervalPastLabel = new JLabel(getString("sync.past"));
+        this.categoryForRaplaAppointmentsOnExchangeLabel = new JLabel(getString("appointment.category"));
+        this.exchangeWebServiceFQDNLabel = new JLabel(getString("msexchange.hosturl"));
 
         this.eventTypeLabel = new JLabel(getString("event.raplatype"));
         this.cbEventTypes = new JComboBox();
@@ -83,118 +95,175 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
         this.roomResourceTypeLabel = new JLabel(getString("event.roomtype"));
         this.cbRoomTypes = new JComboBox();
 
+        this.raplaEventTitleAttributeLabel = new JLabel(getString("event.title.attr"));
+        this.cbEventTitleAttribute = new JComboBox();
+
+        this.raplaRessourceEmailAttributeLabel = new JLabel(getString("resource.mail.attr"));
+        this.cbRaplaRessourceEmailAttribute = new JTextField();
+
+        this.importAlwaysPrivateLabel = new JLabel(getString("msexchange.alwaysprivate"));
+        this.chkAlwaysPrivate = new JCheckBox();
+
     }
 
 
-	/* (non-Javadoc)
+    /* (non-Javadoc)
      * @see org.rapla.gui.DefaultPluginOption#createPanel()
      */
     protected JPanel createPanel() throws RaplaException {
         JPanel parentPanel = super.createPanel();
         JPanel content = new JPanel();
-        double[][] sizes = new double[][] {
-            {5,TableLayout.PREFERRED, 5,TableLayout.FILL,5}
-            ,{TableLayout.PREFERRED,5,TableLayout.PREFERRED, 5, TableLayout.PREFERRED, 5, TableLayout.PREFERRED, 5, TableLayout.PREFERRED, 5, TableLayout.PREFERRED, 5, TableLayout.PREFERRED,5, TableLayout.PREFERRED, 5, TableLayout.PREFERRED}
+        double[][] sizes = new double[][]{
+                {5, TableLayout.PREFERRED, 5, TableLayout.FILL, 5}
+                , {TableLayout.PREFERRED, 5, TableLayout.PREFERRED, 5, TableLayout.PREFERRED, 5, TableLayout.PREFERRED, 5, TableLayout.PREFERRED, 5, TableLayout.PREFERRED, 5, TableLayout.PREFERRED, 5, TableLayout.PREFERRED, 5, TableLayout.PREFERRED, 5, TableLayout.PREFERRED, 5, TableLayout.PREFERRED, 5, TableLayout.PREFERRED}
         };
         TableLayout tableLayout = new TableLayout(sizes);
-        content.setLayout(tableLayout); 
+        content.setLayout(tableLayout);
         content.add(enableSynchronisationLabel, "1,0");
-        content.add(enableSynchronisationBox,"3,0");
-		content.add(exchangeWebServiceFQDNLabel, "1,2");
+        content.add(enableSynchronisationBox, "3,0");
+        content.add(exchangeWebServiceFQDNLabel, "1,2");
         content.add(exchangeWebServiceFQDNTextField, "3,2");
-		content.add(categoryForRaplaAppointmentsOnExchangeLabel, "1,4");
+        content.add(categoryForRaplaAppointmentsOnExchangeLabel, "1,4");
         content.add(categoryForRaplaAppointmentsOnExchangeTextField, "3,4");
-		content.add(syncIntervalPastLabel, "1,6");
+        content.add(syncIntervalPastLabel, "1,6");
         content.add(syncIntervalPast, "3,6");
-		content.add(syncIntervalFutureLabel, "1,8");
+        content.add(syncIntervalFutureLabel, "1,8");
         content.add(syncIntervalFuture, "3,8");
-		content.add(pullFrequencyLabel, "1,10");
+        content.add(pullFrequencyLabel, "1,10");
         content.add(pullFrequency, "3,10");
 //        content.add(syncallButton, "1,12");
 //        content.add(infoBox, "3,12");
-        content.add(eventTypeLabel, "1,14");
-        content.add(cbEventTypes, "3,14");
-        content.add(roomResourceTypeLabel, "1,16");
-        content.add(cbRoomTypes, "3,16");
+        content.add(eventTypeLabel, "1,16");
+        content.add(cbEventTypes, "3,16");
+
+        content.add(roomResourceTypeLabel, "1,14");
+        content.add(cbRoomTypes, "3,14");
+
+        content.add(raplaEventTitleAttributeLabel, "1,18");
+        content.add(cbEventTitleAttribute, "3,18");
+
+        content.add(raplaRessourceEmailAttributeLabel, "1,20");
+        content.add(cbRaplaRessourceEmailAttribute, "3,20");
+
+        content.add(importAlwaysPrivateLabel, "1,22");
+        content.add(chkAlwaysPrivate, "3,22");
+
+        cbEventTitleAttribute.setRenderer(new NamedListCellRenderer(getLocale()));
 
         syncallButton.addActionListener(this);
-        
-        parentPanel.add( content, BorderLayout.CENTER);
+
+        parentPanel.add(content, BorderLayout.CENTER);
         return parentPanel;
     }
-        
-    protected void addChildren( DefaultConfiguration newConfig) {
-    	readUserInputValues();
-    	ExchangeConnectorPlugin.storeParametersToConfig(newConfig);
-	}
+
+    protected void addChildren(DefaultConfiguration newConfig) {
+        readUserInputValues();
+        ExchangeConnectorPlugin.storeParametersToConfig(newConfig);
+    }
 
     private void readUserInputValues() {
-		ExchangeConnectorPlugin.ENABLED_BY_ADMIN = enableSynchronisationBox.isSelected();
-		ExchangeConnectorPlugin.EXCHANGE_WS_FQDN = exchangeWebServiceFQDNTextField.getText();
-		ExchangeConnectorPlugin.EXCHANGE_APPOINTMENT_CATEGORY = categoryForRaplaAppointmentsOnExchangeTextField.getText();
-		ExchangeConnectorPlugin.SYNCING_PERIOD_PAST = syncIntervalPast.getNumber().intValue();
-		ExchangeConnectorPlugin.SYNCING_PERIOD_FUTURE= syncIntervalFuture.getNumber().intValue();
-		ExchangeConnectorPlugin.PULL_FREQUENCY = pullFrequency.getNumber().intValue();
-        ExchangeConnectorPlugin.IMPORT_EVENT_TYPE = ((StringWrapper<DynamicType>)cbEventTypes.getSelectedItem()).forObject.getElementKey();
-        ExchangeConnectorPlugin.ROOM_TYPE = ((StringWrapper<DynamicType>)cbRoomTypes.getSelectedItem()).forObject.getElementKey();
+        ExchangeConnectorPlugin.ENABLED_BY_ADMIN = enableSynchronisationBox.isSelected();
+        ExchangeConnectorPlugin.EXCHANGE_WS_FQDN = exchangeWebServiceFQDNTextField.getText();
+        ExchangeConnectorPlugin.EXCHANGE_APPOINTMENT_CATEGORY = categoryForRaplaAppointmentsOnExchangeTextField.getText();
+        ExchangeConnectorPlugin.SYNCING_PERIOD_PAST = syncIntervalPast.getNumber().intValue();
+        ExchangeConnectorPlugin.SYNCING_PERIOD_FUTURE = syncIntervalFuture.getNumber().intValue();
+        ExchangeConnectorPlugin.PULL_FREQUENCY = pullFrequency.getNumber().intValue();
+        ExchangeConnectorPlugin.IMPORT_EVENT_TYPE = ((StringWrapper<DynamicType>) cbEventTypes.getSelectedItem()).forObject.getElementKey();
+        ExchangeConnectorPlugin.ROOM_TYPE = ((StringWrapper<DynamicType>) cbRoomTypes.getSelectedItem()).forObject.getElementKey();
+        ExchangeConnectorPlugin.RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL = cbRaplaRessourceEmailAttribute.getText();
+        ExchangeConnectorPlugin.RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE = cbEventTitleAttribute.getSelectedItem() instanceof  Attribute?((Attribute) cbEventTitleAttribute.getSelectedItem()).getKey() : ExchangeConnectorPlugin.DEFAULT_RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE;
+        ExchangeConnectorPlugin.EXCHANGE_ALWAYS_PRIVATE = chkAlwaysPrivate.isSelected() ;
 
 
+    }
 
-	}
 
-
-	protected void readConfig( Configuration config){
+    protected void readConfig(Configuration config) {
         try {
             DynamicType[] dynamicTypes = getClientFacade().getDynamicTypes(DynamicTypeAnnotations.VALUE_CLASSIFICATION_TYPE_RESERVATION);
-            StringWrapper<DynamicType> [] eventTypes= new StringWrapper [dynamicTypes.length];
+            StringWrapper<DynamicType>[] eventTypes = new StringWrapper[dynamicTypes.length];
             for (int i = 0, dynamicTypesLength = dynamicTypes.length; i < dynamicTypesLength; i++) {
                 DynamicType dynamicType = dynamicTypes[i];
                 eventTypes[i] = new StringWrapper<DynamicType>(dynamicType);
             }
             dynamicTypes = getClientFacade().getDynamicTypes(DynamicTypeAnnotations.VALUE_CLASSIFICATION_TYPE_RESOURCE);
-            StringWrapper<DynamicType> [] roomTypes= new StringWrapper [dynamicTypes.length];
+            StringWrapper<DynamicType>[] roomTypes = new StringWrapper[dynamicTypes.length];
             for (int i = 0, dynamicTypesLength = dynamicTypes.length; i < dynamicTypesLength; i++) {
                 DynamicType dynamicType = dynamicTypes[i];
                 roomTypes[i] = new StringWrapper<DynamicType>(dynamicType);
             }
 
-
             this.cbEventTypes.setModel(new DefaultComboBoxModel(eventTypes));
+
+            this.cbEventTypes.addItemListener(new ItemListener() {
+                @Override
+                public void itemStateChanged(ItemEvent e) {
+                    if (e.getStateChange() == ItemEvent.SELECTED)
+                        updateAttributeList(((StringWrapper<DynamicType>) cbEventTypes.getSelectedItem()).forObject, ExchangeConnectorPlugin.RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE);
+                }
+            });
             this.cbRoomTypes.setModel(new DefaultComboBoxModel(roomTypes));
+
+
+
+
         } catch (RaplaException e) {
         }
 
-		ExchangeConnectorPlugin.loadConfigParameters(config);
-		enableSynchronisationBox.setSelected(ExchangeConnectorPlugin.ENABLED_BY_ADMIN);
-		exchangeWebServiceFQDNTextField.setText(ExchangeConnectorPlugin.EXCHANGE_WS_FQDN);
-		categoryForRaplaAppointmentsOnExchangeTextField.setText(ExchangeConnectorPlugin.EXCHANGE_APPOINTMENT_CATEGORY);
-		syncIntervalPast.setNumber(ExchangeConnectorPlugin.SYNCING_PERIOD_PAST);
-		syncIntervalFuture.setNumber(ExchangeConnectorPlugin.SYNCING_PERIOD_FUTURE);
-		pullFrequency.setNumber(ExchangeConnectorPlugin.PULL_FREQUENCY);
+        ExchangeConnectorPlugin.loadConfigParameters(config);
+        enableSynchronisationBox.setSelected(ExchangeConnectorPlugin.ENABLED_BY_ADMIN);
+        exchangeWebServiceFQDNTextField.setText(ExchangeConnectorPlugin.EXCHANGE_WS_FQDN);
+        categoryForRaplaAppointmentsOnExchangeTextField.setText(ExchangeConnectorPlugin.EXCHANGE_APPOINTMENT_CATEGORY);
+        syncIntervalPast.setNumber(ExchangeConnectorPlugin.SYNCING_PERIOD_PAST);
+        syncIntervalFuture.setNumber(ExchangeConnectorPlugin.SYNCING_PERIOD_FUTURE);
+        pullFrequency.setNumber(ExchangeConnectorPlugin.PULL_FREQUENCY);
+        DynamicType importEventType = null;
         try {
-            cbEventTypes.setSelectedItem(new StringWrapper<DynamicType>(ExchangeConnectorPlugin.getImportEventType(getClientFacade())));
+            importEventType = ExchangeConnectorPlugin.getImportEventType(getClientFacade());
+            cbEventTypes.setSelectedItem(new StringWrapper<DynamicType>(importEventType));
+
+            updateAttributeList(importEventType, ExchangeConnectorPlugin.RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE);
+
         } catch (RaplaException e) {
         }
         try {
             cbRoomTypes.setSelectedItem(new StringWrapper<DynamicType>(ExchangeConnectorPlugin.getRoomType(getClientFacade())));
         } catch (RaplaException e) {
         }
+
+        cbRaplaRessourceEmailAttribute.setText(ExchangeConnectorPlugin.RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL);
+        chkAlwaysPrivate.setSelected(ExchangeConnectorPlugin.DEFAULT_EXCHANGE_ALWAYS_PRIVATE);
+
     }
 
-    
+    private void updateAttributeList(DynamicType importEventType, String selectedValueKey) {
+        if (importEventType != null) {
+            List<Attribute> attributeList = new ArrayList<Attribute>();
+            Attribute[] attributes = importEventType.getAttributes();
+            for (Attribute attribute : attributes) {
+                if (attribute.getType().equals(AttributeType.STRING))
+                    attributeList.add(attribute);
+            }
+            cbEventTitleAttribute.setModel(new DefaultComboBoxModel(attributeList.toArray()));
+            cbEventTitleAttribute.setSelectedItem(importEventType.getAttribute(selectedValueKey));
+
+        }
+    }
+
+
     public Class<? extends PluginDescriptor<?>> getPluginClass() {
         return ExchangeConnectorPlugin.class;
     }
-    
+
     public String getName(Locale locale) {
         return "Exchange Connector Plugin";
     }
 
 
-	public void actionPerformed(ActionEvent actionEvent) {
-		if (actionEvent.getSource().equals(syncallButton)) {
-			try {
-				String returnedMessage = getWebservice(ExchangeConnectorRemote.class).completeReconciliation();
+    public void actionPerformed(ActionEvent actionEvent) {
+        if (actionEvent.getSource().equals(syncallButton)) {
+            try {
+                String returnedMessage = getWebservice(ExchangeConnectorRemote.class).completeReconciliation();
                 JOptionPane.showMessageDialog(
                         getMainComponent(), returnedMessage, "Information", JOptionPane.INFORMATION_MESSAGE);
             } catch (RaplaException e) {
@@ -202,9 +271,9 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
                         getMainComponent(), e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 
                 getLogger().error("Error occurred while executing the sync-all! ", e);
-			}
-		}
-	}
+            }
+        }
+    }
 }
 
 

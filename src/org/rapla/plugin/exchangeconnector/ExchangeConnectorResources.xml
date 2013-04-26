@@ -68,12 +68,28 @@
 </entry>
     <entry key="event.raplatypes">
         <text lang="en">Choose rapla event types to be pushed to Exchange</text>
-        <text lang="de">Nur Veranstaltungen dieser Art werden nach Exchange übertragen</text>
+        <text lang="de">Veranstaltungsfilter (Rapla -> Exchange)</text>
     </entry>
 
     <entry key="event.roomtype">
         <text lang="en">Choose room types to be used for location</text>
-        <text lang="de">Nur Ressourcen dieses Typs werden als Raumressource interpretiert</text>
+        <text lang="de">Raum-Ressourcentyp</text>
     </entry>
+
+    <entry key="resource.mail.attr">
+        <text lang="en">Provide element key of mail attribute in resources for mapping </text>
+        <text lang="de">Schlüssel des Mailattributes für Ressourcen</text>
+    </entry>
+
+    <entry key="event.title.attr">
+        <text lang="en">Provide element key of title attribute of event</text>
+        <text lang="de">Schlüssel des Titel-Attributes für Veranstaltungen (Exchange -> Rapla)</text>
+    </entry>
+
+    <entry key="msexchange.alwaysprivate">
+        <text lang="en">Import event always as private</text>
+        <text lang="de">Veranstaltungen werden immer als "privat" importiert (Exchange -> Rapla)</text>
+    </entry>
+
 
 </resources>

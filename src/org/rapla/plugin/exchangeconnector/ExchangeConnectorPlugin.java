@@ -8,6 +8,7 @@ import org.rapla.client.RaplaClientExtensionPoints;
 import org.rapla.components.xmlbundle.I18nBundle;
 import org.rapla.components.xmlbundle.impl.I18nBundleImpl;
 import org.rapla.entities.domain.Appointment;
+import org.rapla.entities.dynamictype.Attribute;
 import org.rapla.entities.dynamictype.DynamicType;
 import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
 import org.rapla.facade.CalendarOptions;
@@ -71,14 +72,20 @@ public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceCo
     //admin
     public static final String RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE_KEY = "rapla.attr.title";
     public static final String DEFAULT_RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE = "title";
-    public static String RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE = "title";
+    public static String RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE = DEFAULT_RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE;
 
     public static final boolean USE_JMS = false;
 
     //admin -> editierbare Combobox
     public static final String RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL_KEY = "email.attr.title";
-    public static String RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL = "email";
     public static final String DEFAULT_RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL = "email";
+    public static String RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL = DEFAULT_RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL;
+
+    //admin
+    public static final String EXCHANGE_ALWAYS_PRIVATE_KEY= "exchange.import.alwaysprivate";
+    public static final boolean DEFAULT_EXCHANGE_ALWAYS_PRIVATE= true;
+    public static  boolean EXCHANGE_ALWAYS_PRIVATE= DEFAULT_EXCHANGE_ALWAYS_PRIVATE;
+
 
     //user, checkbox
 
@@ -172,6 +179,7 @@ public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceCo
         EXCHANGE_REMINDER_SET = config.getChild(EXCHANGE_REMINDER_SET_KEY).getValueAsBoolean(DEFAULT_EXCHANGE_REMINDER_SET);
         EXCHANGE_FINDITEMS_PAGESIZE = config.getChild(EXCHANGE_FINDITEMS_PAGESIZE_KEY).getValueAsInteger(DEFAULT_EXCHANGE_FINDITEMS_PAGESIZE);
         EXCHANGE_APPOINTMENT_PRIVATE_NAME_IN_RAPLA= config.getChild(EXCHANGE_APPOINTMENT_PRIVATE_NAME_IN_RAPLA_KEY).getValue(DEFAULT_EXCHANGE_APPOINTMENT_PRIVATE_NAME_IN_RAPLA);
+        EXCHANGE_ALWAYS_PRIVATE= config.getChild(EXCHANGE_APPOINTMENT_PRIVATE_NAME_IN_RAPLA_KEY).getValueAsBoolean(DEFAULT_EXCHANGE_ALWAYS_PRIVATE);
     }
 
     public static void storeParametersToConfig(DefaultConfiguration newConfig)  {
@@ -194,6 +202,7 @@ public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceCo
         newConfig.getMutableChild(ExchangeConnectorPlugin.EXCHANGE_FREE_AND_BUSY_KEY, true).setValue(EXCHANGE_FREE_AND_BUSY);
         newConfig.getMutableChild(ExchangeConnectorPlugin.EXCHANGE_FINDITEMS_PAGESIZE_KEY, true).setValue(EXCHANGE_FINDITEMS_PAGESIZE);
         newConfig.getMutableChild(ExchangeConnectorPlugin.EXCHANGE_APPOINTMENT_PRIVATE_NAME_IN_RAPLA_KEY, true).setValue(EXCHANGE_APPOINTMENT_PRIVATE_NAME_IN_RAPLA);
+        newConfig.getMutableChild(ExchangeConnectorPlugin.EXCHANGE_ALWAYS_PRIVATE_KEY, true).setValue(EXCHANGE_ALWAYS_PRIVATE);
 
     }
 
