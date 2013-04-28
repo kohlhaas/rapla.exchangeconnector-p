@@ -29,7 +29,6 @@ import org.rapla.entities.User;
 import org.rapla.entities.configuration.Preferences;
 import org.rapla.entities.domain.Allocatable;
 import org.rapla.entities.domain.Reservation;
-import org.rapla.entities.domain.internal.ReservationImpl;
 import org.rapla.entities.dynamictype.Classification;
 import org.rapla.entities.dynamictype.ClassificationFilter;
 import org.rapla.entities.dynamictype.DynamicType;
@@ -38,7 +37,6 @@ import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorUtils;
-import org.rapla.plugin.exchangeconnector.server.SynchronisationManager;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 
 /**
@@ -220,11 +218,7 @@ public class DownloadWorker extends EWSWorker {
 
         if (importEventType != null) {
             final Classification classification = importEventType.newClassification();
-            raplaReservation = currentClientFacade.newReservation(getRaplaUser());
-
-            raplaReservation.setClassification(classification);
-            raplaReservation.setOwner(getRaplaUser());
-
+            raplaReservation = currentClientFacade.newReservation(classification,getRaplaUser());
 
             final AttendeeCollection resources = exchangeAppointment.getResources();
             for (Attendee resource : resources) {
