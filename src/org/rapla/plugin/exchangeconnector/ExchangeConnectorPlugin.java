@@ -8,9 +8,7 @@ import org.rapla.client.RaplaClientExtensionPoints;
 import org.rapla.components.xmlbundle.I18nBundle;
 import org.rapla.components.xmlbundle.impl.I18nBundleImpl;
 import org.rapla.entities.domain.Appointment;
-import org.rapla.entities.dynamictype.Attribute;
 import org.rapla.entities.dynamictype.DynamicType;
-import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
 import org.rapla.facade.CalendarOptions;
 import org.rapla.facade.ClientFacade;
 import org.rapla.framework.Configuration;
@@ -61,13 +59,8 @@ public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceCo
     public static final String IMPORT_EVENT_TYPE_KEY = "import-event-type-key";
     public static final String EXPORT_EVENT_TYPE_KEY = "export-event-type-key";
     public static String IMPORT_EVENT_TYPE;
-    private static final String DEFAULT_IMPORT_EVENT_TYPE = "defaultReservation";
+    private static final String DEFAULT_IMPORT_EVENT_TYPE = "event";
     public static final String DEFAULT_EXPORT_EVENT_TYPE = "//";
-
-    //admin -> ICAL Plugin
-    public static final String TIMEZONE_KEY = "timezone1";
-    public static String TIMEZONE;
-    public static final String DEFAULT_TIMEZONE = "Europe/Berlin"; //DateTools.getTimeZone().getID();
 
     //admin
     public static final String RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE_KEY = "rapla.attr.title";
@@ -167,7 +160,6 @@ public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceCo
         PULL_FREQUENCY = config.getChild(PULL_FREQUENCY_KEY).getValueAsInteger(DEFAULT_PULL_FREQUENCY);
         IMPORT_EVENT_TYPE = config.getChild(IMPORT_EVENT_TYPE_KEY).getValue(DEFAULT_IMPORT_EVENT_TYPE);
         ROOM_TYPE = config.getChild(ROOM_TYPE_KEY).getValue(DEFAULT_ROOM_TYPE);
-        TIMEZONE = config.getChild(TIMEZONE_KEY).getValue(DEFAULT_TIMEZONE);
 
         RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL = config.getChild(RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL_KEY).getValue(DEFAULT_RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL);
         RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE= config.getChild(RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE_KEY).getValue(DEFAULT_RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE);
@@ -190,7 +182,6 @@ public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceCo
         newConfig.getMutableChild(ExchangeConnectorPlugin.PULL_FREQUENCY_KEY, true).setValue(PULL_FREQUENCY);
         newConfig.getMutableChild(ExchangeConnectorPlugin.IMPORT_EVENT_TYPE_KEY, true).setValue(IMPORT_EVENT_TYPE);
         newConfig.getMutableChild(ExchangeConnectorPlugin.ROOM_TYPE_KEY, true).setValue(ROOM_TYPE);
-        newConfig.getMutableChild(ExchangeConnectorPlugin.TIMEZONE_KEY, true).setValue(TIMEZONE);
         newConfig.getMutableChild(ExchangeConnectorPlugin.EXCHANGE_INCOMING_FILTER_CATEGORY_KEY, true).setValue(EXCHANGE_INCOMING_FILTER_CATEGORY);
 
         newConfig.getMutableChild(ExchangeConnectorPlugin.RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL_KEY, true).setValue(RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL);

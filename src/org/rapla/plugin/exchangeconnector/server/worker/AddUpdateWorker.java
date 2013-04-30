@@ -3,7 +3,36 @@
  */
 package org.rapla.plugin.exchangeconnector.server.worker;
 
-import microsoft.exchange.webservices.data.*;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.TimeZone;
+
+import microsoft.exchange.webservices.data.ArgumentException;
+import microsoft.exchange.webservices.data.ArgumentOutOfRangeException;
+import microsoft.exchange.webservices.data.Attendee;
+import microsoft.exchange.webservices.data.BodyType;
+import microsoft.exchange.webservices.data.ConflictResolutionMode;
+import microsoft.exchange.webservices.data.DayOfTheWeek;
+import microsoft.exchange.webservices.data.DayOfTheWeekIndex;
+import microsoft.exchange.webservices.data.DeleteMode;
+import microsoft.exchange.webservices.data.LegacyFreeBusyStatus;
+import microsoft.exchange.webservices.data.MailboxType;
+import microsoft.exchange.webservices.data.MessageBody;
+import microsoft.exchange.webservices.data.Month;
+import microsoft.exchange.webservices.data.Recurrence;
+import microsoft.exchange.webservices.data.SendCancellationsMode;
+import microsoft.exchange.webservices.data.SendInvitationsMode;
+import microsoft.exchange.webservices.data.SendInvitationsOrCancellationsMode;
+import microsoft.exchange.webservices.data.ServiceLocalException;
+
 import org.rapla.entities.User;
 import org.rapla.entities.configuration.RaplaConfiguration;
 import org.rapla.entities.domain.Allocatable;
@@ -15,13 +44,11 @@ import org.rapla.facade.CalendarOptions;
 import org.rapla.facade.internal.CalendarOptionsImpl;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
+import org.rapla.framework.RaplaLocale;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorUtils;
-import org.rapla.plugin.exchangeconnector.server.model.RaplaRepeatingType;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
-
-import java.text.SimpleDateFormat;
-import java.util.*;
+import org.rapla.plugin.exchangeconnector.server.model.RaplaRepeatingType;
 
 /**
  * The worker-class for uploading a new- or changed appointment from Rapla to
@@ -157,8 +184,10 @@ class AddUpdateWorker extends EWSWorker {
             exchangeAppointment = new microsoft.exchange.webservices.data.Appointment(getService());
         }
 
-        final Date startDate = ExchangeConnectorUtils.translateRaplaToExchangeTime(raplaAppointment.getStart());
-        final Date endDate = ExchangeConnectorUtils.translateRaplaToExchangeTime(raplaAppointment.getEnd());
+        RaplaLocale raplaLocale = getContext().lookup(RaplaLocale.class);
+		TimeZone timeZone = raplaLocale.getImportExportTimeZone();
+        final Date startDate = raplaLocale.fromRaplaTime(timeZone, raplaAppointment.getStart());
+        final Date endDate = raplaLocale.fromRaplaTime(timeZone, raplaAppointment.getEnd());
 
         exchangeAppointment.setStart(startDate);
         exchangeAppointment.setEnd(endDate);

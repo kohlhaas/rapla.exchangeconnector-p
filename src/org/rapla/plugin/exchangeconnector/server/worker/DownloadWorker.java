@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TimeZone;
 
 import microsoft.exchange.webservices.data.Appointment;
 import microsoft.exchange.webservices.data.AppointmentSchema;
@@ -35,8 +36,8 @@ import org.rapla.entities.dynamictype.DynamicType;
 import org.rapla.facade.ClientFacade;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
+import org.rapla.framework.RaplaLocale;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
-import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorUtils;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 
 /**
@@ -297,8 +298,10 @@ public class DownloadWorker extends EWSWorker {
      * @throws Exception
      */
     private org.rapla.entities.domain.Appointment createRaplaAppointment(Appointment exchangeAppointment) throws Exception {
-        Date startDate = ExchangeConnectorUtils.translateExchangeToRaplaTime(exchangeAppointment.getStart());
-        Date endDate = ExchangeConnectorUtils.translateExchangeToRaplaTime(exchangeAppointment.getEnd());
+    	RaplaLocale raplaLocale = getRaplaLocale();
+    	TimeZone timeZone = raplaLocale.getImportExportTimeZone();
+    	Date startDate = raplaLocale.toRaplaTime(timeZone, exchangeAppointment.getStart());
+        Date endDate = raplaLocale.toRaplaTime(timeZone,exchangeAppointment.getEnd());
         org.rapla.entities.domain.Appointment raplaAppointment = getClientFacade().newAppointment(startDate, endDate, getRaplaUser());
 
         if (exchangeAppointment.getIsAllDayEvent()) {

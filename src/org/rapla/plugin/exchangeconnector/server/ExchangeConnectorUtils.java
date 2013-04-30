@@ -1,11 +1,15 @@
 package org.rapla.plugin.exchangeconnector.server;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import microsoft.exchange.webservices.data.ExchangeService;
 import microsoft.exchange.webservices.data.ItemId;
 import microsoft.exchange.webservices.data.ServiceResponseException;
-import net.fortuna.ical4j.model.TimeZoneRegistry;
-import net.fortuna.ical4j.model.TimeZoneRegistryFactory;
-import net.fortuna.ical4j.model.component.VTimeZone;
+
 import org.rapla.components.util.Assert;
 import org.rapla.entities.User;
 import org.rapla.entities.domain.Allocatable;
@@ -17,36 +21,32 @@ import org.rapla.entities.storage.RefEntity;
 import org.rapla.entities.storage.internal.SimpleIdentifier;
 import org.rapla.facade.ClientFacade;
 import org.rapla.framework.RaplaException;
-import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.storage.impl.AbstractCachableOperator;
 
-import java.util.*;
-
 public class ExchangeConnectorUtils {
-    private static final SimpleTimeZone gmt = new SimpleTimeZone(0, "GMT");
-    private static java.util.TimeZone timezone;
 
-    static {
-        final java.util.TimeZone prefereredTimeZone = java.util.TimeZone.getTimeZone(ExchangeConnectorPlugin.TIMEZONE);
-
-        //todo: this is still a problem!
-        //how to handle different timezones?
-        if (prefereredTimeZone != null) {
-            try {
-                final String timezoneId = prefereredTimeZone.getID();
-                TimeZoneRegistry registry = TimeZoneRegistryFactory.getInstance().createRegistry();
-                timezone = registry.getTimeZone(timezoneId);
-            } catch (Exception rc) {
-                final VTimeZone vTimeZone = new VTimeZone();
-                timezone = new net.fortuna.ical4j.model.TimeZone(vTimeZone);
-                final int rawOffset = prefereredTimeZone.getRawOffset();
-                timezone.setRawOffset(rawOffset);
-            }
-        }
-        Assert.notNull(timezone);
-
-        SynchronisationManager.logInfo("Using timezone: " + timezone.getDisplayName());
-    }
+//    static {
+//    	
+//        final java.util.TimeZone prefereredTimeZone = java.util.TimeZone.getTimeZone(ExchangeConnectorPlugin.TIMEZONE);
+//
+//        //todo: this is still a problem!
+//        //how to handle different timezones?
+//        if (prefereredTimeZone != null) {
+//            try {
+//                final String timezoneId = prefereredTimeZone.getID();
+//                TimeZoneRegistry registry = TimeZoneRegistryFactory.getInstance().createRegistry();
+//                timezone = registry.getTimeZone(timezoneId);
+//            } catch (Exception rc) {
+//                final VTimeZone vTimeZone = new VTimeZone();
+//                timezone = new net.fortuna.ical4j.model.TimeZone(vTimeZone);
+//                final int rawOffset = prefereredTimeZone.getRawOffset();
+//                timezone.setRawOffset(rawOffset);
+//            }
+//        }
+//        Assert.notNull(timezone);
+//
+//        SynchronisationManager.logInfo("Using timezone: " + timezone.getDisplayName());
+//    }
 
     public static Appointment getAppointmentById(int id, ClientFacade facade) {
         // ignore not existing facade
@@ -150,53 +150,8 @@ public class ExchangeConnectorUtils {
         return sid;
     }
 
-    /**
-     * Translates a date coming from rapla into an exchange-conform instance
-     *
-     * @param date
-     * @return
-     */
-    public static Date translateRaplaToExchangeTime(Date date, java.util.TimeZone timeZone) {
-
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(date);
-        cal.setTimeZone(timeZone);
-        int offset = cal.getTimeZone().getOffset(date.getTime());
-        cal.add(Calendar.MILLISECOND, -offset);
-
-        return cal.getTime();
-    }
-
-
-    public static Date translateRaplaToExchangeTime(Date date) {
-        //return date;
-        return translateRaplaToExchangeTime(date, timezone);
-    }
-
-    /**
-     * Translates a date coming from exchange into a rapla-conform instance
-     * <p/>
-     * Exchange expects to be in local time (why ever) so it adds 2 hours to given time.
-     * hence we have to subtract 2 hour from given utc to be correct again
-     * <p/>
-     * Rapla stores all dates in GMT, hence transfering it to Exchange which has Time
-     *
-     * @param date
-     * @return
-     */
-
-    public static Date translateExchangeToRaplaTime(Date date, java.util.TimeZone timeZone) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        calendar.setTimeZone(timeZone);
-        int offset = calendar.getTimeZone().getOffset(date.getTime());
-        calendar.add(Calendar.MILLISECOND, +offset);
-        return calendar.getTime();
-    }
-
-    public static Date translateExchangeToRaplaTime(Date start) {
-        return translateExchangeToRaplaTime(start, timezone);
-    }
+   
+    
 /*
     public static void updateAppointment(RaplaContext context, ClientFacade clientFacade, Appointment appointment, String exchangeId) throws Exception {
         SynchronisationManager.logInfo("add/updating " + appointment + " with exchangeid  " + exchangeId);
