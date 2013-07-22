@@ -33,6 +33,7 @@ import microsoft.exchange.webservices.data.SendInvitationsMode;
 import microsoft.exchange.webservices.data.SendInvitationsOrCancellationsMode;
 import microsoft.exchange.webservices.data.ServiceLocalException;
 
+import org.rapla.components.util.DateTools;
 import org.rapla.entities.User;
 import org.rapla.entities.configuration.RaplaConfiguration;
 import org.rapla.entities.domain.Allocatable;
@@ -185,9 +186,18 @@ class AddUpdateWorker extends EWSWorker {
         }
 
         RaplaLocale raplaLocale = getContext().lookup(RaplaLocale.class);
-		TimeZone timeZone = raplaLocale.getImportExportTimeZone();
-        final Date startDate = raplaLocale.fromRaplaTime(timeZone, raplaAppointment.getStart());
-        final Date endDate = raplaLocale.fromRaplaTime(timeZone, raplaAppointment.getEnd());
+        TimeZone timeZone = raplaLocale.getImportExportTimeZone();
+        Date startDate = raplaLocale.fromRaplaTime(timeZone, raplaAppointment.getStart());
+        Date endDate = raplaLocale.fromRaplaTime(timeZone, raplaAppointment.getEnd());
+
+        long offset = - startDate.getTime() + raplaAppointment.getStart().getTime();
+        startDate = new Date(startDate.getTime() - offset);
+        endDate = new Date(endDate.getTime() - offset);
+
+
+        //SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss-Z");
+        //Date startDate = formatter.parse("2013-07-17 10:30:00-UTC");
+        //Date endDate = formatter.parse("2013-07-17 11:30:00-UTC");
 
         exchangeAppointment.setStart(startDate);
         exchangeAppointment.setEnd(endDate);

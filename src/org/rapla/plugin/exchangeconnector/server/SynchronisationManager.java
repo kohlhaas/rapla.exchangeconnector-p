@@ -89,7 +89,7 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
                 returnMessage = "Your registration was successful! " + ExchangeAccountInformationStorage.getInstance().getSMTPAddressForRaplaUser(raplaUsername);
 
             } catch (Exception e) {
-                returnMessage = "An error occurred - You are not registered!";
+                returnMessage = "An error occurred - You are not registered!\n\n"+e.getMessage();
 
                 getLogger().error(e.getMessage(),e);
 			} 

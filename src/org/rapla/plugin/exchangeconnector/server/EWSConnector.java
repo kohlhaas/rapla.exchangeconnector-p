@@ -90,7 +90,7 @@ public class EWSConnector {
      * @throws Exception
      */
     private void setService() throws Exception {
-        ExchangeService tmpService = new ExchangeService(ExchangeVersion.Exchange2010_SP1, DateTools.getTimeZone());
+        ExchangeService tmpService = new ExchangeService(ExchangeVersion.Exchange2010_SP1); //, DateTools.getTimeZone());//, DateTools.getTimeZone());
 
         tmpService.setCredentials(getCredentials());
         tmpService.setTimeout(SERVICE_DEFAULT_TIMEOUT);
