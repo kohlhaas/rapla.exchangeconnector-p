@@ -2,6 +2,7 @@ package org.rapla.plugin.exchangeconnector.server.worker;
 
 import org.rapla.entities.RaplaObject;
 import org.rapla.entities.User;
+import org.rapla.entities.configuration.Preferences;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.Reservation;
 import org.rapla.entities.dynamictype.DynamicType;
@@ -13,7 +14,6 @@ import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorUtils;
-import org.rapla.plugin.exchangeconnector.server.SynchronisationManager;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 
 import java.util.Date;
@@ -26,7 +26,6 @@ public class AppointmentTask extends RaplaComponent {
     public AppointmentTask(RaplaContext context) {
         super(context);
     }
-
 
 
     private synchronized void deleteAppointments(Set<RaplaObject> removed) throws RaplaException {
@@ -96,9 +95,9 @@ public class AppointmentTask extends RaplaComponent {
             if (appointment != null) {
                 final String exchangeId = ExchangeAppointmentStorage.getInstance().getExchangeId(appointmentSID.getKey());
                 final AddUpdateWorker worker = new AddUpdateWorker(
-                            getContext(),
-                            appointment
-                            );
+                        getContext(),
+                        appointment
+                );
                 worker.perform(appointment, exchangeId);
             }
         } catch (Exception e) {
@@ -123,15 +122,21 @@ public class AppointmentTask extends RaplaComponent {
             if (importEventType != null && reservationType.getElementKey().equals(importEventType.getElementKey())) {
                 getLogger().info("Skipping appointment of type " + reservationType + " because is type of item pulled from exchange");
             } else {
-                final String exportableTypes = clientFacade.getPreferences(appointment.getOwner()).getEntryAsString(ExchangeConnectorPlugin.EXPORT_EVENT_TYPE_KEY, null);
-                if (exportableTypes == null) {
-                    getLogger().info("Skipping appointment of type " + reservationType + " because filter is not defined");
-                } else {
-                    if (!exportableTypes.contains(reservationType.getElementKey())) {
-                        getLogger().info("Skipping appointment of type " + reservationType + " because filtered out by user");
+                User owner = appointment.getOwner();
+                if (owner != null) {
+                    Preferences preferences = clientFacade.getPreferences(owner);
+                    final String exportableTypes = preferences.getEntryAsString(ExchangeConnectorPlugin.EXPORT_EVENT_TYPE_KEY, null);
+                    if (exportableTypes == null) {
+                        getLogger().info("Skipping appointment of type " + reservationType + " because filter is not defined for appointment owner " + owner.getUsername());
                     } else {
-                        result = true;
+                        if (!exportableTypes.contains(reservationType.getElementKey())) {
+                            getLogger().info("Skipping appointment of type " + reservationType + " because filtered out by owner " + owner.getUsername());
+                        } else {
+                            result = true;
+                        }
                     }
+                } else {
+                    getLogger().warn("Skipping appointment of type " + reservationType + " because owner is not defined");
                 }
             }
         }
@@ -154,7 +159,7 @@ public class AppointmentTask extends RaplaComponent {
                 }
             }
         } catch (Exception e) {
-            getLogger().error(e.getMessage(),e);
+            getLogger().error(e.getMessage(), e);
         }
 
     }
