@@ -136,12 +136,6 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
         getLogger().debug("Invoked data change handler for " + evt.getChanged().size() + " objects");
         final AppointmentTask reservationChangedTask = new AppointmentTask(getContext());
         reservationChangedTask.synchronize(evt);
-
-/*
-        Thread changeHandlerThread = new Thread(new ChangeHandler(evt, clientFacade), "ChangeHandlerThread");
-        //changeHandlerThread.start();
-        changeHandlerThread.run();
-*/
     }
 
     public boolean isInvokedOnAWTEventQueue() {

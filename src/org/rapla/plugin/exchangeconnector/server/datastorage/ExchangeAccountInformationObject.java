@@ -95,7 +95,7 @@ public class ExchangeAccountInformationObject implements Serializable {
 	}
 	
 	/**
-	 * @return {@link ExchangeUsername} the exchangeUsername
+	 * @return the exchangeUsername
 	 */
 	private String getExchangeUsername() {
 		return exchangeUsername;

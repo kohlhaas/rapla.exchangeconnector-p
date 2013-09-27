@@ -105,9 +105,17 @@ public class AppointmentTask extends RaplaComponent {
         }
     }
 
-    public synchronized void synchronize(ModificationEvent evt) throws RaplaException {
-        addOrUpdateAppointments(evt.getChanged());
-        deleteAppointments(evt.getRemoved());
+    public synchronized void synchronize(ModificationEvent evt)  {
+        try {
+            addOrUpdateAppointments(evt.getChanged());
+        } catch (RaplaException e) {
+            getLogger().error(e.getMessage(), e);
+        }
+        try {
+            deleteAppointments(evt.getRemoved());
+        } catch (RaplaException e) {
+            getLogger().error(e.getMessage(), e);
+        }
     }
 
     private synchronized boolean check(Appointment appointment) throws RaplaException {
