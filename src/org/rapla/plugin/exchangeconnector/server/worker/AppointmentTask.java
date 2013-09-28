@@ -83,31 +83,39 @@ public class AppointmentTask extends RaplaComponent {
     }
 
     public synchronized void addOrUpdateAppointments(Set<RaplaObject> appointmentSet) throws RaplaException {
+        final User[] users = getClientFacade().getUsers();
+
         for (RaplaObject raplaObject : appointmentSet) {
             if (raplaObject instanceof Appointment) {
                 Appointment appointment = (Appointment) raplaObject;
-                Allocatable[] allocatablesFor = appointment.getReservation().getAllocatablesFor(appointment);
-                for (Allocatable allocatable : allocatablesFor) {
-                    final Classification classification = allocatable.getClassification();
-                    final Attribute attribute = classification.getAttribute(ExchangeConnectorPlugin.RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL_KEY);
-                    if (allocatable.isPerson() && attribute != null) {
-                        User user = getUserForEmail(classification.getValueAsString(attribute, getRaplaLocale()));
-                        if (user != null && check(user, appointment))
-                            addOrUpdateAppointment(user, appointment);
+                // check appointment and owner preferences
+                //todo: replace owner by rapla user if not available
+                //up to new only booked resources are informed
+                if (check(appointment))
+                {
+                    Allocatable[] allocatablesFor = appointment.getReservation().getAllocatablesFor(appointment);
+                    for (Allocatable allocatable : allocatablesFor) {
+                        final Classification classification = allocatable.getClassification();
+                        final Attribute attribute = classification.getAttribute(ExchangeConnectorPlugin.RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL);
+                        if (allocatable.isPerson() && attribute != null) {
+                            User user = getUserForEmail(users, classification.getValueAsString(attribute, getRaplaLocale().getLocale()));
+                            // now check if user has prefs allowing to notify him
+                            if (user != null && checkUser(user, appointment)) {
+                                addOrUpdateAppointment(appointment);
+                            }
+                        }
                     }
                 }
-                if (check(appointment))
-                    addOrUpdateAppointment(appointment);
             }
         }
     }
 
-    private synchronized User getUserForEmail(String email) throws RaplaException {
+    private static synchronized User getUserForEmail(User[] users, String email) throws RaplaException {
         User result = null;
 
         if (email != null && !email.isEmpty()) {
             // todo: do this more efficient
-            final User[] users = getClientFacade().getUsers();
+
             for (User user : users) {
                 if (user.getEmail().equalsIgnoreCase(email)) {
                     result = user;
@@ -135,17 +143,15 @@ public class AppointmentTask extends RaplaComponent {
     }
 
     public synchronized void synchronize(ModificationEvent evt) {
-        if (evt.isModified()) {
-            try {
-                addOrUpdateAppointments(evt.getChanged());
-            } catch (RaplaException e) {
-                getLogger().error(e.getMessage(), e);
-            }
-            try {
-                deleteAppointments(evt.getRemoved());
-            } catch (RaplaException e) {
-                getLogger().error(e.getMessage(), e);
-            }
+        try {
+            addOrUpdateAppointments(evt.getChanged());
+        } catch (RaplaException e) {
+            getLogger().error(e.getMessage(), e);
+        }
+        try {
+            deleteAppointments(evt.getRemoved());
+        } catch (RaplaException e) {
+            getLogger().error(e.getMessage(), e);
         }
     }
 
@@ -161,59 +167,43 @@ public class AppointmentTask extends RaplaComponent {
             if (importEventType != null && reservationType.getElementKey().equals(importEventType.getElementKey())) {
                 getLogger().info("Skipping appointment of type " + reservationType + " because is type of item pulled from exchange");
             } else {
-                User owner = user;
-                if (owner != null) {
-                    Preferences preferences = clientFacade.getPreferences(owner);
-                    final String exportableTypes = preferences.getEntryAsString(ExchangeConnectorPlugin.EXPORT_EVENT_TYPE_KEY, null);
-                    if (exportableTypes == null) {
-                        getLogger().info("Skipping appointment of type " + reservationType + " because filter is not defined for appointment owner " + owner.getUsername());
-                    } else {
-                        if (!exportableTypes.contains(reservationType.getElementKey())) {
-                            getLogger().info("Skipping appointment of type " + reservationType + " because filtered out by owner " + owner.getUsername());
-                        } else {
-                            result = true;
-                        }
-                    }
-                } else {
-                    getLogger().warn("Skipping appointment of type " + reservationType + " because owner is not defined");
-                }
+                result = checkUser(user, appointment);
             }
+        }
+        return result;
+    }
+
+    private synchronized boolean checkUser(User user, Appointment appointment) throws RaplaException {
+        boolean result = false;
+        final ClientFacade clientFacade = getClientFacade();
+        final DynamicType reservationType = appointment.getReservation().getClassification().getType();
+
+        if (user != null) {
+            Preferences preferences = clientFacade.getPreferences(user);
+            if (preferences != null) {
+                final String exportableTypes = preferences.getEntryAsString(ExchangeConnectorPlugin.EXPORT_EVENT_TYPE_KEY, null);
+                if (exportableTypes == null) {
+                    getLogger().info("Skipping appointment of type " + reservationType + " because filter is not defined for appointment user " + user.getUsername());
+                } else {
+                    if (!exportableTypes.contains(reservationType.getElementKey())) {
+                        getLogger().info("Skipping appointment of type " + reservationType + " because filtered out by user " + user.getUsername());
+                    } else {
+                        result = true;
+                    }
+                }
+            } else {
+                getLogger().warn("Skipping appointment of type " + reservationType + " because user " + user.getUsername() + " has no preferences");
+            }
+        } else {
+            getLogger().warn("Skipping appointment of type " + reservationType + " because user is not defined");
         }
         return result;
     }
 
 
     private synchronized boolean check(Appointment appointment) throws RaplaException {
-        boolean result = false;
-        if (appointment.getStart().before(ExchangeConnectorPlugin.getSynchingPeriodPast(new Date())) || appointment.getStart().after(ExchangeConnectorPlugin.getSynchingPeriodFuture(new Date()))) {
-            getLogger().info("Skipping update of appointment " + appointment + " because is date of item is out of range");
-        } else {
-            final ClientFacade clientFacade = getClientFacade();
-            final DynamicType importEventType = ExchangeConnectorPlugin.getImportEventType(clientFacade);
-            final DynamicType reservationType = appointment.getReservation().getClassification().getType();
-
-            if (importEventType != null && reservationType.getElementKey().equals(importEventType.getElementKey())) {
-                getLogger().info("Skipping appointment of type " + reservationType + " because is type of item pulled from exchange");
-            } else {
-                User owner = appointment.getOwner();
-                if (owner != null) {
-                    Preferences preferences = clientFacade.getPreferences(owner);
-                    final String exportableTypes = preferences.getEntryAsString(ExchangeConnectorPlugin.EXPORT_EVENT_TYPE_KEY, null);
-                    if (exportableTypes == null) {
-                        getLogger().info("Skipping appointment of type " + reservationType + " because filter is not defined for appointment owner " + owner.getUsername());
-                    } else {
-                        if (!exportableTypes.contains(reservationType.getElementKey())) {
-                            getLogger().info("Skipping appointment of type " + reservationType + " because filtered out by owner " + owner.getUsername());
-                        } else {
-                            result = true;
-                        }
-                    }
-                } else {
-                    getLogger().warn("Skipping appointment of type " + reservationType + " because owner is not defined");
-                }
-            }
-        }
-        return result;
+        User owner = appointment.getOwner();
+        return check(owner, appointment);
     }
 
     public synchronized void downloadUserAppointments(User user) {
