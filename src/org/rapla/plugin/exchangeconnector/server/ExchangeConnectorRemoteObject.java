@@ -43,6 +43,11 @@ public class ExchangeConnectorRemoteObject implements ExchangeConnectorRemote, R
 		return SynchronisationManager.getInstance().completeReconciliation();
 	}
 
+    @Override
+    public String synchronizeUser(String raplaUsername) throws RaplaException {
+        return  SynchronisationManager.getInstance().synchronizeUser(raplaUsername);
+    }
+
     public boolean isExchangeAvailable() throws RaplaException {
         return SynchronisationManager.getInstance().isExchangeAvailable();
     }

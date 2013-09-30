@@ -17,15 +17,24 @@
 	<text lang="en">Password on Exchange-Server</text>
 	<text lang="de">Passwort auf dem Exchange-Server</text>
 </entry>
-<entry key ="username.server">
-	<text lang="en">Username on Exchange-Server</text>
-	<text lang="de">Username auf dem Exchange-Server</text>
+    <entry key ="username.server">
+        <text lang="en">Username on Exchange-Server</text>
+        <text lang="de">Username auf dem Exchange-Server</text>
+    </entry>
+<entry key ="button.sync.user">
+	<text lang="en">Synchronize Rapla to Exchange</text>
+	<text lang="de">Existierende Raplatermine nach Exchange übertragen</text>
 </entry>
+    <entry key ="button.sync">
+        <text lang="en">Synchronize</text>
+        <text lang="de">Synchronisieren</text>
+    </entry>
+
 <entry key="category.filter">
 	<text lang="en">Exchange Category Filter</text>
 	<text lang="de">Nur Termine mit der folgenden Kategorie importieren</text>
 </entry>
-<entry key="button.sync">
+<entry key="button.sync.all">
 	<text lang="en">(Re-)Sync all</text>
 	<text lang="de">Alle (re-)synchronisieren</text>
 </entry>

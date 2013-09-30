@@ -1,7 +1,5 @@
 package org.rapla.plugin.exchangeconnector.server;
 
-import java.util.Timer;
-
 import org.rapla.facade.AllocationChangeEvent;
 import org.rapla.facade.AllocationChangeListener;
 import org.rapla.facade.ClientFacade;
@@ -10,7 +8,6 @@ import org.rapla.facade.ModificationListener;
 import org.rapla.facade.RaplaComponent;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
-import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAccountInformationStorage;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 import org.rapla.plugin.exchangeconnector.server.worker.AppointmentTask;
@@ -85,7 +82,7 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 			try {
                 ExchangeAccountInformationStorage.getInstance().addAccount(raplaUsername, exchangeUsername, exchangePassword, downloadFromExchange);
 
-                syncUser(raplaUsername);
+                synchronizeUser(raplaUsername);
                 returnMessage = "Your registration was successful! " + ExchangeAccountInformationStorage.getInstance().getSMTPAddressForRaplaUser(raplaUsername);
 
             } catch (Exception e) {
@@ -96,11 +93,11 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 		return returnMessage;
 	}
 
-	private void syncUser(String raplaUsername) throws RaplaException {
+	protected void synchronizeUser(String raplaUsername) throws RaplaException {
         getLogger().debug("Invoked change sync for user " + raplaUsername);
         final AppointmentTask task = new AppointmentTask(getContext());
-        task.downloadUserAppointments(getClientFacade().getUser(raplaUsername));
-        
+        task.synchronizeUser(getClientFacade().getUser(raplaUsername));
+        return ""
 	}
 
 	public String removeExchangeUser(String raplaUsername) throws RaplaException{
@@ -169,4 +166,6 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
             ExchangeAccountInformationStorage.getInstance().save();
         return result;
     }
+
+
 }

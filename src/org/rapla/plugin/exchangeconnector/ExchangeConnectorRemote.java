@@ -36,6 +36,16 @@ public interface ExchangeConnectorRemote {
 	public String completeReconciliation() throws RaplaException;
 
     /**
+     * sync an Exchange user
+     *
+     * @param raplaUsername
+     * @return {@link ClientMessage}
+     * @throws RaplaException
+     */
+    public String synchronizeUser(String raplaUsername) throws RaplaException;
+
+
+    /**
      * checks wether exchange is available
      * @return true, if service is available und connected
      * @throws RaplaException

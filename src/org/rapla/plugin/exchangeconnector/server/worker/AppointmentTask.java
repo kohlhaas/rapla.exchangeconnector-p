@@ -8,6 +8,7 @@ import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.Reservation;
 import org.rapla.entities.dynamictype.Attribute;
 import org.rapla.entities.dynamictype.Classification;
+import org.rapla.entities.dynamictype.ClassificationFilter;
 import org.rapla.entities.dynamictype.DynamicType;
 import org.rapla.entities.storage.internal.SimpleIdentifier;
 import org.rapla.facade.ClientFacade;
@@ -19,9 +20,7 @@ import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorUtils;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 
 public class AppointmentTask extends RaplaComponent {
@@ -91,8 +90,7 @@ public class AppointmentTask extends RaplaComponent {
                 // check appointment and owner preferences
                 //todo: replace owner by rapla user if not available
                 //up to new only booked resources are informed
-                if (check(appointment))
-                {
+                if (check(appointment)) {
                     Allocatable[] allocatablesFor = appointment.getReservation().getAllocatablesFor(appointment);
                     for (Allocatable allocatable : allocatablesFor) {
                         final Classification classification = allocatable.getClassification();
@@ -206,24 +204,53 @@ public class AppointmentTask extends RaplaComponent {
         return check(owner, appointment);
     }
 
-    public synchronized void downloadUserAppointments(User user) {
-        final Date from = ExchangeConnectorPlugin.getSynchingPeriodPast(new Date());
-        final Date to = ExchangeConnectorPlugin.getSynchingPeriodFuture(new Date());
+    public synchronized int synchronizeUser(User user) throws RaplaException {
 
-        try {
-
-            for (Reservation reservation : getClientFacade().getReservations(user, from, to, null)) {
-
-                for (Appointment appointment : reservation.getAppointments()) {
-                    if (ExchangeAppointmentStorage.getInstance().appointmentExists(appointment)) {
-                        deleteAppointment(appointment);
-                    }
-                    addOrUpdateAppointment(appointment);
+        //todo: add filter
+        int result = -1;
+        final Preferences preferences = getClientFacade().getPreferences(user);
+        if (preferences != null) {
+            final String exportableTypes = preferences.getEntryAsString(ExchangeConnectorPlugin.EXPORT_EVENT_TYPE_KEY, null);
+            if (exportableTypes == null || exportableTypes.trim().isEmpty()) {
+                getLogger().info("Skipping sync at adduser because filter is not defined for user " + user.getUsername());
+            } else {
+                // get reservation type filters
+                String[] reservationTypeKeys = exportableTypes.trim().split(",");
+                List<ClassificationFilter> reservationTypeFilters = new ArrayList<ClassificationFilter>(reservationTypeKeys.length);
+                for (String reservationTypeKey : reservationTypeKeys) {
+                    ClassificationFilter reservationTypeFilter = getClientFacade().getDynamicType(reservationTypeKey).newClassificationFilter();
+                    reservationTypeFilters.add(reservationTypeFilter);
                 }
+
+                try {
+                    result = 0;
+                    //get all reservations within from/to wrt. selected filters
+
+                    final ClassificationFilter[] filter = reservationTypeFilters.toArray(new ClassificationFilter[reservationTypeFilters.size()]);
+                    final Date from = ExchangeConnectorPlugin.getSynchingPeriodPast(new Date());
+                    final Date to = ExchangeConnectorPlugin.getSynchingPeriodFuture(new Date());
+                    final Reservation[] reservations = getClientFacade().getReservations(user, from, to, filter);
+                    //iterate through all reservations and delete old existing, re-add them to exchange
+                    for (Reservation reservation : reservations) {
+
+                        for (Appointment appointment : reservation.getAppointments()) {
+                            if (ExchangeAppointmentStorage.getInstance().appointmentExists(appointment)) {
+                                deleteAppointment(appointment);
+                            }
+                            addOrUpdateAppointment(appointment);
+                            result ++;
+                        }
+                    }
+                } catch (Exception e) {
+                    getLogger().error(e.getMessage(), e);
+                }
+
             }
-        } catch (Exception e) {
-            getLogger().error(e.getMessage(), e);
+
+        } else {
+            getLogger().warn("Skipping appointment at adduser because user " + user.getUsername() + " has no preferences");
         }
+        return result;
 
     }
 }

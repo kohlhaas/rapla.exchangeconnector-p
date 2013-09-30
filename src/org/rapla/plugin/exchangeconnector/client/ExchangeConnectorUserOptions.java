@@ -4,17 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Locale;
 
-import javax.swing.DefaultListModel;
-import javax.swing.JCheckBox;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JScrollPane;
-import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
+import javax.swing.*;
 
 import org.rapla.components.layout.TableLayout;
 import org.rapla.entities.configuration.Preferences;
@@ -223,6 +213,27 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
         this.optionsPanel.add(this.passwordTextField, "3,4");
         this.optionsPanel.add(this.eventTypesLabel, "1,6");
         this.optionsPanel.add(new JScrollPane(this.eventTypesList), "3,6");
+        this.optionsPanel.add(new JLabel("Re-Sync User"), "1, 8");
+        final JButton syncButton = new JButton("Re-Sync User");
+        syncButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                 if (JOptionPane.showConfirmDialog(getMainComponent(),
+                         getString("button.sync.user.confirm"))==JOptionPane.YES_OPTION) {
+                     try {
+                         final String returnedMessageString = getWebservice(ExchangeConnectorRemote.class).synchronizeUser(preferences.getOwner().getUsername());
+                         JOptionPane.showMessageDialog(
+                                 getMainComponent(), returnedMessageString, "Information", JOptionPane.INFORMATION_MESSAGE);
+                     } catch (RaplaException e) {
+                         JOptionPane.showMessageDialog(
+                                 getMainComponent(), e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+
+                         getLogger().error("The operation was not successful!", e);
+                     }
+                 }
+            }
+        });
+        this.optionsPanel.add(syncButton, "3, 8");
       //  this.optionsPanel.add(this.downloadFromExchangeBox, "1,8");
         //this.optionsPanel.add(this.filterCategoryLabel, "1,10");
         //this.optionsPanel.add(this.filterCategoryField, "3,10");
