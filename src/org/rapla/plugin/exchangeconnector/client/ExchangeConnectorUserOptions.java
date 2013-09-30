@@ -224,11 +224,11 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
                          final String returnedMessageString = getWebservice(ExchangeConnectorRemote.class).synchronizeUser(preferences.getOwner().getUsername());
                          JOptionPane.showMessageDialog(
                                  getMainComponent(), returnedMessageString, "Information", JOptionPane.INFORMATION_MESSAGE);
-                     } catch (RaplaException e) {
+                     } catch (RaplaException ex) {
                          JOptionPane.showMessageDialog(
-                                 getMainComponent(), e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                                 getMainComponent(), ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 
-                         getLogger().error("The operation was not successful!", e);
+                         getLogger().error("The operation was not successful!", ex);
                      }
                  }
             }

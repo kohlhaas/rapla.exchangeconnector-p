@@ -93,11 +93,11 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 		return returnMessage;
 	}
 
-	protected void synchronizeUser(String raplaUsername) throws RaplaException {
+	protected String synchronizeUser(String raplaUsername) throws RaplaException {
         getLogger().debug("Invoked change sync for user " + raplaUsername);
         final AppointmentTask task = new AppointmentTask(getContext());
         task.synchronizeUser(getClientFacade().getUser(raplaUsername));
-        return ""
+        return "";
 	}
 
 	public String removeExchangeUser(String raplaUsername) throws RaplaException{
