@@ -213,8 +213,8 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
         this.optionsPanel.add(this.passwordTextField, "3,4");
         this.optionsPanel.add(this.eventTypesLabel, "1,6");
         this.optionsPanel.add(new JScrollPane(this.eventTypesList), "3,6");
-        this.optionsPanel.add(new JLabel("Re-Sync User"), "1, 8");
-        final JButton syncButton = new JButton("Re-Sync User");
+       // this.optionsPanel.add(new JLabel("Re-Sync User"), "1, 8");
+/*        final JButton syncButton = new JButton("Re-Sync User");
         syncButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -232,8 +232,8 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
                      }
                  }
             }
-        });
-        this.optionsPanel.add(syncButton, "3, 8");
+        });   */
+      //  this.optionsPanel.add(syncButton, "3, 8");
       //  this.optionsPanel.add(this.downloadFromExchangeBox, "1,8");
         //this.optionsPanel.add(this.filterCategoryLabel, "1,10");
         //this.optionsPanel.add(this.filterCategoryField, "3,10");
