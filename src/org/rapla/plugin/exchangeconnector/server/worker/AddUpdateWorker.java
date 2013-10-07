@@ -46,6 +46,7 @@ import org.rapla.facade.internal.CalendarOptionsImpl;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.framework.RaplaLocale;
+import org.rapla.framework.logger.Logger;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorUtils;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
@@ -88,6 +89,9 @@ class AddUpdateWorker extends EWSWorker {
     public void perform(Appointment raplaAppointment, String exchangeId) throws Exception {
 
         if (raplaAppointment != null && getService() != null) {
+        	long time = System.currentTimeMillis();
+        	Logger logger = getLogger().getChildLogger("exchangeupdate");
+        	logger.info("Updating appointment " + raplaAppointment);
             microsoft.exchange.webservices.data.Appointment exchangeAppointment = getEquivalentExchangeAppointment(exchangeId, raplaAppointment);
 
             setExchangeRecurrence(raplaAppointment, exchangeAppointment);
@@ -103,7 +107,7 @@ class AddUpdateWorker extends EWSWorker {
             saveToStorageManager(raplaAppointment, exchangeAppointment);
 
             removeRecurrenceExceptions(raplaAppointment, exchangeAppointment);
-
+            logger.info("Updated appointment " + raplaAppointment  + " took " + (System.currentTimeMillis()- time) + " ms " );
         }
     }
 

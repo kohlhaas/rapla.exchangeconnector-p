@@ -3,10 +3,16 @@
  */
 package org.rapla.plugin.exchangeconnector.server.worker;
 
-import microsoft.exchange.webservices.data.*;
+import microsoft.exchange.webservices.data.Appointment;
+import microsoft.exchange.webservices.data.DeleteMode;
+import microsoft.exchange.webservices.data.ItemId;
+import microsoft.exchange.webservices.data.SendCancellationsMode;
+import microsoft.exchange.webservices.data.ServiceResponseException;
+
 import org.rapla.entities.User;
 import org.rapla.entities.storage.internal.SimpleIdentifier;
 import org.rapla.framework.RaplaContext;
+import org.rapla.framework.logger.Logger;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 
 
@@ -34,6 +40,9 @@ import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointment
      */
     public synchronized void perform(SimpleIdentifier identifier) throws Exception {
         if (!ExchangeAppointmentStorage.getInstance().isExternalAppointment(identifier.getKey())) {
+        	Logger logger = getLogger().getChildLogger("exchangeupdate");
+        	long time = System.currentTimeMillis();
+        	logger.info("Deleting appointment with id " + identifier);
 
             String exchangeId = ExchangeAppointmentStorage.getInstance().getExchangeId(identifier.getKey());
             if (exchangeId == null || "".equals(exchangeId))
@@ -58,6 +67,7 @@ import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointment
             //remove it from the "to-be-removed"-list
             ExchangeAppointmentStorage.getInstance().removeAppointment(identifier.getKey());
             ExchangeAppointmentStorage.getInstance().save();
+        	logger.info("Delted appointment with id " + identifier + " took " + (System.currentTimeMillis()- time) + " ms " );
         }
     }
 

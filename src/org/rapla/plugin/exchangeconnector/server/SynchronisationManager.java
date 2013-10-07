@@ -1,7 +1,5 @@
 package org.rapla.plugin.exchangeconnector.server;
 
-import org.rapla.facade.AllocationChangeEvent;
-import org.rapla.facade.AllocationChangeListener;
 import org.rapla.facade.ClientFacade;
 import org.rapla.facade.ModificationEvent;
 import org.rapla.facade.ModificationListener;
@@ -19,7 +17,7 @@ import org.rapla.server.ServerExtension;
  * @see {@link ExchangeAppointmentStorage}
  * @see {@link ExchangeAccountInformationStorage}
  */
-public class SynchronisationManager extends RaplaComponent implements AllocationChangeListener, ModificationListener, ServerExtension {
+public class SynchronisationManager extends RaplaComponent implements ModificationListener, ServerExtension {
 	private static SynchronisationManager synchronisationManagerInstance;
 
     /**
@@ -33,7 +31,7 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
         synchronisationManagerInstance = this;
 		
 		final ClientFacade clientFacade =  context.lookup(ClientFacade.class);
-		clientFacade.addAllocationChangedListener(this);
+		clientFacade.addModificationListener(this);
 
         //final Timer scheduledDownloadTimer = new Timer("ScheduledDownloadThread",true);
         //scheduledDownloadTimer.schedule(new ScheduledDownloadHandler(context, clientFacade, getLogger()), 30000, ExchangeConnectorPlugin.PULL_FREQUENCY*1000);
@@ -63,16 +61,6 @@ public class SynchronisationManager extends RaplaComponent implements Allocation
 	/*public static void logException(Exception e){
 		SynchronisationManager.getInstance().getLogger().error("Exception in the ExchangeConnector Plugin: ", e);
 	}*/
-
-	/**
-	 * This method is called when an appointment change has been triggered
-	 * 
-	 * @param changeEvents : Array of {@link AllocationChangeEvent} with all changes that happened
-	 * @see org.rapla.facade.AllocationChangeListener#changed(org.rapla.facade.AllocationChangeEvent[])
-	 */
-	public synchronized void changed(AllocationChangeEvent[] changeEvents) {
-
-	}
 	
 	public String addExchangeUser(String raplaUsername, String exchangeUsername, String exchangePassword, Boolean downloadFromExchange) {
         getLogger().debug("Invoked add exchange user for rapla " + raplaUsername + " with exchange user " + exchangeUsername);
