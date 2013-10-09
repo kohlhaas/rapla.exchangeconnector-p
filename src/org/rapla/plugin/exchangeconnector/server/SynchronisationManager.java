@@ -5,7 +5,10 @@ import org.rapla.facade.ModificationEvent;
 import org.rapla.facade.ModificationListener;
 import org.rapla.facade.RaplaComponent;
 import org.rapla.framework.RaplaContext;
+import org.rapla.framework.RaplaContextException;
+import org.rapla.framework.RaplaDefaultContext;
 import org.rapla.framework.RaplaException;
+import org.rapla.framework.logger.Logger;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAccountInformationStorage;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 import org.rapla.plugin.exchangeconnector.server.worker.AppointmentTask;
@@ -35,6 +38,14 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 
         //final Timer scheduledDownloadTimer = new Timer("ScheduledDownloadThread",true);
         //scheduledDownloadTimer.schedule(new ScheduledDownloadHandler(context, clientFacade, getLogger()), 30000, ExchangeConnectorPlugin.PULL_FREQUENCY*1000);
+	}
+	
+	public static RaplaContext createLoggerContext(RaplaContext context) throws RaplaContextException
+	{
+		Logger logger = context.lookup(Logger.class);
+		RaplaDefaultContext newContext = new RaplaDefaultContext( context);
+		newContext.put(Logger.class, logger.getChildLogger("exchange"));
+		return newContext;
 	}
 
 
