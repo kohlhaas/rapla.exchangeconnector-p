@@ -30,7 +30,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 	 * @throws RaplaException
 	 */
 	public SynchronisationManager(RaplaContext context) throws RaplaException {
-		super(context);
+		super(createLoggerContext(context));
         synchronisationManagerInstance = this;
 		
 		final ClientFacade clientFacade =  context.lookup(ClientFacade.class);
