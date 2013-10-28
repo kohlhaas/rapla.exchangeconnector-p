@@ -156,14 +156,14 @@ public class AppointmentTask extends RaplaComponent {
     private synchronized boolean check(User user, Appointment appointment) throws RaplaException {
         boolean result = false;
         if (appointment.getStart().before(ExchangeConnectorPlugin.getSynchingPeriodPast(new Date())) || appointment.getStart().after(ExchangeConnectorPlugin.getSynchingPeriodFuture(new Date()))) {
-            getLogger().info("Skipping update of appointment " + appointment + " because is date of item is out of range");
+            getLogger().debug("Skipping update of appointment " + appointment + " because is date of item is out of range");
         } else {
             final ClientFacade clientFacade = getClientFacade();
             final DynamicType importEventType = ExchangeConnectorPlugin.getImportEventType(clientFacade);
             final DynamicType reservationType = appointment.getReservation().getClassification().getType();
 
             if (importEventType != null && reservationType.getElementKey().equals(importEventType.getElementKey())) {
-                getLogger().info("Skipping appointment of type " + reservationType + " because is type of item pulled from exchange");
+                getLogger().debug("Skipping appointment of type " + reservationType + " because is type of item pulled from exchange");
             } else {
                 result = checkUser(user, appointment);
             }
@@ -181,10 +181,10 @@ public class AppointmentTask extends RaplaComponent {
             if (preferences != null) {
                 final String exportableTypes = preferences.getEntryAsString(ExchangeConnectorPlugin.EXPORT_EVENT_TYPE_KEY, null);
                 if (exportableTypes == null) {
-                    getLogger().info("Skipping appointment of type " + reservationType + " because filter is not defined for appointment user " + user.getUsername());
+                    getLogger().debug("Skipping appointment of type " + reservationType + " because filter is not defined for appointment user " + user.getUsername());
                 } else {
                     if (!exportableTypes.contains(reservationType.getElementKey())) {
-                        getLogger().info("Skipping appointment of type " + reservationType + " because filtered out by user " + user.getUsername());
+                        getLogger().debug("Skipping appointment of type " + reservationType + " because filtered out by user " + user.getUsername());
                     } else {
                         result = true;
                     }
