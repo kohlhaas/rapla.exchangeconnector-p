@@ -1,5 +1,6 @@
 package org.rapla.plugin.exchangeconnector.server.datastorage;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -304,12 +305,14 @@ public class ExchangeAppointmentStorage {
 	@SuppressWarnings("unchecked")
 	public boolean load() {
 		try {
-			FileInputStream fileInputStream = new FileInputStream(storageFilePath);
+			File file = new File(storageFilePath );
+			FileInputStream fileInputStream = new FileInputStream(file);
 			ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
 			Object appointmentsObject = objectInputStream.readObject();
 			if(appointmentsObject.getClass().equals(appointments.getClass()))
 				appointments = (HashMap<Integer, ExchangeAppointmentStorageObject>)appointmentsObject;
 			objectInputStream.close();
+			fileInputStream.close();
 			return true;
 		} catch (Exception e) {
 			return false;
@@ -322,10 +325,12 @@ public class ExchangeAppointmentStorage {
 	 */
 	public boolean save() {
 		try {
-			FileOutputStream fileOutputStream = new FileOutputStream(storageFilePath);
+			File file = new File(storageFilePath );
+			FileOutputStream fileOutputStream = new FileOutputStream(file);
 			ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
 			objectOutputStream.writeObject(appointments);
 			objectOutputStream.close();
+			fileOutputStream.close();
 			return true;
 		} catch (IOException e) {
 			return false;

@@ -3,6 +3,7 @@
  */
 package org.rapla.plugin.exchangeconnector.server.datastorage;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -21,7 +22,6 @@ import microsoft.exchange.webservices.data.WebCredentials;
 import org.rapla.entities.User;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.server.EWSConnector;
-import org.rapla.plugin.exchangeconnector.server.SynchronisationManager;
 
 
 /**
@@ -299,12 +299,14 @@ public class ExchangeAccountInformationStorage {
 	@SuppressWarnings("unchecked")
 	public boolean load() {
 		try {
-			FileInputStream fileInputStream = new FileInputStream(storageFilePath);
+			File file = new File(storageFilePath );
+			FileInputStream fileInputStream = new FileInputStream(file);
 			ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
 			Object accountInformationObject = objectInputStream.readObject();
 			if(accountInformationObject.getClass().equals(accountInformation.getClass()))
 				accountInformation = (HashMap<String, ExchangeAccountInformationObject>)accountInformationObject;
 			objectInputStream.close();
+			fileInputStream.close();
 			return true;
 		} catch (Exception e) {
 			return false;
@@ -317,10 +319,12 @@ public class ExchangeAccountInformationStorage {
 	 */
 	public boolean save() {
 		try {
+			File file = new File(storageFilePath );
 			FileOutputStream fileOutputStream = new FileOutputStream(storageFilePath);
 			ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
 			objectOutputStream.writeObject(accountInformation);
 			objectOutputStream.close();
+			fileOutputStream.close();
 			return true;
 		} catch (IOException e) {
 			return false;
