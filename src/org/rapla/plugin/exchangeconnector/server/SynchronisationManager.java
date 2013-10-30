@@ -134,10 +134,6 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
         reservationChangedTask.synchronize(evt);
     }
 
-    public boolean isInvokedOnAWTEventQueue() {
-		return false;
-	}
-
 /*
     public IMessageServer getMessageServer() {
         return messageServer;
