@@ -54,7 +54,7 @@ public class ExchangeConnectorUtils {
             return null;
         AbstractCachableOperator operator = (AbstractCachableOperator) facade.getOperator();
         SimpleIdentifier simpleIdentifier = new SimpleIdentifier(Appointment.TYPE, id);
-        RefEntity refEntity = operator.getCache().get(simpleIdentifier);
+        RefEntity refEntity = operator.tryResolve(simpleIdentifier);
         return (Appointment) refEntity;
     }
 
@@ -73,7 +73,7 @@ public class ExchangeConnectorUtils {
         if (facade == null)
             return null;
         AbstractCachableOperator operator = (AbstractCachableOperator) facade.getOperator();
-        RefEntity refEntity = operator.getCache().get(id);
+        RefEntity refEntity = operator.tryResolve(id);
         return refEntity;
     }
 
