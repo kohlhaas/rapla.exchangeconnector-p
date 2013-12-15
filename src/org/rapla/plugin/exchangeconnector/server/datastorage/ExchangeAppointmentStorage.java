@@ -8,23 +8,17 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 
 import org.rapla.components.util.TimeInterval;
 import org.rapla.entities.User;
 import org.rapla.entities.domain.Appointment;
-import org.rapla.entities.storage.RefEntity;
 import org.rapla.facade.RaplaComponent;
 import org.rapla.framework.Configuration;
 import org.rapla.framework.RaplaContext;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
-import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorUtils;
 import org.rapla.plugin.exchangeconnector.server.SynchronisationManager;
 import org.rapla.plugin.exchangeconnector.server.datastorage.SynchronizationTask.SyncStatus;
-
-import edu.emory.mathcs.backport.java.util.Collections;
 
 
 /**
@@ -96,8 +90,6 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		task.setStatus( newStatus );
 		save();
 	}
-
-
 	
 	/**
 	 * loads the file into the mapping table
@@ -137,90 +129,4 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 			return false;
 		}
 	}
-
-	
-
-
-
-	
-
-	/**
-	 * get all Exchange {Appointment}s which have been created on the Exchange Server
-	 * @return {@link HashSet} of {@link Appointment}s which have been created on the Exchange Server
-	 */
-//	public HashSet<Appointment> getExchangeItems() {
-//		HashSet<Appointment> returnAppointments = new HashSet<Appointment>();
-//		for (ExchangeAppointmentStorageObject appointmentStorage : appointments.values()) {
-//			if(appointmentStorage.isExchangeItem()) {
-//				Appointment appointment = ExchangeConnectorUtils.getAppointmentById(appointmentStorage.getAppointmentId(), getClientFacade());
-//				if(appointment != null)
-//					returnAppointments.add(appointment);
-//			}
-//		}
-//		return returnAppointments;
-//	}
-//
-//
-//	public Collection<Integer> getExchangeItemIds() {
-//		HashSet<Integer> exchangeAppointmentIds = new HashSet<Integer>();
-//		for (Integer key : appointments.keySet()) {
-//			if (isExternalAppointment(key)) {
-//				exchangeAppointmentIds.add(key);
-//			}
-//		}
-//		return exchangeAppointmentIds;
-//	}
-
-	
-
-	
-//	public boolean isRaplaItem(String exchangeId) {
-//		for (Integer appointmentId : getAppointmentIds(exchangeId)) {
-//			ExchangeAppointmentStorageObject appointmentStorageObject = appointments.get(appointmentId);
-//			if(appointmentStorageObject != null && !appointmentStorageObject.isExchangeItem())
-//				return true;
-//		}
-//		return false;
-//	}
-
-
-//	public void setAllDeleted() {
-//		for (ExchangeAppointmentStorageObject storageObject : this.appointments.values()) {
-//			if (!storageObject.isExchangeItem()) {
-//				storageObject.setDeleted();
-//			}
-//		}
-//	}
-	
-//	public void removeExchangeItems() {
-//		Collection<Integer> appointmentStorageObjectsKeys = getExchangeItemIds();
-//		for (Integer appointmentStorageObjectKey: appointmentStorageObjectsKeys) {
-//			appointments.remove(appointmentStorageObjectKey);
-//		}
-//	}
-//
-
-	
-//	/**
-//	 * check if a given Rapla {@link Appointment} originates from the Exchange Server
-//	 * 
-//	 * @param appointment : {@link Appointment} the Rapla appointment to be found in the mapping table
-//	 * @return {@link Boolean} true if the appointment has been created in Outlook/Exchange, false if it has been created in Rapla
-//	 */
-//	public boolean isExternalAppointment(Appointment appointment) {
-//		return isExternalAppointment(ExchangeConnectorUtils.getAppointmentID(appointment));
-//	}
-//	/**
-//	 * check if a given Rapla {@link Appointment} originates from the Exchange Server
-//	 * 
-//	 * @param appointmentId : {@link Integer} unique id of the Rapla {@link Appointment} the Rapla appointment to be found in the mapping table
-//	 * @return {@link Boolean} true if the appointment has been created in Outlook/Exchange, false if it has been created in Rapla
-//	 */
-//	public boolean isExternalAppointment(int appointmentId) {
-//		ExchangeAppointmentStorageObject appointmentStorage = appointments.get(appointmentId);
-//		return (appointmentStorage == null)?false:appointmentStorage.isExchangeItem();
-//	}
-//	
-
-
 }

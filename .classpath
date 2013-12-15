@@ -9,6 +9,7 @@
 			<accessrule kind="accessible" pattern="org/rapla/framework/logger/*"/>
 			<accessrule kind="accessible" pattern="org/rapla/client/*"/>
 			<accessrule kind="accessible" pattern="org/rapla/server/*"/>
+			<accessrule kind="accessible" pattern="org/rapla/storage/*"/>
 			<accessrule kind="accessible" pattern="org/rapla/entities/**"/>
 			<accessrule kind="accessible" pattern="org/rapla/facade/*"/>
 			<accessrule kind="accessible" pattern="org/rapla/components/**"/>

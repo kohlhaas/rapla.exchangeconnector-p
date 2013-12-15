@@ -44,7 +44,6 @@ import org.rapla.entities.domain.RepeatingType;
 import org.rapla.entities.dynamictype.Attribute;
 import org.rapla.entities.dynamictype.Classification;
 import org.rapla.entities.dynamictype.DynamicType;
-import org.rapla.entities.storage.internal.SimpleIdentifier;
 import org.rapla.facade.RaplaComponent;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
@@ -52,7 +51,6 @@ import org.rapla.framework.logger.Logger;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig.ConfigReader;
 import org.rapla.plugin.exchangeconnector.server.EWSConnector;
-import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorUtils;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 import org.rapla.plugin.exchangeconnector.server.datastorage.SynchronizationTask;
 import org.rapla.plugin.exchangeconnector.server.datastorage.SynchronizationTask.SyncStatus;
@@ -178,12 +176,25 @@ class AppointmentSynchronizer extends RaplaComponent {
             exchangeAppointment.update(ConflictResolutionMode.AlwaysOverwrite, SendInvitationsOrCancellationsMode.SendToNone);
         }
     }
+    
+    public static microsoft.exchange.webservices.data.Appointment getExchangeAppointmentByID(ExchangeService service, String exchangeId) throws Exception {
+        try {
+            return microsoft.exchange.webservices.data.Appointment.bind(service, new ItemId(exchangeId));
+        } catch (ServiceResponseException e) {
+            // item not found error is to be expected sometimes so do not raise!
+            if (e.getErrorCode().ordinal() == 225) {
+                return null;
+            }
+            throw e;
+        }
+
+    }
 
     private microsoft.exchange.webservices.data.Appointment getEquivalentExchangeAppointment( Appointment raplaAppointment) throws ArgumentOutOfRangeException, ArgumentException, Exception {
         String exchangeId = appointmentTask.getExchangeAppointmentId();
         microsoft.exchange.webservices.data.Appointment exchangeAppointment = null;
         if (exchangeId != null && !exchangeId.isEmpty()) {
-        	exchangeAppointment = ExchangeConnectorUtils.getExchangeAppointmentByID(service, exchangeId);
+        	exchangeAppointment = getExchangeAppointmentByID(service, exchangeId);
         }
         if (exchangeAppointment == null) {
             exchangeAppointment = new microsoft.exchange.webservices.data.Appointment(service);

@@ -26,7 +26,6 @@ import org.rapla.framework.RaplaException;
 import org.rapla.gui.DefaultPluginOption;
 import org.rapla.gui.internal.edit.reservation.SortedListModel;
 import org.rapla.gui.toolkit.DialogUI;
-import org.rapla.gui.toolkit.RaplaButton;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;

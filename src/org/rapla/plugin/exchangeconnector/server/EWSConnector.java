@@ -3,9 +3,10 @@ package org.rapla.plugin.exchangeconnector.server;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import microsoft.exchange.webservices.data.*;
+import microsoft.exchange.webservices.data.ExchangeService;
+import microsoft.exchange.webservices.data.ExchangeVersion;
+import microsoft.exchange.webservices.data.WebCredentials;
 
-import org.rapla.components.util.DateTools;
 import org.rapla.framework.RaplaException;
 
 /**

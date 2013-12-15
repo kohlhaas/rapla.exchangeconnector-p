@@ -1,28 +1,16 @@
 package org.rapla.plugin.exchangeconnector.client;
 
 import java.awt.BorderLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 
 import javax.swing.DefaultComboBoxModel;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import org.rapla.components.calendar.RaplaNumber;
 import org.rapla.components.layout.TableLayout;
-import org.rapla.entities.dynamictype.Attribute;
-import org.rapla.entities.dynamictype.AttributeType;
 import org.rapla.entities.dynamictype.DynamicType;
 import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
 import org.rapla.framework.Configuration;
@@ -32,10 +20,8 @@ import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.framework.TypedComponentRole;
 import org.rapla.gui.DefaultPluginOption;
-import org.rapla.gui.internal.common.NamedListCellRenderer;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
-import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 
 
 public class ExchangeConnectorAdminOptions extends DefaultPluginOption implements ExchangeConnectorConfig {
@@ -62,7 +48,7 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
     //private JLabel raplaEventTitleAttributeLabel;
     //private JComboBox cbEventTitleAttribute;
 //    private JLabel raplaRessourceEmailAttributeLabel;
-    private JTextField cbRaplaRessourceEmailAttribute;
+    //private JTextField cbRaplaRessourceEmailAttribute;
     //private JLabel importAlwaysPrivateLabel;
     //private JCheckBox chkAlwaysPrivate;
 
