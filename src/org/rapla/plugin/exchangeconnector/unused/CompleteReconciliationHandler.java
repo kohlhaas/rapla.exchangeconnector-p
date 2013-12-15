@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.rapla.plugin.exchangeconnector.server;
+package org.rapla.plugin.exchangeconnector.unused;
 
 import org.rapla.facade.ClientFacade;
 import org.rapla.framework.RaplaException;

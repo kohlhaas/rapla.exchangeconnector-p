@@ -1,8 +1,10 @@
 package org.rapla.plugin.exchangeconnector;
 
-import org.rapla.entities.User;
+import javax.jws.WebService;
+
 import org.rapla.framework.RaplaException;
 
+@WebService
 public interface ExchangeConnectorRemote {
 	
 	/** 
@@ -12,11 +14,10 @@ public interface ExchangeConnectorRemote {
 	 * @param raplaUsername
 	 * @param exchangeUsername  
 	 * @param exchangePassword
-	 * @param downloadFromExchange
 	 * @return {@link ClientMessage}
 	 * @throws RaplaException
 	 */
-	public String addExchangeUser(String raplaUsername, String exchangeUsername, String exchangePassword, Boolean downloadFromExchange) throws RaplaException;
+	public String synchronize(String exchangeUsername, String exchangePassword/*, Boolean downloadFromExchange*/) throws RaplaException;
 
 	/**
 	 * Remove an existing user from the user list (unregister a user from the Exchange Server)
@@ -26,31 +27,15 @@ public interface ExchangeConnectorRemote {
 	 * @return {@link ClientMessage}
 	 * @throws RaplaException
 	 */
-	public String removeExchangeUser(String raplaUsername) throws RaplaException;
+	//public String removeExchangeUser() throws RaplaException;
 
 	/**
 	 * This method initialises a so called "complete reconciliation" - meaning a re-sync of all existing appointments on both systems.
 	 * @return {@link ClientMessage}
 	 * @throws RaplaException
 	 */
-	public String completeReconciliation() throws RaplaException;
+	//public String completeReconciliation() throws RaplaException;
 
-    /**
-     * sync an Exchange user
-     *
-     * @param raplaUsername
-     * @return {@link ClientMessage}
-     * @throws RaplaException
-     */
-    public String synchronizeUser(String raplaUsername) throws RaplaException;
-
-
-    /**
-     * checks wether exchange is available
-     * @return true, if service is available und connected
-     * @throws RaplaException
-     */
-    public boolean isExchangeAvailable() throws RaplaException;
 
     /**
      * enables/disable pull
@@ -58,7 +43,7 @@ public interface ExchangeConnectorRemote {
      * @param downloadFromExchange
      * @throws RaplaException
      */
-    public void setDownloadFromExchange(String raplaUsername, boolean downloadFromExchange) throws RaplaException;
+    //public void setDownloadFromExchange( boolean downloadFromExchange) throws RaplaException;
 
 
 }

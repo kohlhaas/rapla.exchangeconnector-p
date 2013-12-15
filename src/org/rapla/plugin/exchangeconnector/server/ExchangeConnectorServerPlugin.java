@@ -6,6 +6,8 @@ import org.rapla.framework.PluginDescriptor;
 import org.rapla.framework.RaplaContextException;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
+import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
+import org.rapla.plugin.exchangeconnector.server.worker.AppointmentTask;
 import org.rapla.server.RaplaServerExtensionPoints;
 import org.rapla.server.ServerServiceContainer;
 
@@ -21,9 +23,10 @@ public class ExchangeConnectorServerPlugin implements PluginDescriptor<ServerSer
         if (!config.getAttributeAsBoolean("enabled", ExchangeConnectorPlugin.ENABLE_BY_DEFAULT)) {
         	return;
         }
-        ExchangeConnectorPlugin.loadConfigParameters(config);
+        container.addContainerProvidedComponent(ExchangeAppointmentStorage.class, ExchangeAppointmentStorage.class, config);
+        container.addContainerProvidedComponent(AppointmentTask.class, AppointmentTask.class, config);
         container.addContainerProvidedComponent(RaplaServerExtensionPoints.SERVER_EXTENSION, SynchronisationManager.class);
-        container.addRemoteMethodFactory(ExchangeConnectorRemote.class, ExchangeConnectorRemoteObject.class);
+        container.addRemoteMethodFactory(ExchangeConnectorRemote.class, ExchangeConnectorRemoteObjectFactory.class, config);
     }
 
 

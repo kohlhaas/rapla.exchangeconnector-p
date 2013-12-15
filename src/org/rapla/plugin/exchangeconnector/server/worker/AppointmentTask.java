@@ -1,256 +1,253 @@
 package org.rapla.plugin.exchangeconnector.server.worker;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
+import org.rapla.components.util.DateTools;
+import org.rapla.components.util.Predicate;
+import org.rapla.components.util.TimeInterval;
+import org.rapla.entities.EntityNotFoundException;
 import org.rapla.entities.RaplaObject;
 import org.rapla.entities.User;
 import org.rapla.entities.configuration.Preferences;
 import org.rapla.entities.domain.Allocatable;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.Reservation;
-import org.rapla.entities.dynamictype.Attribute;
-import org.rapla.entities.dynamictype.Classification;
-import org.rapla.entities.dynamictype.ClassificationFilter;
 import org.rapla.entities.dynamictype.DynamicType;
+import org.rapla.entities.storage.EntityResolver;
 import org.rapla.entities.storage.internal.SimpleIdentifier;
 import org.rapla.facade.ClientFacade;
 import org.rapla.facade.ModificationEvent;
 import org.rapla.facade.RaplaComponent;
+import org.rapla.framework.Configuration;
 import org.rapla.framework.RaplaContext;
+import org.rapla.framework.RaplaContextException;
 import org.rapla.framework.RaplaException;
-import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
+import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.server.ExchangeConnectorUtils;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
+import org.rapla.plugin.exchangeconnector.server.datastorage.SynchronizationTask;
+import org.rapla.plugin.exchangeconnector.server.datastorage.SynchronizationTask.SyncStatus;
+import org.rapla.storage.StorageOperator;
 
-import java.util.*;
+public class AppointmentTask extends RaplaComponent implements ExchangeConnectorConfig {
 
-
-public class AppointmentTask extends RaplaComponent {
-
-    public AppointmentTask(RaplaContext context) {
+	ExchangeAppointmentStorage appointmentStorage;
+	ExchangeConnectorConfig.ConfigReader config;
+   
+	public AppointmentTask(RaplaContext context,Configuration config) throws RaplaContextException {
         super(context);
+        this.config  = new ExchangeConnectorConfig.ConfigReader(config);
+        this.appointmentStorage = context.lookup( ExchangeAppointmentStorage.class);
+    }
+    
+    private AppointmentSynchronizer createSyncronizer(SynchronizationTask task) throws RaplaException, EntityNotFoundException
+    {
+    	Comparable userId = task.getUserId();
+    	EntityResolver resolver = getContext().lookup(StorageOperator.class);
+		User user = (User) resolver.resolve( userId); 
+		Preferences preferences = getQuery().getPreferences(user , false);
+        String username = null;
+        String password = null;
+        if ( preferences != null)
+    	{
+    		username = preferences.getEntryAsString(ExchangeConnectorConfig.USERNAME,null);
+    		password = preferences.getEntryAsString(ExchangeConnectorConfig.PASSWORD,null);
+    	}
+    	if ( username != null && password != null)
+		{
+    		// we don't resolve the appointment if we delete 
+    		Appointment appointment = task.getStatus() != SyncStatus.toDelete  ? (Appointment) resolver.resolve( userId) : null;
+			return new AppointmentSynchronizer(getContext(), config,task, appointment,user,username,password);
+    	}
+    	throw new RaplaException("No exchange username and password set for user " + user.getUsername());
     }
 
+    public synchronized void synchronizeUser(User user) throws RaplaException {
+    	Predicate<Reservation> predicate = getReservationSynced(user);
+    	Collection<SynchronizationTask> tasks = new ArrayList<SynchronizationTask>();
+    	try {
+            TimeInterval syncRange = getSyncRange();
+    		for ( SynchronizationTask task:appointmentStorage.getTasks(user,syncRange))
+    		{
+    			task.setStatus( SyncStatus.toDelete);
+    			tasks.add( task);
+    		}
+    		final Reservation[] reservations = getClientFacade().getReservations(user, syncRange.getStart(), syncRange.getEnd(), null);
+            for (Reservation reservation : reservations) {
+            	if ( predicate.apply( reservation))
+            	{
+            		for (Appointment appointment : reservation.getAppointments()) {
+                    	boolean toReplace = true;
+						SynchronizationTask task = addOrUpdateAppointment(appointment, user, toReplace);
+						tasks.add( task);
+            		}
+            	}
+            }
+            appointmentStorage.addOrReplace( tasks);
+            execute( tasks);
+        } catch (Exception e) {
+            getLogger().error(e.getMessage(), e);
+        }
+    }
 
-    private synchronized void deleteAppointments(Set<RaplaObject> removed) throws RaplaException {
-        for (RaplaObject raplaObject : removed) {
+    public synchronized void synchronize(ModificationEvent evt) throws RaplaException {
+        Set<RaplaObject> changeSet = evt.getChanged();
+        Set<RaplaObject> removed = evt.getRemoved();
+        Map<Allocatable, User> users = getExchangSyncUsers();
+        Map<User,org.rapla.components.util.Predicate<Reservation>> reservationAllowedPredicates = new LinkedHashMap<User,Predicate<Reservation>>();
+        for (User user:users.values())
+        {
+        	Predicate<Reservation> predicate = getReservationSynced(user);
+        	reservationAllowedPredicates.put( user, predicate);
+        }
+        Collection<SynchronizationTask> tasks = new ArrayList<SynchronizationTask>();
+        for (RaplaObject raplaObject : changeSet) {
+            if (raplaObject instanceof Appointment) {
+                Appointment appointment = (Appointment) raplaObject;
+                if ( check( appointment))
+                {
+	                Allocatable[] allocatablesFor = appointment.getReservation().getAllocatablesFor(appointment);
+	                for (Allocatable allocatable : allocatablesFor) 
+	                {
+	                	User user = users.get( allocatable);
+	                	if ( user != null)
+	                	{
+	                		Predicate<Reservation> p = reservationAllowedPredicates.get( user);
+	                		if ( p.apply( appointment.getReservation() ))
+	                		{
+	                			SynchronizationTask task = addOrUpdateAppointment(appointment,user, false);
+	                			tasks.add( task );
+	                		}
+	                	}
+	                }
+                }
+            }
+        }
+        
+		for (RaplaObject raplaObject : removed) {
             if (raplaObject instanceof Appointment) {
                 Appointment appointment = (Appointment) raplaObject;
                 if (check(appointment))
-                    deleteAppointment(appointment);
-            }
-
-        }
-
-    }
-
-    public synchronized void deleteAppointment(Appointment appointment) throws RaplaException {
-        try {
-            final SimpleIdentifier appointmentSID = ExchangeConnectorUtils.getAppointmentSID(appointment);
-            if (appointment != null) {
-                final HashSet<SimpleIdentifier> deleteAppointments = new HashSet<SimpleIdentifier>();
-                deleteAppointments.add(appointmentSID);
-                deleteAppointments(deleteAppointments, true);
-
-            }
-        } catch (Exception e) {
-            throw new RaplaException(e);
-        }
-
-    }
-
-    /**
-     * Method to delete an Exchange {@link microsoft.exchange.webservices.data.Appointment} with a particular exchange id from the Exchange Server
-     *
-     * @param deleteAppointments : {@link String} the unique id of the {@link microsoft.exchange.webservices.data.Appointment} on the Exchange Server
-     * @param addToDeleteList    : {@link Boolean} flag, if this appointment should be remembered in the "to delete" list in case deleting the item from the Exchange Server fails
-     * @throws Exception
-     * @see org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage
-     */
-    private void deleteAppointments(final HashSet<SimpleIdentifier> deleteAppointments, boolean addToDeleteList) throws Exception {
-        for (SimpleIdentifier simpleIdentifier : deleteAppointments) {
-            if (ExchangeAppointmentStorage.getInstance().appointmentExists(simpleIdentifier.getKey())
-                    && !ExchangeAppointmentStorage.getInstance().isExternalAppointment(simpleIdentifier.getKey())) {
-
-                if (addToDeleteList) {
-                    ExchangeAppointmentStorage.getInstance().setDeleted(simpleIdentifier.getKey());
-                    ExchangeAppointmentStorage.getInstance().save();
-                }
-                final String raplaUsername = ExchangeAppointmentStorage.getInstance().getRaplaUsername(simpleIdentifier.getKey());
-                DeleteWorker deleteWorker = new DeleteWorker(getContext(), getClientFacade().getUser(raplaUsername));
-                deleteWorker.perform(simpleIdentifier);
-            }
-        }
-    }
-
-    public synchronized void addOrUpdateAppointments(Set<RaplaObject> appointmentSet) throws RaplaException {
-        final User[] users = getClientFacade().getUsers();
-
-        for (RaplaObject raplaObject : appointmentSet) {
-            if (raplaObject instanceof Appointment) {
-                Appointment appointment = (Appointment) raplaObject;
-                // check appointment and owner preferences
-                //todo: replace owner by rapla user if not available
-                //up to new only booked resources are informed
-                if (check(appointment)) {
-                    Allocatable[] allocatablesFor = appointment.getReservation().getAllocatablesFor(appointment);
-                    for (Allocatable allocatable : allocatablesFor) {
-                        final Classification classification = allocatable.getClassification();
-                        final Attribute attribute = classification.getAttribute(ExchangeConnectorPlugin.RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL);
-                        if (allocatable.isPerson() && attribute != null) {
-                            User user = getUserForEmail(users, classification.getValueAsString(attribute, getRaplaLocale().getLocale()));
-                            // now check if user has prefs allowing to notify him
-                            if (user != null && checkUser(user, appointment)) {
-                                addOrUpdateAppointment(appointment);
-                            }
-                        }
-                    }
+                {
+                	for (User user: users.values())
+                	{
+                		SynchronizationTask task = appointmentStorage.getTask( appointment,user);
+                    	if ( task != null)
+                    	{
+                    		task.setStatus( SyncStatus.toDelete);
+                    		tasks.add( task );
+                    	}
+                	}
                 }
             }
         }
     }
 
-    private static synchronized User getUserForEmail(User[] users, String email) throws RaplaException {
-        User result = null;
-
-        if (email != null && !email.isEmpty()) {
-            // todo: do this more efficient
-
-            for (User user : users) {
-                if (user.getEmail().equalsIgnoreCase(email)) {
-                    result = user;
-                    break;
-                }
-            }
+    public synchronized SynchronizationTask addOrUpdateAppointment(Appointment appointment,User user, boolean toReplace) throws RaplaException {
+    	SynchronizationTask task = appointmentStorage.getTask( appointment,user);
+    	if ( task == null)
+    	{
+    		task = new SynchronizationTask(appointment,user);
+    	}
+    	task.setStatus( toReplace ? SyncStatus.toReplace : SyncStatus.toUpdate);
+    	return task;
+    }
+    
+	public void execute(Collection<SynchronizationTask> tasks) throws RaplaException {
+		for ( SynchronizationTask task:tasks)
+		{
+			 final AppointmentSynchronizer worker; 
+			 try
+			 {
+				 worker = createSyncronizer(task);
+			 } catch (EntityNotFoundException e) {
+				 getLogger().warn( "Removing synchronize " + task + " due to " + e.getMessage() );
+				 appointmentStorage.remove( task);
+				 continue;
+			 }
+			try
+	        {
+	            worker.execute();
+	        } catch (Exception e) {
+	        	getLogger().warn( "Can't synchronize " + task , e );
+	        }
+		}
+	}
+    
+    private Map<Allocatable,User> getExchangSyncUsers() throws RaplaException
+    {
+    	Map<Allocatable,User> result = new LinkedHashMap<Allocatable,User>();
+    	final ClientFacade clientFacade = getClientFacade();
+        final User[] users = clientFacade.getUsers();
+        for (User user:users)
+        {
+        	Allocatable person = user.getPerson();
+        	if ( person != null)
+        	{
+	        	Preferences preferences = clientFacade.getPreferences(user, false);
+		        if (preferences != null) {
+		        	boolean enabled = preferences.getEntryAsBoolean(SYNC_FROM_EXCHANGE_ENABLED_KEY, DEFAULT_SYNC_FROM_EXCHANGE_ENABLED);
+		        	String username = preferences.getEntryAsString(USERNAME, "");
+		        	if ( enabled && !username.trim().isEmpty())
+		        	{
+		        		result.put(person, user);
+		        	}
+		        }
+        	}
         }
-        return result;
+    	return result;
+    }
+    
+    private TimeInterval getSyncRange()
+    {
+    	final ClientFacade clientFacade = getClientFacade();
+    	Date today = clientFacade.today();
+    	Date start = DateTools.addDays(today, -config.get(ExchangeConnectorConfig.SYNCING_PERIOD_PAST));
+    	Date end = DateTools.addDays(today, config.get(ExchangeConnectorConfig.SYNCING_PERIOD_FUTURE));
+    	return new TimeInterval(start, end);
     }
 
-    public synchronized void addOrUpdateAppointment(Appointment appointment) throws RaplaException {
-        try {
-            final SimpleIdentifier appointmentSID = ExchangeConnectorUtils.getAppointmentSID(appointment);
-            if (appointment != null) {
-                final String exchangeId = ExchangeAppointmentStorage.getInstance().getExchangeId(appointmentSID.getKey());
-                final AddUpdateWorker worker = new AddUpdateWorker(
-                        getContext(),
-                        appointment
-                );
-                worker.perform(appointment, exchangeId);
-            }
-        } catch (Exception e) {
-            throw new RaplaException(e);
-        }
+    private synchronized boolean check( Appointment appointment) throws RaplaException {
+    	Date start = appointment.getStart();
+		TimeInterval appointmentRange = new TimeInterval(start, appointment.getMaxEnd());
+		TimeInterval syncRange = getSyncRange();
+		if ( !syncRange.overlaps( appointmentRange))
+		{
+		    getLogger().debug("Skipping update of appointment " + appointment + " because is date of item is out of range");
+	        return false;
+		}
+		else 
+		{
+			return true;
+		}
     }
-
-    public synchronized void synchronize(ModificationEvent evt) {
-        try {
-            addOrUpdateAppointments(evt.getChanged());
-        } catch (RaplaException e) {
-            getLogger().error(e.getMessage(), e);
-        }
-        try {
-            deleteAppointments(evt.getRemoved());
-        } catch (RaplaException e) {
-            getLogger().error(e.getMessage(), e);
-        }
-    }
-
-    private synchronized boolean check(User user, Appointment appointment) throws RaplaException {
-        boolean result = false;
-        if (appointment.getStart().before(ExchangeConnectorPlugin.getSynchingPeriodPast(new Date())) || appointment.getStart().after(ExchangeConnectorPlugin.getSynchingPeriodFuture(new Date()))) {
-            getLogger().debug("Skipping update of appointment " + appointment + " because is date of item is out of range");
-        } else {
-            final ClientFacade clientFacade = getClientFacade();
-            final DynamicType importEventType = ExchangeConnectorPlugin.getImportEventType(clientFacade);
-            final DynamicType reservationType = appointment.getReservation().getClassification().getType();
-
-            if (importEventType != null && reservationType.getElementKey().equals(importEventType.getElementKey())) {
-                getLogger().debug("Skipping appointment of type " + reservationType + " because is type of item pulled from exchange");
-            } else {
-                result = checkUser(user, appointment);
-            }
-        }
-        return result;
-    }
-
-    private synchronized boolean checkUser(User user, Appointment appointment) throws RaplaException {
-        boolean result = false;
-        final ClientFacade clientFacade = getClientFacade();
-        final DynamicType reservationType = appointment.getReservation().getClassification().getType();
-
-        if (user != null) {
-            Preferences preferences = clientFacade.getPreferences(user);
-            if (preferences != null) {
-                final String exportableTypes = preferences.getEntryAsString(ExchangeConnectorPlugin.EXPORT_EVENT_TYPE_KEY, null);
-                if (exportableTypes == null) {
-                    getLogger().debug("Skipping appointment of type " + reservationType + " because filter is not defined for appointment user " + user.getUsername());
-                } else {
-                    if (!exportableTypes.contains(reservationType.getElementKey())) {
-                        getLogger().debug("Skipping appointment of type " + reservationType + " because filtered out by user " + user.getUsername());
-                    } else {
-                        result = true;
-                    }
-                }
-            } else {
-                getLogger().warn("Skipping appointment of type " + reservationType + " because user " + user.getUsername() + " has no preferences");
-            }
-        } else {
-            getLogger().warn("Skipping appointment of type " + reservationType + " because user is not defined");
-        }
-        return result;
-    }
-
-
-    private synchronized boolean check(Appointment appointment) throws RaplaException {
-        User owner = appointment.getOwner();
-        return check(owner, appointment);
-    }
-
-    public synchronized int synchronizeUser(User user) throws RaplaException {
-
-        //todo: add filter
-        int result = -1;
-        final Preferences preferences = getClientFacade().getPreferences(user);
-        if (preferences != null) {
-            final String exportableTypes = preferences.getEntryAsString(ExchangeConnectorPlugin.EXPORT_EVENT_TYPE_KEY, null);
-            if (exportableTypes == null || exportableTypes.trim().isEmpty()) {
-                getLogger().info("Skipping sync at adduser because filter is not defined for user " + user.getUsername());
-            } else {
-                // get reservation type filters
-                String[] reservationTypeKeys = exportableTypes.trim().split(",");
-                List<ClassificationFilter> reservationTypeFilters = new ArrayList<ClassificationFilter>(reservationTypeKeys.length);
-                for (String reservationTypeKey : reservationTypeKeys) {
-                    ClassificationFilter reservationTypeFilter = getClientFacade().getDynamicType(reservationTypeKey).newClassificationFilter();
-                    reservationTypeFilters.add(reservationTypeFilter);
-                }
-
-                try {
-                    result = 0;
-                    //get all reservations within from/to wrt. selected filters
-
-                    final ClassificationFilter[] filter = reservationTypeFilters.toArray(new ClassificationFilter[reservationTypeFilters.size()]);
-                    final Date from = ExchangeConnectorPlugin.getSynchingPeriodPast(new Date());
-                    final Date to = ExchangeConnectorPlugin.getSynchingPeriodFuture(new Date());
-                    final Reservation[] reservations = getClientFacade().getReservations(user, from, to, filter);
-                    //iterate through all reservations and delete old existing, re-add them to exchange
-                    for (Reservation reservation : reservations) {
-
-                        for (Appointment appointment : reservation.getAppointments()) {
-                            if (ExchangeAppointmentStorage.getInstance().appointmentExists(appointment)) {
-                                deleteAppointment(appointment);
-                            }
-                            addOrUpdateAppointment(appointment);
-                            result ++;
-                        }
-                    }
-                } catch (Exception e) {
-                    getLogger().error(e.getMessage(), e);
-                }
-
-            }
-
-        } else {
-            getLogger().warn("Skipping appointment at adduser because user " + user.getUsername() + " has no preferences");
-        }
-        return result;
-
+    
+    private synchronized Predicate<Reservation> getReservationSynced(final User user) throws RaplaException {
+    	Preferences preferences = getClientFacade().getPreferences(user, false);
+        final String exportableTypes = preferences != null ? preferences.getEntryAsString(ExchangeConnectorConfig.EXPORT_EVENT_TYPE_KEY, null) : null;
+    	return new Predicate<Reservation>()
+    	{
+			public boolean apply(Reservation reservation) {
+				   final DynamicType reservationType = reservation.getClassification().getType();
+			        if (exportableTypes == null) {
+			            getLogger().debug("Skipping appointment of type " + reservationType + " because filter is not defined for appointment user " + user.getUsername());
+			            return false;
+			        } 
+			        else 
+			        {
+			            if (!exportableTypes.contains(reservationType.getElementKey())) {
+			                getLogger().debug("Skipping appointment of type " + reservationType + " because filtered out by user " + user.getUsername());
+			                return false;
+			            } else {
+			                return true;
+			            }
+			        }
+			}
+    	};
     }
 }

@@ -1,26 +1,18 @@
 package org.rapla.plugin.exchangeconnector.server;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import microsoft.exchange.webservices.data.ExchangeService;
 import microsoft.exchange.webservices.data.ItemId;
 import microsoft.exchange.webservices.data.ServiceResponseException;
 
 import org.rapla.components.util.Assert;
-import org.rapla.entities.User;
-import org.rapla.entities.domain.Allocatable;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.Reservation;
 import org.rapla.entities.domain.internal.AppointmentImpl;
 import org.rapla.entities.domain.internal.ReservationImpl;
+import org.rapla.entities.storage.EntityResolver;
 import org.rapla.entities.storage.RefEntity;
 import org.rapla.entities.storage.internal.SimpleIdentifier;
 import org.rapla.facade.ClientFacade;
-import org.rapla.framework.RaplaException;
 import org.rapla.storage.impl.AbstractCachableOperator;
 
 public class ExchangeConnectorUtils {
@@ -52,7 +44,7 @@ public class ExchangeConnectorUtils {
         // ignore not existing facade
         if (facade == null)
             return null;
-        AbstractCachableOperator operator = (AbstractCachableOperator) facade.getOperator();
+        EntityResolver operator = facade.getOperator();
         SimpleIdentifier simpleIdentifier = new SimpleIdentifier(Appointment.TYPE, id);
         RefEntity refEntity = operator.tryResolve(simpleIdentifier);
         return (Appointment) refEntity;
@@ -211,39 +203,32 @@ public class ExchangeConnectorUtils {
 
     }*/
 
-    public static List<User> getAppointmentUsers(Appointment raplaAppointment, ClientFacade clientFacade) throws RaplaException {
-        // get all restricted resources
-        final Allocatable[] restrictedAllocatables = raplaAppointment.getReservation().getRestrictedAllocatables(raplaAppointment);
-        // get all non restricted resources
-        final Allocatable[] persons = raplaAppointment.getReservation().getPersons();
-        final List<Allocatable> allocatablePersons = new ArrayList<Allocatable>();
-        allocatablePersons.addAll(Arrays.asList(restrictedAllocatables));
-        allocatablePersons.addAll(Arrays.asList(persons));
-        final List<User> results = new ArrayList<User>();
+//    public static List<User> getAppointmentUsers(Appointment raplaAppointment, ClientFacade clientFacade) throws RaplaException {
+//        // get all allocatables at the appointment
+//        final Allocatable[] allocatables = raplaAppointment.getReservation().getAllocatablesFor(raplaAppointment);
+//        final Set<Allocatable> allocatablePersons = new HashSet<Allocatable>(Arrays.asList(allocatables));
+//        final List<User> results = new ArrayList<User>();
+//
+//        // todo: here we are really missing a feature!
+//        // todo: mapping of person -> users is very inefficient
+//        final User[] users = clientFacade.getUsers();
+//        for (User user : users) {
+//            if (user.getPerson() != null && allocatablePersons.contains(user.getPerson())) {
+//
+//                results.add(user);
+//            }
+//        }
+//
+//        return results;
+//    }
 
-        // todo: here we are really missing a feature!
-        // todo: mapping of person -> users is very inefficient
-        final User[] users = clientFacade.getUsers();
-        for (User user : users) {
-            if (user.getPerson() != null && allocatablePersons.contains(user.getPerson())) {
-
-                results.add(user);
-            }
-        }
-
-        return results;
-    }
-
-    public static Set<Allocatable> getAttachedPersonAllocatables(Appointment raplaAppointment) {
-        final Allocatable[] restrictedAllocatables = raplaAppointment.getReservation().getRestrictedAllocatables(raplaAppointment);
-        // get all non restricted resources
-        final Allocatable[] persons = raplaAppointment.getReservation().getPersons();
-        final Set<Allocatable> allocatablePersons = new HashSet<Allocatable>();
-        for (Allocatable restrictedAllocatable : restrictedAllocatables) {
-            if (restrictedAllocatable.isPerson())
-                allocatablePersons.add(restrictedAllocatable);
-        }
-        allocatablePersons.addAll(Arrays.asList(persons));
-        return allocatablePersons;
-    }
+//    public static Set<Allocatable> getAttachedPersonAllocatables(Appointment raplaAppointment) {
+//        final Allocatable[] allocatables = raplaAppointment.getReservation().getAllocatablesFor(raplaAppointment);
+//        final Set<Allocatable> allocatablePersons = new HashSet<Allocatable>();
+//        for (Allocatable restrictedAllocatable : allocatables) {
+//            if (restrictedAllocatable.isPerson())
+//                allocatablePersons.add(restrictedAllocatable);
+//        }
+//        return allocatablePersons;
+//    }
 }
