@@ -74,7 +74,8 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 	
 	synchronized public void addOrReplace(Collection<SynchronizationTask> tasks) 
 	{
-		tasks.addAll( tasks);
+		this.tasks.removeAll( tasks);
+		this.tasks.addAll( tasks);
 		save();
 	}
 	

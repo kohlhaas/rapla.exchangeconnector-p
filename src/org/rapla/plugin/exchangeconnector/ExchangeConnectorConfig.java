@@ -18,8 +18,8 @@ public interface ExchangeConnectorConfig
 	public static final TypedComponentRole<String> PASSWORD = new TypedComponentRole<String>("exchangeconnector.password");
 
 	
-	public static final TypedComponentRole<Boolean> SYNC_FROM_EXCHANGE_ENABLED_KEY = new TypedComponentRole<Boolean>("sync_from_exchange");
-	public static final boolean DEFAULT_SYNC_FROM_EXCHANGE_ENABLED = false;
+//	public static final TypedComponentRole<Boolean> SYNC_FROM_EXCHANGE_ENABLED_KEY = new TypedComponentRole<Boolean>("sync_from_exchange");
+//	public static final boolean DEFAULT_SYNC_FROM_EXCHANGE_ENABLED = false;
 
 //	public static final TypedComponentRole<Boolean> ENABLED_BY_ADMIN = new TypedComponentRole<Boolean>("exchange_connector_enabled_by_admin");
 //	public static final boolean DEFAULT_ENABLED_BY_ADMIN = false;

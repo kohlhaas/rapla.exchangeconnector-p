@@ -58,8 +58,9 @@ public class AppointmentTask extends RaplaComponent implements ExchangeConnector
     	}
     	if ( username != null && password != null)
 		{
-    		// we don't resolve the appointment if we delete 
-    		Appointment appointment = task.getStatus() != SyncStatus.toDelete  ? (Appointment) resolver.resolve( userId) : null;
+    		Comparable appointmentId = task.getAppointmentId();
+			// we don't resolve the appointment if we delete 
+    		Appointment appointment = task.getStatus() != SyncStatus.toDelete  ? (Appointment) resolver.resolve( appointmentId) : null;
 			return new AppointmentSynchronizer(getContext(), config,task, appointment,user,username,password);
     	}
     	throw new RaplaException("No exchange username and password set for user " + user.getUsername());
@@ -144,6 +145,8 @@ public class AppointmentTask extends RaplaComponent implements ExchangeConnector
                 }
             }
         }
+		appointmentStorage.addOrReplace( tasks);
+		execute( tasks);
     }
 
     public synchronized SynchronizationTask addOrUpdateAppointment(Appointment appointment,User user, boolean toReplace) throws RaplaException {
@@ -189,7 +192,7 @@ public class AppointmentTask extends RaplaComponent implements ExchangeConnector
         	{
 	        	Preferences preferences = clientFacade.getPreferences(user, false);
 		        if (preferences != null) {
-		        	boolean enabled = preferences.getEntryAsBoolean(SYNC_FROM_EXCHANGE_ENABLED_KEY, DEFAULT_SYNC_FROM_EXCHANGE_ENABLED);
+		        	boolean enabled = preferences.getEntryAsBoolean(ENABLED_BY_USER_KEY, DEFAULT_ENABLED_BY_USER);
 		        	String username = preferences.getEntryAsString(USERNAME, "");
 		        	if ( enabled && !username.trim().isEmpty())
 		        	{

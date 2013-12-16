@@ -46,7 +46,7 @@ public class ExchangeConnectorRemoteObject extends RaplaComponent implements Exc
 				boolean testConnection = true;
 				if(testConnection) {
 					WebCredentials cred = new WebCredentials(exchangeUsername, exchangePassword);
-					String smtpAddress = retrieveSMTPAddress(cred);
+					test(cred);
 				}
 				getLogger().debug("Invoked change sync for user " + user.getUsername());
 				task.synchronizeUser(user);
@@ -69,7 +69,7 @@ public class ExchangeConnectorRemoteObject extends RaplaComponent implements Exc
 	 * @return {@link String} if the account information is valid
 	 * @throws Exception 
 	 */
-	private String retrieveSMTPAddress(WebCredentials credentials) throws Exception {
+	private void test(WebCredentials credentials) throws Exception {
 		String fqdn = config.get(ExchangeConnectorConfig.EXCHANGE_WS_FQDN);
 		EWSConnector ewsConnector = new EWSConnector(fqdn, credentials);
 		String user2 = credentials.getUser();
@@ -77,10 +77,10 @@ public class ExchangeConnectorRemoteObject extends RaplaComponent implements Exc
 		if (nameResolutionCollection.getCount() == 1) {
 			String smtpAddress = nameResolutionCollection.nameResolutionCollection(0).getMailbox().getAddress();
 			if (!smtpAddress.isEmpty()) {
-				return smtpAddress;
+				//return smtpAddress;
 			}
 		}
-		throw new Exception("Credentials are invalid!");
+		//throw new Exception("Credentials are invalid!");
 	}
 
 

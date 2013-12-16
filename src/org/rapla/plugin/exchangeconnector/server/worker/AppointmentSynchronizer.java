@@ -73,6 +73,7 @@ class AppointmentSynchronizer extends RaplaComponent {
     SynchronizationTask appointmentTask;
     public AppointmentSynchronizer(RaplaContext context, ConfigReader config, SynchronizationTask appointmentTask,Appointment appointment,User user, String exchangeUsername, String password ) throws RaplaException {
         super(context);
+        this.raplaUser = user;
     	WebCredentials 	credentials = new WebCredentials(exchangeUsername, password);
         timeZoneConverter = context.lookup( TimeZoneConverter.class);
         appointmentStorage = context.lookup( ExchangeAppointmentStorage.class);
@@ -171,9 +172,13 @@ class AppointmentSynchronizer extends RaplaComponent {
         if (exchangeAppointment.isNew()) {
             getLogger().info("Adding " + exchangeAppointment.getSubject() + " to exchange");
             exchangeAppointment.save(SendInvitationsMode.SendToNone);
+            String exchangeId = exchangeAppointment.getId().getUniqueId();
+            appointmentTask.setExchangeAppointmentId(exchangeId);
         } else {
             getLogger().info("Updating " + exchangeAppointment.getId() + " " + exchangeAppointment.getSubject() + "," + exchangeAppointment.getWhen());
             exchangeAppointment.update(ConflictResolutionMode.AlwaysOverwrite, SendInvitationsOrCancellationsMode.SendToNone);
+            String exchangeId = exchangeAppointment.getId().getUniqueId();
+            appointmentTask.setExchangeAppointmentId(exchangeId);
         }
     }
     
@@ -182,7 +187,8 @@ class AppointmentSynchronizer extends RaplaComponent {
             return microsoft.exchange.webservices.data.Appointment.bind(service, new ItemId(exchangeId));
         } catch (ServiceResponseException e) {
             // item not found error is to be expected sometimes so do not raise!
-            if (e.getErrorCode().ordinal() == 225) {
+            int ordinal = e.getErrorCode().ordinal();
+			if (ordinal == 225 || ordinal == 226) {
                 return null;
             }
             throw e;
@@ -198,8 +204,7 @@ class AppointmentSynchronizer extends RaplaComponent {
         }
         if (exchangeAppointment == null) {
             exchangeAppointment = new microsoft.exchange.webservices.data.Appointment(service);
-            exchangeId = exchangeAppointment.getId().getUniqueId();
-            appointmentTask.setExchangeAppointmentId(exchangeId);
+    
         }
 
         Date start = raplaAppointment.getStart();
