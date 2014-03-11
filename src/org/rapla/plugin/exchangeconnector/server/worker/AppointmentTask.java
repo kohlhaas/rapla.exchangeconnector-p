@@ -45,7 +45,7 @@ public class AppointmentTask extends RaplaComponent implements ExchangeConnector
     
     private AppointmentSynchronizer createSyncronizer(SynchronizationTask task) throws RaplaException, EntityNotFoundException
     {
-    	Comparable userId = task.getUserId();
+    	String userId = task.getUserId();
     	EntityResolver resolver = getContext().lookup(StorageOperator.class);
 		User user = (User) resolver.resolve( userId); 
 		Preferences preferences = getQuery().getPreferences(user , false);
@@ -58,7 +58,7 @@ public class AppointmentTask extends RaplaComponent implements ExchangeConnector
     	}
     	if ( username != null && password != null)
 		{
-    		Comparable appointmentId = task.getAppointmentId();
+    		String appointmentId = task.getAppointmentId();
 			// we don't resolve the appointment if we delete 
     		Appointment appointment = task.getStatus() != SyncStatus.toDelete  ? (Appointment) resolver.resolve( appointmentId) : null;
 			return new AppointmentSynchronizer(getContext(), config,task, appointment,user,username,password);

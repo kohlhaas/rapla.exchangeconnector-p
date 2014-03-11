@@ -5,7 +5,6 @@ import java.io.Serializable;
 import org.rapla.components.util.TimeInterval;
 import org.rapla.entities.User;
 import org.rapla.entities.domain.Appointment;
-import org.rapla.entities.storage.RefEntity;
 
 public class SynchronizationTask implements Serializable
 {
@@ -17,24 +16,24 @@ public class SynchronizationTask implements Serializable
 		,synched
 	}
 	private static final long serialVersionUID = 219323872273312836L;
-	Comparable userId;
-	Comparable appointmentId;
+	String userId;
+	String appointmentId;
 	String exchangeAppointmentId;
 	
 	TimeInterval syncInterval;
 	SyncStatus status;
 	
 	public SynchronizationTask(Appointment appointment, User user) {
-		userId = ((RefEntity<?>) user).getId();
-		appointmentId = ((RefEntity<?>) appointment).getId();
+		userId = user.getId();
+		appointmentId = appointment.getId();
 		status = SyncStatus.toUpdate;
 	}
 
-	public Comparable getUserId() {
+	public String getUserId() {
 		return userId;
 	}
 
-	public Comparable getAppointmentId() {
+	public String getAppointmentId() {
 		return appointmentId;
 	}
 	
@@ -108,7 +107,7 @@ public class SynchronizationTask implements Serializable
 	}
 
 	public boolean matches(Appointment appointment) {
-		Comparable other_appointmentId = ((RefEntity<?>) appointment).getId();
+		Comparable other_appointmentId = appointment.getId();
 		if (appointmentId == null) {
 			if (other_appointmentId != null)
 				return false;
@@ -120,7 +119,7 @@ public class SynchronizationTask implements Serializable
 	}
 
 	public boolean matches(User user) {
-		Comparable other_userId = ((RefEntity<?>) user).getId();
+		Comparable other_userId = user.getId();
 		if (userId == null) {
 			if (other_userId != null)
 				return false;

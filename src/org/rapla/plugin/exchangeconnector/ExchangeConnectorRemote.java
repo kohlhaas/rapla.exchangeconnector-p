@@ -11,7 +11,6 @@ public interface ExchangeConnectorRemote {
 	 * Add an Exchange user to the user list (register a user to the Exchange Server)
 	 * (User wants to have his Exchange Account synchronized with the Rapla system)
 	 * 
-	 * @param raplaUsername
 	 * @param exchangeUsername  
 	 * @param exchangePassword
 	 * @return {@link ClientMessage}
