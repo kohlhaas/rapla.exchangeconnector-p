@@ -106,47 +106,55 @@ public class AppointmentTask extends RaplaComponent implements ExchangeConnector
         }
         Collection<SynchronizationTask> tasks = new ArrayList<SynchronizationTask>();
         for (RaplaObject raplaObject : changeSet) {
-            if (raplaObject instanceof Appointment) {
-                Appointment appointment = (Appointment) raplaObject;
-                if ( check( appointment))
-                {
-	                Allocatable[] allocatablesFor = appointment.getReservation().getAllocatablesFor(appointment);
-	                for (Allocatable allocatable : allocatablesFor) 
+            if (raplaObject instanceof Reservation) {
+            	for ( Appointment appointment: ((Reservation) raplaObject).getAppointments())
+            	{
+	                if ( check( appointment))
 	                {
-	                	User user = users.get( allocatable);
-	                	if ( user != null)
-	                	{
-	                		Predicate<Reservation> p = reservationAllowedPredicates.get( user);
-	                		if ( p.apply( appointment.getReservation() ))
-	                		{
-	                			SynchronizationTask task = addOrUpdateAppointment(appointment,user, false);
-	                			tasks.add( task );
-	                		}
-	                	}
+		                Allocatable[] allocatablesFor = appointment.getReservation().getAllocatablesFor(appointment);
+		                for (Allocatable allocatable : allocatablesFor) 
+		                {
+		                	User user = users.get( allocatable);
+		                	if ( user != null)
+		                	{
+		                		Predicate<Reservation> p = reservationAllowedPredicates.get( user);
+		                		if ( p.apply( appointment.getReservation() ))
+		                		{
+		                			SynchronizationTask task = addOrUpdateAppointment(appointment,user, false);
+		                			tasks.add( task );
+		                		}
+		                	}
+		                }
 	                }
-                }
+            	}
             }
         }
         
+        // FIXME get removed appointments
 		for (RaplaObject raplaObject : removed) {
-            if (raplaObject instanceof Appointment) {
-                Appointment appointment = (Appointment) raplaObject;
-                if (check(appointment))
-                {
-                	for (User user: users.values())
-                	{
-                		SynchronizationTask task = appointmentStorage.getTask( appointment,user);
-                    	if ( task != null)
-                    	{
-                    		task.setStatus( SyncStatus.toDelete);
-                    		tasks.add( task );
-                    	}
-                	}
-                }
+			if (raplaObject instanceof Reservation) {
+            	for ( Appointment appointment: ((Reservation) raplaObject).getAppointments())
+            	{
+	                if (check(appointment))
+	                {
+	                	for (User user: users.values())
+	                	{
+	                		SynchronizationTask task = appointmentStorage.getTask( appointment,user);
+	                    	if ( task != null)
+	                    	{
+	                    		task.setStatus( SyncStatus.toDelete);
+	                    		tasks.add( task );
+	                    	}
+	                	}
+	                }
+            	}
             }
         }
-		appointmentStorage.addOrReplace( tasks);
-		execute( tasks);
+		if ( tasks.size() > 0)
+		{
+			appointmentStorage.addOrReplace( tasks);
+			execute( tasks);
+		}
     }
 
     public synchronized SynchronizationTask addOrUpdateAppointment(Appointment appointment,User user, boolean toReplace) throws RaplaException {

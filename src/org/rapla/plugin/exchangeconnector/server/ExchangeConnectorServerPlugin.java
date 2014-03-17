@@ -23,7 +23,7 @@ public class ExchangeConnectorServerPlugin implements PluginDescriptor<ServerSer
         if (!config.getAttributeAsBoolean("enabled", ExchangeConnectorPlugin.ENABLE_BY_DEFAULT)) {
         	return;
         }
-        container.addContainerProvidedComponent(ExchangeAppointmentStorage.class, ExchangeAppointmentStorage.class, config);
+        container.addContainerProvidedComponent(ExchangeAppointmentStorage.class, ExchangeAppointmentStorage.class);
         container.addContainerProvidedComponent(AppointmentTask.class, AppointmentTask.class, config);
         container.addContainerProvidedComponent(RaplaServerExtensionPoints.SERVER_EXTENSION, SynchronisationManager.class);
         container.addRemoteMethodFactory(ExchangeConnectorRemote.class, ExchangeConnectorRemoteObjectFactory.class, config);

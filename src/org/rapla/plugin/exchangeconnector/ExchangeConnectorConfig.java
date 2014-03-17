@@ -76,9 +76,9 @@ public interface ExchangeConnectorConfig
 	 */
 	public static final int DEFAULT_EXCHANGE_FINDITEMS_PAGESIZE = 50;
 	//public static final String EXCHANGE_FINDITEMS_PAGESIZE_KEY = "exchange.finditems.pagesize";
-	public static final  TypedComponentRole<String> ROOM_TYPE = new  TypedComponentRole<String>("rapla.room.type");
-	public static final String DEFAULT_ROOM_TYPE = "room";
-	
+//	public static final  TypedComponentRole<String> ROOM_TYPE = new  TypedComponentRole<String>("rapla.room.type");
+//	public static final String DEFAULT_ROOM_TYPE = "room";
+
 	 public static class ConfigReader implements ExchangeConnectorConfig
 	    {
 	    	Configuration config;
@@ -92,8 +92,7 @@ public interface ExchangeConnectorConfig
 		        loadInt(config,SYNCING_PERIOD_FUTURE,DEFAULT_SYNCING_PERIOD_FUTURE);
 		        //loadInt(config,PULL_FREQUENCY_KEY,DEFAULT_PULL_FREQUENCY);
 		        //load(config,IMPORT_EVENT_TYPE_KEY,DEFAULT_IMPORT_EVENT_TYPE);
-		        load(config,ROOM_TYPE,DEFAULT_ROOM_TYPE);
-
+		        
 		        //load(config,RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL,DEFAULT_RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL);
 		        //load(config,RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE_KEY,DEFAULT_RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE);
 

@@ -43,8 +43,8 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
     private JLabel exchangeWebServiceFQDNLabel;// = new JLabel("Exchange-Webservice FQDN");
    // private JLabel eventTypeLabel;
    // private JComboBox cbEventTypes;
-    private JLabel roomResourceTypeLabel;
-    private JComboBox cbRoomTypes;
+//    private JLabel roomResourceTypeLabel;
+//    private JComboBox cbRoomTypes;
     //private JLabel raplaEventTitleAttributeLabel;
     //private JComboBox cbEventTitleAttribute;
 //    private JLabel raplaRessourceEmailAttributeLabel;
@@ -80,8 +80,8 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 //        this.eventTypeLabel = new JLabel(getString("event.raplatype"));
 //        this.cbEventTypes = new JComboBox();
 
-        this.roomResourceTypeLabel = new JLabel(getString("event.roomtype"));
-        this.cbRoomTypes = new JComboBox();
+//        this.roomResourceTypeLabel = new JLabel(getString("event.roomtype"));
+//        this.cbRoomTypes = new JComboBox();
 
 //        this.raplaEventTitleAttributeLabel = new JLabel(getString("event.title.attr"));
 //        this.cbEventTitleAttribute = new JComboBox();
@@ -124,8 +124,8 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 //        content.add(eventTypeLabel, "1,16");
 //        content.add(cbEventTypes, "3,16");
 
-        content.add(roomResourceTypeLabel, "1,14");
-        content.add(cbRoomTypes, "3,14");
+//        content.add(roomResourceTypeLabel, "1,14");
+//        content.add(cbRoomTypes, "3,14");
 
 //        content.add(raplaEventTitleAttributeLabel, "1,18");
 //        content.add(cbEventTitleAttribute, "3,18");
@@ -153,7 +153,7 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 		set(newConfig,SYNCING_PERIOD_FUTURE, syncIntervalFuture.getNumber().intValue());
         //ExchangeConnectorPlugin.PULL_FREQUENCY, pullFrequency.getNumber().intValue();
         //ExchangeConnectorPlugin.IMPORT_EVENT_TYPE, ((StringWrapper<DynamicType>) cbEventTypes.getSelectedItem()).forObject.getElementKey();
-		set(newConfig,ROOM_TYPE, ((StringWrapper<DynamicType>) cbRoomTypes.getSelectedItem()).forObject.getElementKey());
+		//set(newConfig,ROOM_TYPE, ((StringWrapper<DynamicType>) cbRoomTypes.getSelectedItem()).forObject.getElementKey());
 		//set(newConfig,RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL, cbRaplaRessourceEmailAttribute.getText());
         //ExchangeConnectorPlugin.RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE = cbEventTitleAttribute.getSelectedItem() instanceof  Attribute?((Attribute) cbEventTitleAttribute.getSelectedItem()).getKey() : ExchangeConnectorPlugin.DEFAULT_RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE;
         //ExchangeConnectorPlugin.EXCHANGE_ALWAYS_PRIVATE = chkAlwaysPrivate.isSelected() ;
@@ -195,7 +195,7 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 //                        updateAttributeList(((StringWrapper<DynamicType>) cbEventTypes.getSelectedItem()).forObject, ExchangeConnectorPlugin.RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE);
 //                }
 //            });
-            this.cbRoomTypes.setModel(new DefaultComboBoxModel(roomTypes));
+//            this.cbRoomTypes.setModel(new DefaultComboBoxModel(roomTypes));
         } catch (RaplaException e) {
         }
         ConfigReader reader = new ConfigReader(config);
@@ -214,11 +214,11 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 //
 //        } catch (RaplaException e) {
 //        }
-        try {
-        	DynamicType roomType = getClientFacade().getDynamicType( reader.get(ROOM_TYPE ));
-			cbRoomTypes.setSelectedItem(new StringWrapper<DynamicType>(roomType));
-        } catch (RaplaException e) {
-        }
+//        try {
+//        	DynamicType roomType = getClientFacade().getDynamicType( reader.get(ROOM_TYPE ));
+//			cbRoomTypes.setSelectedItem(new StringWrapper<DynamicType>(roomType));
+//        } catch (RaplaException e) {
+//        }
 
         //cbRaplaRessourceEmailAttribute.setText(reader.get(RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL));
         //chkAlwaysPrivate.setSelected(ExchangeConnectorPlugin.DEFAULT_EXCHANGE_ALWAYS_PRIVATE);

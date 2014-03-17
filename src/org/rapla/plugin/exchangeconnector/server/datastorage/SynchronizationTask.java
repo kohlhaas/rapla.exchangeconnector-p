@@ -2,7 +2,6 @@ package org.rapla.plugin.exchangeconnector.server.datastorage;
 
 import java.io.Serializable;
 
-import org.rapla.components.util.TimeInterval;
 import org.rapla.entities.User;
 import org.rapla.entities.domain.Appointment;
 
@@ -20,8 +19,9 @@ public class SynchronizationTask implements Serializable
 	String appointmentId;
 	String exchangeAppointmentId;
 	
-	TimeInterval syncInterval;
+	//TimeInterval syncInterval;
 	SyncStatus status;
+	private String persistantId;
 	
 	public SynchronizationTask(Appointment appointment, User user) {
 		userId = user.getId();
@@ -29,6 +29,13 @@ public class SynchronizationTask implements Serializable
 		status = SyncStatus.toUpdate;
 	}
 
+	public SynchronizationTask(String appointmentId, String userId) {
+		this.userId = userId;
+		this.appointmentId = appointmentId;
+		status = SyncStatus.toUpdate;
+	}
+
+	
 	public String getUserId() {
 		return userId;
 	}
@@ -45,12 +52,12 @@ public class SynchronizationTask implements Serializable
 		this.exchangeAppointmentId = exchangeAppointmentId;
 	}
 
-	public TimeInterval getSyncInterval() {
-		return syncInterval;
-	}
-	public void setSyncInterval(TimeInterval syncInterval) {
-		this.syncInterval = syncInterval;
-	}
+//	public TimeInterval getSyncInterval() {
+//		return syncInterval;
+//	}
+//	public void setSyncInterval(TimeInterval syncInterval) {
+//		this.syncInterval = syncInterval;
+//	}
 	public SyncStatus getStatus() {
 		return status;
 	}
@@ -94,7 +101,8 @@ public class SynchronizationTask implements Serializable
 	public String toString() {
 		return "SynchronizationTask [userId=" + userId + ", appointmentId="
 				+ appointmentId + ", exchangeAppointmentId="
-				+ exchangeAppointmentId + ", syncInterval=" + syncInterval
+				+ exchangeAppointmentId 
+				//+ ", syncInterval=" + syncInterval
 				+ ", status=" + status + "]";
 	}
 
@@ -129,6 +137,15 @@ public class SynchronizationTask implements Serializable
 			return false;
 		}
 		return true;
+	}
+
+	public void setPersistantId(String id) {
+		this.persistantId = id;
+	}
+	
+	public String getPersistantId()
+	{
+		return persistantId;
 	}
 
 	

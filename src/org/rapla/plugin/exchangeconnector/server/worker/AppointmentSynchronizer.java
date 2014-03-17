@@ -42,8 +42,9 @@ import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.Repeating;
 import org.rapla.entities.domain.RepeatingType;
 import org.rapla.entities.dynamictype.Attribute;
+import org.rapla.entities.dynamictype.AttributeAnnotations;
 import org.rapla.entities.dynamictype.Classification;
-import org.rapla.entities.dynamictype.DynamicType;
+import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
 import org.rapla.facade.RaplaComponent;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
@@ -272,8 +273,7 @@ class AppointmentSynchronizer extends RaplaComponent {
     }
 
     private void addPersonsAndResources(microsoft.exchange.webservices.data.Appointment exchangeAppointment) throws ServiceLocalException, Exception {
-    	String roomtypeKey = config.get( ExchangeConnectorConfig.ROOM_TYPE);
- 		final DynamicType roomType = getClientFacade().getDynamicType(roomtypeKey);
+ 		//final DynamicType roomType = getClientFacade().getDynamicTypes();
     	// get all restricted resources
         final Allocatable[] allocatables = raplaAppointment.getReservation().getAllocatablesFor(raplaAppointment);
         // join and check for mail address, if so, add to reservation
@@ -285,19 +285,18 @@ class AppointmentSynchronizer extends RaplaComponent {
         for (Allocatable restrictedAllocatable : allocatables) {
         	//String emailAttribute = config.get(ExchangeConnectorConfig.RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL);
             final Classification classification = restrictedAllocatable.getClassification();
-            Attribute emailAttribute = classification.getAttribute("email");
-            final Object email = emailAttribute != null ? classification.getValue(emailAttribute) : null;
+            final String email = getEmail(classification);
         	final String name = restrictedAllocatable.getName(Locale.getDefault());
             if (restrictedAllocatable.isPerson()) {
-                if (email != null && !email.toString().isEmpty() && !email.toString().equalsIgnoreCase(raplaUser.getEmail())) {
-                    exchangeAppointment.getRequiredAttendees().add(name, email.toString());
+                if (email != null && !email.equalsIgnoreCase(raplaUser.getEmail())) {
+                    exchangeAppointment.getRequiredAttendees().add(name, email);
 //                    if (ExchangeConnectorConfig.DEFAULT_EXCHANGE_EXPECT_RESPONSE)
 //                        exchangeAppointment.setIsResponseRequested(true);
                 }
             }
-            else  if (classification.getType().equals(roomType))
+            else  if (classification.getType().getAnnotation(DynamicTypeAnnotations.KEY_LOCATION, "false").equals("true"))
             {
-                if (email != null && !email.toString().isEmpty()) {
+                if (email != null ) {
                     final Attendee attendee = new Attendee(email.toString());
                     attendee.setMailboxType(MailboxType.Mailbox);
                     attendee.setRoutingType("SMTP");
@@ -319,6 +318,37 @@ class AppointmentSynchronizer extends RaplaComponent {
             exchangeAppointment.setLocation(location.toString());
         }
     }
+
+	private String getEmail(final Classification classification) 
+	{
+		Attribute emailAttribute = getEmailAttribute(classification);
+		final String email = emailAttribute != null ? classification.getValueAsString(emailAttribute, null) : null;
+		if ( email != null && email.isEmpty())
+		{
+			return null;
+		}
+		return email;
+	}
+
+	private Attribute getEmailAttribute(final Classification classification) {
+		Attribute[] attributes = classification.getType().getAttributes();
+		for ( Attribute att: attributes)
+		{
+			String isEmail = att.getAnnotation(AttributeAnnotations.KEY_EMAIL);
+			if ( isEmail != null )
+			{
+				if ( isEmail.equals("true"))
+				{
+					return att;
+				}
+			}
+			else if ( att.getKey().equalsIgnoreCase("email"))
+			{
+				return att;
+			}
+		}
+		return null;
+	}
 
     private Recurrence getExchangeRecurrence( Repeating repeating) throws ArgumentOutOfRangeException, ArgumentException {
         final Recurrence returnVal ;
