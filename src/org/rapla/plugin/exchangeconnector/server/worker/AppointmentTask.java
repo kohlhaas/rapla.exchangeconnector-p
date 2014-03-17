@@ -139,7 +139,7 @@ public class AppointmentTask extends RaplaComponent implements ExchangeConnector
 	                {
 	                	for (User user: users.values())
 	                	{
-	                		SynchronizationTask task = appointmentStorage.getTask( appointment,user);
+	                		SynchronizationTask task = appointmentStorage.getOrCreateTask( appointment,user);
 	                    	if ( task != null)
 	                    	{
 	                    		task.setStatus( SyncStatus.toDelete);
@@ -158,11 +158,7 @@ public class AppointmentTask extends RaplaComponent implements ExchangeConnector
     }
 
     public synchronized SynchronizationTask addOrUpdateAppointment(Appointment appointment,User user, boolean toReplace) throws RaplaException {
-    	SynchronizationTask task = appointmentStorage.getTask( appointment,user);
-    	if ( task == null)
-    	{
-    		task = new SynchronizationTask(appointment,user);
-    	}
+    	SynchronizationTask task = appointmentStorage.getOrCreateTask( appointment,user);
     	task.setStatus( toReplace ? SyncStatus.toReplace : SyncStatus.toUpdate);
     	return task;
     }

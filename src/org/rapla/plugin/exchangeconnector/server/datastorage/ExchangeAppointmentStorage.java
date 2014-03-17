@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.rapla.components.util.TimeInterval;
 import org.rapla.entities.Entity;
@@ -91,7 +92,7 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		}
 	}
 	
-	synchronized public SynchronizationTask getTask(Appointment appointment, User user) {
+	synchronized public SynchronizationTask getOrCreateTask(Appointment appointment, User user) {
 		for (SynchronizationTask task: tasks)
 		{
 			if (task.matches(appointment, user))
@@ -99,7 +100,7 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 				return task;
 			}
 		}
-		return null;
+		return new SynchronizationTask( appointment.getId(), user.getId());
 	}
 	
 	// FIXME implement sync range
@@ -159,27 +160,31 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		for ( SynchronizationTask task:toStore)
 		{
 			String persistantId = task.getPersistantId();
+			Classification newClassification = null;
 			if ( persistantId != null)
 			{
 				Entity persistant = operator.tryResolve( persistantId);
 				if ( persistant != null)
 				{
-					storeObjects.add( persistant);
+					Set<Entity> singleton = Collections.singleton( persistant);
+					Collection<Entity> editObjects = operator.editObjects( singleton, null);
+					Allocatable editable = (Allocatable) editObjects.iterator().next();
+					newClassification = editable.getClassification();
+					storeObjects.add( editable);
 				}
 			}
 			else
 			{
 				DynamicType dynamicType = operator.getDynamicType( StorageOperator.SYNCHRONIZATIONTASK_TYPE);
-				Classification newClassification = dynamicType.newClassification(); 
-	        	newClassification.setValue("objectId", task.getAppointmentId());
-	        	newClassification.setValue("externalObjectId", task.getExchangeAppointmentId());
-	        	newClassification.setValue("status", task.getStatus().name());
+				newClassification = dynamicType.newClassification(); 
 				Allocatable newObject = getModification().newAllocatable(newClassification, null );
 				String userId = task.getUserId();
+				task.setPersistantId( newObject.getId());
 				User owner = (User) operator.tryResolve(userId);
 				if ( owner == null)
 				{
 					getLogger().error("User for id " + userId + " not found. Ignoring appointmentTask for appointment " + task.getAppointmentId());
+					continue;
 				}
 				else
 				{	
@@ -187,6 +192,13 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 					storeObjects.add( newObject);
 				}
 			}
+			if ( newClassification != null)
+			{
+				newClassification.setValue("objectId", task.getAppointmentId());
+				newClassification.setValue("externalObjectId", task.getExchangeAppointmentId());
+				newClassification.setValue("status", task.getStatus().name());
+			}
+
 		}
 		User user = null;
 		operator.storeAndRemove(storeObjects, removeObjects, user);

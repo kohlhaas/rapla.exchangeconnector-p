@@ -23,12 +23,6 @@ public class SynchronizationTask implements Serializable
 	SyncStatus status;
 	private String persistantId;
 	
-	public SynchronizationTask(Appointment appointment, User user) {
-		userId = user.getId();
-		appointmentId = appointment.getId();
-		status = SyncStatus.toUpdate;
-	}
-
 	public SynchronizationTask(String appointmentId, String userId) {
 		this.userId = userId;
 		this.appointmentId = appointmentId;
