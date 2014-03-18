@@ -92,7 +92,7 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		}
 	}
 	
-	synchronized public SynchronizationTask getOrCreateTask(Appointment appointment, User user) {
+	synchronized public SynchronizationTask getTask(Appointment appointment, User user) {
 		for (SynchronizationTask task: tasks)
 		{
 			if (task.matches(appointment, user))
@@ -100,8 +100,14 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 				return task;
 			}
 		}
+		return null;
+	}
+	synchronized public SynchronizationTask createTask(Appointment appointment, User user) 
+	{
 		return new SynchronizationTask( appointment.getId(), user.getId());
 	}
+
+	
 	
 	// FIXME implement sync range
 	synchronized public Collection<SynchronizationTask> getTasks(User user, TimeInterval syncRange) {

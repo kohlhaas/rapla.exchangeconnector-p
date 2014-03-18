@@ -1,10 +1,12 @@
-package org.rapla.plugin.exchangeconnector.server;
+package org.rapla.plugin.exchangeconnector.server.exchange;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 
 import microsoft.exchange.webservices.data.ExchangeService;
 import microsoft.exchange.webservices.data.ExchangeVersion;
+import microsoft.exchange.webservices.data.NameResolutionCollection;
+import microsoft.exchange.webservices.data.ResolveNameSearchLocation;
 import microsoft.exchange.webservices.data.WebCredentials;
 
 import org.rapla.framework.RaplaException;
@@ -19,9 +21,13 @@ public class EWSConnector {
 
     private static final int SERVICE_DEFAULT_TIMEOUT = 10000;
     private ExchangeService service;
-
+    String user;
+	
 //	private final Character DOMAIN_SEPERATION_SYMBOL = new Character('@');
 
+    public EWSConnector(String fqdn, String exchangeUsername,String exchangePassword) throws RaplaException  {
+    	this( fqdn,new WebCredentials(exchangeUsername, exchangePassword));
+    }
     /**
      * The constructor
      *
@@ -37,7 +43,7 @@ public class EWSConnector {
         tmpService.setTimeout(SERVICE_DEFAULT_TIMEOUT);
 
         //define connection url to mail server, assume https
-
+        this.user = credentials.getUser();
         URI uri;
 		try {
 			uri = new URI(fqdn + "/ews/Exchange.asmx");
@@ -67,5 +73,16 @@ public class EWSConnector {
         return service;
     }
 
+
+    public void test( ) throws Exception {
+		NameResolutionCollection nameResolutionCollection = getService().resolveName(user, ResolveNameSearchLocation.DirectoryOnly, true);
+		if (nameResolutionCollection.getCount() == 1) {
+			String smtpAddress = nameResolutionCollection.nameResolutionCollection(0).getMailbox().getAddress();
+			if (!smtpAddress.isEmpty()) {
+				//return smtpAddress;
+			}
+		}
+		//throw new Exception("Credentials are invalid!");
+	}
 
 }

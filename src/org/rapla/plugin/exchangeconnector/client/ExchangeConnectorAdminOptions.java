@@ -3,16 +3,12 @@ package org.rapla.plugin.exchangeconnector.client;
 import java.awt.BorderLayout;
 import java.util.Locale;
 
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import org.rapla.components.calendar.RaplaNumber;
 import org.rapla.components.layout.TableLayout;
-import org.rapla.entities.dynamictype.DynamicType;
-import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
 import org.rapla.framework.Configuration;
 import org.rapla.framework.DefaultConfiguration;
 import org.rapla.framework.PluginDescriptor;
@@ -172,19 +168,19 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 
 
     protected void readConfig(Configuration config) {
-        try {
-            DynamicType[] dynamicTypes = getClientFacade().getDynamicTypes(DynamicTypeAnnotations.VALUE_CLASSIFICATION_TYPE_RESERVATION);
-            StringWrapper<DynamicType>[] eventTypes = new StringWrapper[dynamicTypes.length];
-            for (int i = 0, dynamicTypesLength = dynamicTypes.length; i < dynamicTypesLength; i++) {
-                DynamicType dynamicType = dynamicTypes[i];
-                eventTypes[i] = new StringWrapper<DynamicType>(dynamicType);
-            }
-            dynamicTypes = getClientFacade().getDynamicTypes(DynamicTypeAnnotations.VALUE_CLASSIFICATION_TYPE_RESOURCE);
-            StringWrapper<DynamicType>[] roomTypes = new StringWrapper[dynamicTypes.length];
-            for (int i = 0, dynamicTypesLength = dynamicTypes.length; i < dynamicTypesLength; i++) {
-                DynamicType dynamicType = dynamicTypes[i];
-                roomTypes[i] = new StringWrapper<DynamicType>(dynamicType);
-            }
+//        try {
+//            DynamicType[] dynamicTypes = getClientFacade().getDynamicTypes(DynamicTypeAnnotations.VALUE_CLASSIFICATION_TYPE_RESERVATION);
+//            StringWrapper<DynamicType>[] eventTypes = new StringWrapper[dynamicTypes.length];
+//            for (int i = 0, dynamicTypesLength = dynamicTypes.length; i < dynamicTypesLength; i++) {
+//                DynamicType dynamicType = dynamicTypes[i];
+//                eventTypes[i] = new StringWrapper<DynamicType>(dynamicType);
+//            }
+//            dynamicTypes = getClientFacade().getDynamicTypes(DynamicTypeAnnotations.VALUE_CLASSIFICATION_TYPE_RESOURCE);
+//            StringWrapper<DynamicType>[] roomTypes = new StringWrapper[dynamicTypes.length];
+//            for (int i = 0, dynamicTypesLength = dynamicTypes.length; i < dynamicTypesLength; i++) {
+//                DynamicType dynamicType = dynamicTypes[i];
+//                roomTypes[i] = new StringWrapper<DynamicType>(dynamicType);
+//            }
 
 //            this.cbEventTypes.setModel(new DefaultComboBoxModel(eventTypes));
 //
@@ -196,8 +192,8 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 //                }
 //            });
 //            this.cbRoomTypes.setModel(new DefaultComboBoxModel(roomTypes));
-        } catch (RaplaException e) {
-        }
+//        } catch (RaplaException e) {
+//        }
         ConfigReader reader = new ConfigReader(config);
         //enableSynchronisationBox.setSelected(ExchangeConnectorPlugin.ENABLED_BY_ADMIN);
         exchangeWebServiceFQDNTextField.setText(reader.get(EXCHANGE_WS_FQDN));

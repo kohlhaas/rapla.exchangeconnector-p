@@ -1,4 +1,4 @@
-package org.rapla.plugin.exchangeconnector.server.worker;
+package org.rapla.plugin.exchangeconnector.server.exchange;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -51,13 +51,18 @@ import org.rapla.framework.RaplaException;
 import org.rapla.framework.logger.Logger;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig.ConfigReader;
-import org.rapla.plugin.exchangeconnector.server.EWSConnector;
 import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 import org.rapla.plugin.exchangeconnector.server.datastorage.SynchronizationTask;
 import org.rapla.plugin.exchangeconnector.server.datastorage.SynchronizationTask.SyncStatus;
 import org.rapla.server.TimeZoneConverter;
 
-class AppointmentSynchronizer extends RaplaComponent {
+/**
+ * 
+ * synchronizes a rapla appointment with an exchange appointment.
+ * contains the interface to the exchange api 
+ *
+ */
+public class AppointmentSynchronizer extends RaplaComponent {
 	
 	public static ExtendedPropertyDefinition raplaAppointmentPropertyDefinition;
 	private ExchangeService service;
