@@ -9,24 +9,21 @@ import org.rapla.framework.RaplaException;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 import org.rapla.plugin.exchangeconnector.SynchronizationStatus;
-import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 import org.rapla.plugin.exchangeconnector.server.exchange.EWSConnector;
 import org.rapla.server.RaplaKeyStorage;
 import org.rapla.server.RemoteMethodFactory;
 import org.rapla.server.RemoteSession;
 
 public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent implements RemoteMethodFactory<ExchangeConnectorRemote>{
-	ExchangeAppointmentStorage appointmentStorage;
 	ExchangeConnectorConfig.ConfigReader config;
-	final SynchronisationManager task;
+	final SynchronisationManager manager;
 	RaplaKeyStorage keyStorage;
 			
 	public ExchangeConnectorRemoteObjectFactory(RaplaContext context,Configuration config) throws RaplaContextException {
 		super(context);
 		this.config = new ExchangeConnectorConfig.ConfigReader( config );
-		appointmentStorage = context.lookup( ExchangeAppointmentStorage.class);
 		this.keyStorage = context.lookup( RaplaKeyStorage.class);
-		this.task = context.lookup( SynchronisationManager.class);
+		this.manager = context.lookup( SynchronisationManager.class);
 	}
 
 	@Override
@@ -40,7 +37,7 @@ public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent impleme
 					// Synchronize this user after registering
 					try {
 						getLogger().debug("Invoked change sync for user " + user.getUsername());
-						task.synchronizeUser(user);
+						//manager.synchronizeUser(user);
 		                returnMessage = "Your registration was successful! " ;
 	
 		            } catch (Exception e) {
@@ -52,8 +49,10 @@ public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent impleme
 			}
 			
 			@Override
-			public SynchronizationStatus getSynchronizationStatus() {
+			public SynchronizationStatus getSynchronizationStatus() throws RaplaException {
 				SynchronizationStatus status = new SynchronizationStatus();
+				boolean connected = keyStorage.getSecrets(user, "exchange") != null;
+				status.enabled = connected;
 				status.status = "synchronized";
 				return status;
 			}

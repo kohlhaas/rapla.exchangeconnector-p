@@ -100,5 +100,9 @@
         <text lang="de">Veranstaltungen werden immer als "privat" importiert (Exchange -> Rapla)</text>
     </entry>
 
+    <entry key="msexchange.notify">
+        <text lang="en">Import event always as private</text>
+        <text lang="de">Veranstaltungen werden immer als "privat" importiert (Exchange -> Rapla)</text>
+    </entry>
 
 </resources>

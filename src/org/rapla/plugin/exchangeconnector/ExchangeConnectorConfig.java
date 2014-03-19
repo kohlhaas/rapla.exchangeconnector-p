@@ -20,16 +20,17 @@ public interface ExchangeConnectorConfig
 	public static final TypedComponentRole<Integer> SYNCING_PERIOD_FUTURE = new TypedComponentRole<Integer>("exch-sync-future");
 	public static final Integer DEFAULT_SYNCING_PERIOD_FUTURE = 5;
 
-	public static final TypedComponentRole<String> EXPORT_EVENT_TYPE_KEY = new TypedComponentRole<String>("export-event-type-key");
-	public static final String DEFAULT_EXPORT_EVENT_TYPE = "//";
-
-	public static final boolean DEFAULT_EXCHANGE_REMINDER_SET = true;
-	
 	public static final TypedComponentRole<String> EXCHANGE_APPOINTMENT_CATEGORY  = new TypedComponentRole<String>( "exchange.default.category");
 	public static final String DEFAULT_EXCHANGE_APPOINTMENT_CATEGORY = "RAPLA";
 
+	public static final TypedComponentRole<Boolean> EXCHANGE_SEND_INVITATION_AND_CANCELATION  = new TypedComponentRole<Boolean>( "exchange.sendInvitationAndCancelation");
+	public static final boolean DEFAULT_EXCHANGE_SEND_INVITATION_AND_CANCELATION = false;
+
+	public static final boolean DEFAULT_EXCHANGE_REMINDER_SET = true;
 	public static final String DEFAULT_EXCHANGE_FREE_AND_BUSY = "Busy";
 
+//  public static final TypedComponentRole<String> EXPORT_EVENT_TYPE_KEY = new TypedComponentRole<String>("export-event-type-key");
+//	public static final String DEFAULT_EXPORT_EVENT_TYPE = "//";
 //	public static final TypedComponentRole<Boolean> ENABLED_BY_USER_KEY = new TypedComponentRole<Boolean>("exchangeconnector.userenabled");
 //	public static final boolean DEFAULT_ENABLED_BY_USER = false;
 //	public static final TypedComponentRole<String> USERNAME = new TypedComponentRole<String>("exchangeconnector.username");
@@ -105,7 +106,8 @@ public interface ExchangeConnectorConfig
 	    		map.put( key,value);
 	    	}
 	    	
-	    	public <T> T get( TypedComponentRole<T> key)
+	    	@SuppressWarnings("unchecked")
+			public <T> T get( TypedComponentRole<T> key)
 	    	{
 	    		return (T) map.get(key);
 	    	}

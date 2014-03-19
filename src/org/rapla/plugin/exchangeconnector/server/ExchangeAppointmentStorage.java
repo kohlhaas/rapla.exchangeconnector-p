@@ -1,14 +1,17 @@
-package org.rapla.plugin.exchangeconnector.server.datastorage;
+package org.rapla.plugin.exchangeconnector.server;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.rapla.components.util.TimeInterval;
 import org.rapla.entities.Entity;
 import org.rapla.entities.User;
 import org.rapla.entities.domain.Allocatable;
@@ -21,8 +24,7 @@ import org.rapla.facade.RaplaComponent;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
-import org.rapla.plugin.exchangeconnector.server.SynchronisationManager;
-import org.rapla.plugin.exchangeconnector.server.datastorage.SynchronizationTask.SyncStatus;
+import org.rapla.plugin.exchangeconnector.server.SynchronizationTask.SyncStatus;
 import org.rapla.storage.StorageOperator;
 
 
@@ -39,12 +41,11 @@ import org.rapla.storage.StorageOperator;
  * @see {@link ExchangeConnectorPlugin}
  */
 public class ExchangeAppointmentStorage extends RaplaComponent {
-	Collection<SynchronizationTask> tasks =  new LinkedHashSet<SynchronizationTask>();
+	Map<String,Set<SynchronizationTask>> tasks =  new LinkedHashMap<String,Set<SynchronizationTask>>();
 	StorageOperator operator;
 	//private static String DEFAULT_STORAGE_FILE_PATH = "data/exchangeConnector.dat";
 //	private String storageFilePath = DEFAULT_STORAGE_FILE_PATH;
-	
-	
+	protected ReadWriteLock lock = new ReentrantReadWriteLock();
 	/**
 	 * public constructor of the class to read a particular file
 
@@ -88,51 +89,130 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 				continue;
 			}
 			synchronizationTask.setStatus( valueOf);
-			tasks.add( synchronizationTask);
+			Set<SynchronizationTask> taskList = tasks.get( appointmentId);
+			if ( taskList == null)
+			{
+				taskList = new HashSet<SynchronizationTask>();
+				tasks.put( appointmentId, taskList);
+			}
+			taskList.add( synchronizationTask);
 		}
 	}
 	
-	synchronized public SynchronizationTask getTask(Appointment appointment, User user) {
-		for (SynchronizationTask task: tasks)
+	protected Lock writeLock() throws RaplaException {
+		return RaplaComponent.lock( lock.writeLock(), 60);
+	}
+
+	protected Lock readLock() throws RaplaException {
+		return RaplaComponent.lock( lock.readLock(), 10);
+	}
+	
+	
+	synchronized public SynchronizationTask getTask(Appointment appointment, String userId) throws RaplaException {
+		String appointmentId = appointment.getId();
+		Lock lock = readLock();
+		try
 		{
-			if (task.matches(appointment, user))
+			Set<SynchronizationTask> set = tasks.get(appointmentId);
+			if ( set != null)
 			{
-				return task;
+				for (SynchronizationTask task: set)
+				{
+					String taskUserId = task.getUserId();
+					if (userId == taskUserId || (userId!= null && userId.equals( taskUserId)))
+					{
+						return task;
+					}
+				}
 			}
+		} 
+		finally
+		{
+			unlock( lock);
 		}
 		return null;
 	}
-	synchronized public SynchronizationTask createTask(Appointment appointment, User user) 
+	
+	public Collection<SynchronizationTask> getTasks(Appointment appointment) throws RaplaException {
+		String appointmentId = appointment.getId();
+		Lock lock = readLock();
+		try
+		{
+			Set<SynchronizationTask> set = tasks.get(appointmentId);
+			return new ArrayList<SynchronizationTask>( set);
+		}
+		finally
+		{
+			unlock( lock);
+		}
+	}
+	
+	synchronized public SynchronizationTask createTask(Appointment appointment, String userId) 
 	{
-		return new SynchronizationTask( appointment.getId(), user.getId());
+		return new SynchronizationTask( appointment.getId(), userId);
 	}
 
 	
 	
 	// FIXME implement sync range
-	synchronized public Collection<SynchronizationTask> getTasks(User user, TimeInterval syncRange) {
-		Collection<SynchronizationTask> result = new ArrayList<SynchronizationTask>();
-		for (SynchronizationTask task: tasks)
-		{
-			if (task.matches( user))
-			{
-				result.add(task);
-			}
-		}
-		return result;
-	}
+//	synchronized public Collection<SynchronizationTask> getTasks(User user, TimeInterval syncRange) {
+//		Collection<SynchronizationTask> result = new ArrayList<SynchronizationTask>();
+//		for (SynchronizationTask task: tasks)
+//		{
+//			if (task.matches( user))
+//			{
+//				result.add(task);
+//			}
+//		}
+//		return result;
+//	}
 	
 	synchronized public void addOrReplace(Collection<SynchronizationTask> toStore) throws RaplaException 
 	{
-		this.tasks.removeAll( toStore);
-		this.tasks.addAll( toStore);
+		Lock lock = writeLock();
+		try
+		{
+			for (SynchronizationTask task: toStore)
+			{
+				String appointmentId = task.getAppointmentId();
+				Set<SynchronizationTask> set = tasks.get(appointmentId);
+				if ( set != null)
+				{
+					set.remove( task);
+				}
+				else
+				{
+					set = new HashSet<SynchronizationTask>();
+					tasks.put( appointmentId, set);
+				}
+				set.add( task);
+			}
+		} 
+		finally
+		{
+			unlock( lock);
+		}
 		Collection<SynchronizationTask> toRemove = Collections.emptyList();
 		storeAndRemove( toStore, toRemove);
 	}
 	
 	synchronized public void remove(SynchronizationTask appointmentTask) throws RaplaException {
-		boolean remove = tasks.remove( appointmentTask);
-		if ( remove )
+		String appointmentId = appointmentTask.getAppointmentId();
+		boolean remove = false;
+		Lock lock = writeLock();
+		try
+		{
+			Set<SynchronizationTask> set = tasks.get(appointmentId);
+			if ( set != null)
+			{
+				remove = set.remove( appointmentTask);
+			}
+		} 
+		finally
+		{
+			unlock( lock);
+		}
+		if ( remove)
 		{
 			Collection<SynchronizationTask> toStore = Collections.emptyList();
 			Collection<SynchronizationTask> toRemove = Collections.singletonList(appointmentTask);
@@ -209,6 +289,8 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		User user = null;
 		operator.storeAndRemove(storeObjects, removeObjects, user);
 	}
+
+	
 	
 	
 //	/**

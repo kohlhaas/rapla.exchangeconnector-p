@@ -51,9 +51,9 @@ import org.rapla.framework.RaplaException;
 import org.rapla.framework.logger.Logger;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig.ConfigReader;
-import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
-import org.rapla.plugin.exchangeconnector.server.datastorage.SynchronizationTask;
-import org.rapla.plugin.exchangeconnector.server.datastorage.SynchronizationTask.SyncStatus;
+import org.rapla.plugin.exchangeconnector.server.ExchangeAppointmentStorage;
+import org.rapla.plugin.exchangeconnector.server.SynchronizationTask;
+import org.rapla.plugin.exchangeconnector.server.SynchronizationTask.SyncStatus;
 import org.rapla.server.TimeZoneConverter;
 
 /**
@@ -77,8 +77,11 @@ public class AppointmentSynchronizer extends RaplaComponent {
     TimeZone systemTimeZone = TimeZone.getDefault();
     ExchangeAppointmentStorage appointmentStorage;
     SynchronizationTask appointmentTask;
-    public AppointmentSynchronizer(RaplaContext context, ConfigReader config, SynchronizationTask appointmentTask,Appointment appointment,User user, String exchangeUsername, String password ) throws RaplaException {
+    boolean sendNotificationMail;
+    
+    public AppointmentSynchronizer(RaplaContext context, ConfigReader config, SynchronizationTask appointmentTask,Appointment appointment,User user, String exchangeUsername, String password, boolean sendNotificationMail) throws RaplaException {
         super(context);
+        this.sendNotificationMail = sendNotificationMail;
         this.raplaUser = user;
     	WebCredentials 	credentials = new WebCredentials(exchangeUsername, password);
         timeZoneConverter = context.lookup( TimeZoneConverter.class);
@@ -136,7 +139,7 @@ public class AppointmentSynchronizer extends RaplaComponent {
         exchangeAppointment.setBody(new MessageBody(BodyType.Text, messageBody));
 
         addPersonsAndResources(exchangeAppointment );
-        saveToExchangeServer(exchangeAppointment);
+        saveToExchangeServer(exchangeAppointment, sendNotificationMail);
         // FIXME it an error occurs exceptions may not be serialized correctly
         removeRecurrenceExceptions( exchangeAppointment );
         logger.info("Updated appointment " + raplaAppointment  + " took " + (System.currentTimeMillis()- time) + " ms " );
@@ -173,16 +176,18 @@ public class AppointmentSynchronizer extends RaplaComponent {
     }
 
 
-    private void saveToExchangeServer(microsoft.exchange.webservices.data.Appointment exchangeAppointment) throws Exception {
+    private void saveToExchangeServer(microsoft.exchange.webservices.data.Appointment exchangeAppointment, boolean notify) throws Exception {
         // save the appointment to the server
         if (exchangeAppointment.isNew()) {
             getLogger().info("Adding " + exchangeAppointment.getSubject() + " to exchange");
-            exchangeAppointment.save(SendInvitationsMode.SendToNone);
+            SendInvitationsMode sendMode = notify ? SendInvitationsMode.SendOnlyToAll : SendInvitationsMode.SendToNone;
+			exchangeAppointment.save(sendMode);
             String exchangeId = exchangeAppointment.getId().getUniqueId();
             appointmentTask.setExchangeAppointmentId(exchangeId);
         } else {
             getLogger().info("Updating " + exchangeAppointment.getId() + " " + exchangeAppointment.getSubject() + "," + exchangeAppointment.getWhen());
-            exchangeAppointment.update(ConflictResolutionMode.AlwaysOverwrite, SendInvitationsOrCancellationsMode.SendToNone);
+            SendInvitationsOrCancellationsMode sendMode = notify ? SendInvitationsOrCancellationsMode.SendOnlyToAll :SendInvitationsOrCancellationsMode.SendToNone;
+			exchangeAppointment.update(ConflictResolutionMode.AlwaysOverwrite, sendMode);
             String exchangeId = exchangeAppointment.getId().getUniqueId();
             appointmentTask.setExchangeAppointmentId(exchangeId);
         }

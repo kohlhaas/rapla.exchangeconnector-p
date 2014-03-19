@@ -1,13 +1,11 @@
 package org.rapla.plugin.exchangeconnector.server;
 
-import org.rapla.components.util.CommandScheduler;
 import org.rapla.components.xmlbundle.impl.I18nBundleImpl;
 import org.rapla.framework.Configuration;
 import org.rapla.framework.PluginDescriptor;
 import org.rapla.framework.RaplaContextException;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
-import org.rapla.plugin.exchangeconnector.server.datastorage.ExchangeAppointmentStorage;
 import org.rapla.server.RaplaServerExtensionPoints;
 import org.rapla.server.ServerServiceContainer;
 

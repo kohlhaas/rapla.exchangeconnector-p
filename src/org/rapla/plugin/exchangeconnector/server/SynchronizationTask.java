@@ -1,4 +1,4 @@
-package org.rapla.plugin.exchangeconnector.server.datastorage;
+package org.rapla.plugin.exchangeconnector.server;
 
 import java.io.Serializable;
 

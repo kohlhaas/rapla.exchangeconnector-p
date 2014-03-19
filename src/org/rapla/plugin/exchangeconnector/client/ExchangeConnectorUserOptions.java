@@ -10,12 +10,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
-import javax.swing.event.ChangeListener;
 
 import org.rapla.components.layout.TableLayout;
 import org.rapla.entities.configuration.Preferences;
-import org.rapla.facade.CalendarSelectionModel;
-import org.rapla.facade.ClassifiableFilter;
 import org.rapla.framework.PluginDescriptor;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
@@ -32,7 +29,7 @@ import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 
    // private static final String DEFAULT_DISPLAYED_VALUE = "******";
-    private Preferences preferences;
+    //private Preferences preferences;
 
     //private String exchangeUsername;
 //    private String exchangePassword;
@@ -40,7 +37,6 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
     //private boolean enableSynchronisation;
     //FilterEditButton filter;
     RaplaButton loginButton = new RaplaButton();
-    RaplaButton removeButton = new RaplaButton();
     RaplaButton syncButton = new RaplaButton();
     private JPanel optionsPanel;
     //private JCheckBox enableSynchronisationBox;
@@ -168,13 +164,9 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 //    }
 
  
-    private void initJComponents() throws RaplaException {
+    private void initJComponents()  {
         this.optionsPanel = new JPanel();
-        boolean isResourceSelection =false;
-		ClassifiableFilter model = createModel();
-		ChangeListener listener = null;
-		
-		//filter = new FilterEditButton(getContext(), model, listener, isResourceSelection);
+        
         //this.filterCategoryField = new JTextField();
         //this.eventTypesLabel = new JLabel(getString("event.raplatypes"));
 //        this.eventTypesList = new JList();
@@ -182,7 +174,7 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 //        this.eventTypesList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
         //this.enableSynchronisationBox = new JCheckBox(getString("enable.sync.rapla.exchange"));
-        UpdateComponentsListener updateComponentsListener = new UpdateComponentsListener();
+        //UpdateComponentsListener updateComponentsListener = new UpdateComponentsListener();
         //this.enableSynchronisationBox.addActionListener(updateComponentsListener);
       //  this.downloadFromExchangeBox = new JCheckBox(getString("enable.sync.exchange.rapla"));
 //        this.downloadFromExchangeBox.addActionListener(updateComponentsListener);
@@ -214,14 +206,14 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 //        this.optionsPanel.add(this.passwordTextField, "3,4");
 //        this.optionsPanel.add(this.eventTypesLabel, "1,6");
         //this.optionsPanel.add(filter.getButton(), "3,6");
-        this.optionsPanel.add(new JLabel("Re-Sync User"), "1, 8");
-        final JButton syncButton = new JButton("Re-Sync User");
+        this.optionsPanel.add(new JLabel("Exchange Login"), "1, 8");
+        final JButton syncButton = new JButton("Set Login");
         syncButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
             	
             	boolean modal = true;
-				String[] options = new String[] {"connect","abort"};
+				String[] options = new String[] {getString("save"),getString("abort")};
 				SyncDialog content = new SyncDialog();
 				content.init("");
 				try
@@ -269,11 +261,6 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
         //this.optionsPanel.add(this.filterCategoryField, "3,10");
         //this.optionsPanel.add(this.securityInformationLabel, "3,12");
     }
-
-    private ClassifiableFilter createModel() throws RaplaException {
-    	CalendarSelectionModel model = getModification().newCalendarModel(getUser());
-    	return model;
-	}
 
 	/**
      *
@@ -329,15 +316,16 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
         return ExchangeConnectorPlugin.class;
     }
 
-    private class UpdateComponentsListener implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
-            updateComponentState();
-        }
-    }
+//    private class UpdateComponentsListener implements ActionListener {
+//        public void actionPerformed(ActionEvent e) {
+//            updateComponentState();
+//        }
+//    }
     
     class SyncDialog extends JPanel
     {
-        private JTextField usernameTextField;
+        private static final long serialVersionUID = 1L;
+		private JTextField usernameTextField;
         private JPasswordField passwordTextField;
         private JLabel usernameLabel;
         private JLabel passwordLabel;

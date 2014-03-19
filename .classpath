@@ -3,6 +3,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry exported="true" kind="src" path="/rapla">
 		<accessrules>
+			<accessrule kind="accessible" pattern="org/rapla/facade/internal/CalendarModelImpl"/>
 			<accessrule kind="discouraged" pattern="**/internal/**"/>
 			<accessrule kind="accessible" pattern="org/apache/avalon/**"/>
 			<accessrule kind="accessible" pattern="org/rapla/framework/*"/>

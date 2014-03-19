@@ -7,7 +7,7 @@ import org.rapla.framework.RaplaException;
 @WebService
 public interface ExchangeConnectorRemote 
 {
-	public SynchronizationStatus getSynchronizationStatus();
+	public SynchronizationStatus getSynchronizationStatus() throws RaplaException;
 	public String synchronize() throws RaplaException;
 
 	/** 
