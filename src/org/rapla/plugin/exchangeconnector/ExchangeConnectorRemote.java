@@ -19,7 +19,8 @@ public interface ExchangeConnectorRemote
 	 * @return {@link ClientMessage}
 	 * @throws RaplaException
 	 */
-	public String changeUser(String exchangeUsername, String exchangePassword/*, Boolean downloadFromExchange*/) throws RaplaException;
+	public void changeUser(String exchangeUsername, String exchangePassword/*, Boolean downloadFromExchange*/) throws RaplaException;
+	public void removeUser() throws RaplaException;
 
 	/**
 	 * Remove an existing user from the user list (unregister a user from the Exchange Server)

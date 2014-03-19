@@ -18,15 +18,22 @@ public class SynchronizationTask implements Serializable
 	String userId;
 	String appointmentId;
 	String exchangeAppointmentId;
+	int retries = 0;
 	
 	//TimeInterval syncInterval;
 	SyncStatus status;
 	private String persistantId;
 	
-	public SynchronizationTask(String appointmentId, String userId) {
+	public SynchronizationTask(String appointmentId, String userId, int retries) {
 		this.userId = userId;
 		this.appointmentId = appointmentId;
 		status = SyncStatus.toUpdate;
+		this.retries = retries;
+	}
+	
+	public void increaseRetries()
+	{
+		retries++;
 	}
 
 	
@@ -52,13 +59,18 @@ public class SynchronizationTask implements Serializable
 //	public void setSyncInterval(TimeInterval syncInterval) {
 //		this.syncInterval = syncInterval;
 //	}
+	
 	public SyncStatus getStatus() {
 		return status;
 	}
+	
 	public void setStatus(SyncStatus status) {
+		if ( status != this.status)
+		{
+			retries = 0;
+		}
 		this.status = status;
 	}
-
 	
 	@Override
 	public int hashCode() {

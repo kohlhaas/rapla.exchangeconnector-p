@@ -4,7 +4,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Locale;
 
-import javax.swing.JButton;
+import javax.swing.AbstractAction;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -22,6 +23,7 @@ import org.rapla.gui.toolkit.RaplaButton;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
+import org.rapla.plugin.exchangeconnector.SynchronizationStatus;
 
 /**
  * @author lutz
@@ -36,19 +38,22 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
     //private boolean downloadFromExchange;
     //private boolean enableSynchronisation;
     //FilterEditButton filter;
-    RaplaButton loginButton = new RaplaButton();
-    RaplaButton syncButton = new RaplaButton();
     private JPanel optionsPanel;
-    //private JCheckBox enableSynchronisationBox;
+    private JCheckBox enableNotifyBox;
     //private JCheckBox downloadFromExchangeBox;
     //private JLabel securityInformationLabel;
-    //private JLabel filterCategoryLabel;
+    private JLabel usernameLabel = new JLabel();
+    private JLabel usernameInfoLabel = new JLabel();
     //private JTextField filterCategoryField;
     //private String filterCategory;
     //private JLabel eventTypesLabel;
 //    private JList eventTypesList;
     ExchangeConnectorRemote service;
-
+    RaplaButton loginButton;
+    RaplaButton syncButton;
+    RaplaButton removeButton;
+	private boolean connected;
+    
     public ExchangeConnectorUserOptions(RaplaContext raplaContext,ExchangeConnectorRemote service) throws Exception {
         super(raplaContext);
         setChildBundleName(ExchangeConnectorConfig.RESOURCE_FILE);
@@ -68,8 +73,6 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
         setValuesToJComponents();
     }
 
-
-
     public void setPreferences(Preferences preferences) {
         this.preferences = preferences;
     }
@@ -81,7 +84,7 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 
     	//String exchangeUsername = usernameTextField.getText();
     	//String exchangePassword = new String(passwordTextField.getPassword());
-//        preferences.putEntry(ExchangeConnectorConfig.ENABLED_BY_USER_KEY,enableSynchronisationBox.isSelected());
+    	preferences.putEntry(ExchangeConnectorConfig.EXCHANGE_SEND_INVITATION_AND_CANCELATION,enableNotifyBox.isSelected());
         //preferences.putEntry(ExchangeConnectorConfig.SYNC_FROM_EXCHANGE_ENABLED_KEY, downloadFromExchangeBox.isSelected());
 //        preferences.putEntry(ExchangeConnectorConfig.EXCHANGE_INCOMING_FILTER_CATEGORY_KEY, filterCategoryField.getText());
 //        preferences.putEntry(ExchangeConnectorConfig.EXPORT_EVENT_TYPE_KEY, getSelectedEventTypeKeysAsCSV());
@@ -90,97 +93,9 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
    
     }
 
-//    private void selectEventTypesInListFromCSV(String csv) {
-//        if (csv == null || csv.length() == 0 || csv.equalsIgnoreCase(ExchangeConnectorConfig.DEFAULT_EXPORT_EVENT_TYPE))
-//            eventTypesList.addSelectionInterval(0, eventTypesList.getModel().getSize() - 1);
-//        else
-//            for (int i = 0; i < eventTypesList.getModel().getSize(); i++) {
-//                final StringWrapper<DynamicType> elementAt = (StringWrapper<DynamicType>) eventTypesList.getModel().getElementAt(i);
-//                if (csv.contains(
-//                        elementAt.forObject.getElementKey())) {
-//                    eventTypesList.addSelectionInterval(i, i);
-//                }
-//
-//            }
-//    }
-
-//    private String getSelectedEventTypeKeysAsCSV() {
-//        StringBuilder b = new StringBuilder();
-//        Object[] selectedValues = eventTypesList.getSelectedValues();
-//        for (int i = 0, selectedValuesLength = selectedValues.length; i < selectedValuesLength; i++) {
-//            Object o = selectedValues[i];
-//            StringWrapper<DynamicType> et = (StringWrapper<DynamicType>) o;
-//            b.append(et.forObject.getElementKey());
-//            if (i < selectedValues.length - 1) {
-//                b.append(",");
-//            }
-//        }
-//        return b.toString();
-//    }
-
-    /**
-     *
-     */
-//    private void saveUsersettings() {
-//        try {
-//            String returnedMessageString;
-//            if (enableSynchronisationBox.isSelected()) {
-//                returnedMessageString = getWebservice(ExchangeConnectorRemote.class).addExchangeUser( exchangeUsername, exchangePassword/*, Boolean.valueOf(downloadFromExchange)*/);
-//            } else {
-//                returnedMessageString = getWebservice(ExchangeConnectorRemote.class).removeExchangeUser();
-//            }
-//            JOptionPane.showMessageDialog(
-//                    getMainComponent(), returnedMessageString, "Information", JOptionPane.INFORMATION_MESSAGE);
-//        } catch (RaplaException e) {
-//            JOptionPane.showMessageDialog(
-//                    getMainComponent(), e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-//
-//            getLogger().error("The operation was not successful!", e);
-//        }
-//    }
-
-    /**
-     * Read the values from the user input
-     *
-     * @return boolean indicating if the user entered username and password
-     */
-//    private boolean applyUsersettings() {
-//        // if was not enabled before and has not been enabled now just return
-//        if (!enableSynchronisation && !enableSynchronisationBox.isSelected())
-//            return false;
-//        if (enableSynchronisationBox.isSelected() &&
-//                (usernameTextField.getText().equals(DEFAULT_DISPLAYED_VALUE)
-//                        || passwordTextField.getParent().toString().equals(DEFAULT_DISPLAYED_VALUE)))
-//            return false;
-//        else {
-//            this.exchangeUsername = usernameTextField.getText();
-//            this.exchangePassword = new String(passwordTextField.getPassword());
-//            //this.downloadFromExchange = downloadFromExchangeBox.isSelected();
-//            this.enableSynchronisation = enableSynchronisationBox.isSelected();
-//            this.eventTypeKeys = getSelectedEventTypeKeysAsCSV();
-//
-//            return true;
-//        }
-//    }
-
  
-    private void initJComponents()  {
+    private void initJComponents() throws RaplaException {
         this.optionsPanel = new JPanel();
-        
-        //this.filterCategoryField = new JTextField();
-        //this.eventTypesLabel = new JLabel(getString("event.raplatypes"));
-//        this.eventTypesList = new JList();
-//        this.eventTypesList.setVisibleRowCount(5);
-//        this.eventTypesList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-
-        //this.enableSynchronisationBox = new JCheckBox(getString("enable.sync.rapla.exchange"));
-        //UpdateComponentsListener updateComponentsListener = new UpdateComponentsListener();
-        //this.enableSynchronisationBox.addActionListener(updateComponentsListener);
-      //  this.downloadFromExchangeBox = new JCheckBox(getString("enable.sync.exchange.rapla"));
-//        this.downloadFromExchangeBox.addActionListener(updateComponentsListener);
-        //this.securityInformationLabel = new JLabel(getString("security.info"));
-        //this.filterCategoryLabel = new JLabel(getString("category.filter"));
-
         double[][] sizes = new double[][]{
                 {5, TableLayout.PREFERRED, 5, TableLayout.FILL, 5},
                 {TableLayout.PREFERRED, 5,
@@ -199,128 +114,141 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 
         TableLayout tableLayout = new TableLayout(sizes);
         this.optionsPanel.setLayout(tableLayout);
-        //this.optionsPanel.add(this.enableSynchronisationBox, "1,0");
-        //  this.optionsPanel.add(this.usernameLabel, "1,2");
-//        this.optionsPanel.add(this.usernameTextField, "3,2");
-//        this.optionsPanel.add(this.passwordLabel, "1,4");
-//        this.optionsPanel.add(this.passwordTextField, "3,4");
-//        this.optionsPanel.add(this.eventTypesLabel, "1,6");
-        //this.optionsPanel.add(filter.getButton(), "3,6");
-        this.optionsPanel.add(new JLabel("Exchange Login"), "1, 8");
-        final JButton syncButton = new JButton("Set Login");
-        syncButton.addActionListener(new ActionListener() {
+        this.optionsPanel.add(new JLabel("Exchange Login"), "1, 2");
+        loginButton = new RaplaButton();
+        syncButton = new RaplaButton();
+        removeButton = new RaplaButton();
+        loginButton.setText("Set Login");
+        removeButton.setText("Remove Login");
+        syncButton.setText("Sync");
+        usernameInfoLabel.setText( "exchange user");
+        usernameLabel.setText("not connected");
+        this.optionsPanel.add(usernameInfoLabel, "1, 0");
+        this.optionsPanel.add(usernameLabel, "3, 0");
+        enableNotifyBox = new JCheckBox("Send mail on invitation/cancelation");
+        this.optionsPanel.add(loginButton, "3, 2");
+        this.optionsPanel.add(removeButton, "3, 4");
+        this.optionsPanel.add(syncButton, "3, 6");
+        this.optionsPanel.add(this.enableNotifyBox, "1,8");
+        loginButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
             	
             	boolean modal = true;
-				String[] options = new String[] {getString("save"),getString("abort")};
-				SyncDialog content = new SyncDialog();
-				content.init("");
+				String[] options = new String[] {getString("connect"),getString("abort")};
+				final SyncDialog content = new SyncDialog();
+				if ( connected)
+				{
+					String text = usernameLabel.getText();
+					content.init(text);
+				}
 				try
 				{
-					DialogUI dialog = DialogUI.create(getContext(), getComponent(), modal, content, options);
+					final DialogUI dialog = DialogUI.create(getContext(), getComponent(), modal, content, options);
+					dialog.setTitle( "Exchange Login");
+					dialog.getButton( 0).setAction( new AbstractAction() {
+						
+						@Override
+						public void actionPerformed(ActionEvent e) {
+							String username = content.getUsername();
+							String password = content.getPassword();
+						     try {
+						    	 service.changeUser(username,password);
+						     } catch (RaplaException ex) {
+			                	 showException(ex, getMainComponent());
+			                	 return;
+			                 }
+						     dialog.close();
+						}
+					});
 					dialog.start();
-					int selectedIndex = dialog.getSelectedIndex();
-					if ( selectedIndex == 0)
-					{
-						String username = content.getUsername();
-						String password = content.getPassword();
-					     try {
-					    	 final String returnedMessageString = service.changeUser(username,password);
-					    	 getLogger().info(returnedMessageString);
-					     } catch (RaplaException ex) {
-		                	 showException(ex, getMainComponent());
-		                     getLogger().error("The operation was not successful!", ex);
-		                 }
-					}
+					updateComponentState();
 				}
 				catch (RaplaException ex)
 				{
 					 showException(ex, getMainComponent());
                      getLogger().error("The operation was not successful!", ex);
 				}
-//                 if (JOptionPane.showConfirmDialog(getMainComponent(),
-//                         getString("button.sync.user.confirm"))==JOptionPane.YES_OPTION) {
-//                 try {
-//                	 String password = new String( passwordTextField.getPassword());
-//                	 String username = usernameTextField.getText();
-//                	 DialogUI dialog = DialogUI.create(getContext(), getComponent(), false,"Exchange result",returnedMessageString);
-//                	 dialog.start();
-////                     JOptionPane.showMessageDialog(
-////                             getMainComponent(), returnedMessageString, "Information", JOptionPane.INFORMATION_MESSAGE);
-//                 } catch (RaplaException ex) {
-//                	 showException(ex, getMainComponent());
-//                     getLogger().error("The operation was not successful!", ex);
-//                 }
-            	
             }
-        });   
-        this.optionsPanel.add(syncButton, "3, 8");
-      //  this.optionsPanel.add(this.downloadFromExchangeBox, "1,8");
-        //this.optionsPanel.add(this.filterCategoryLabel, "1,10");
-        //this.optionsPanel.add(this.filterCategoryField, "3,10");
-        //this.optionsPanel.add(this.securityInformationLabel, "3,12");
+        });
+        removeButton.addActionListener( new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				try
+				{
+					service.removeUser();
+					updateComponentState();
+				}
+				catch (RaplaException ex)
+				{
+					 showException(ex, getMainComponent());
+                     getLogger().error("The operation was not successful!", ex);
+				}
+			}
+		});
+        
+        
+//        this.filterCategoryField = new JTextField();
+//        this.eventTypesLabel = new JLabel(getString("event.raplatypes"));
+//        this.eventTypesList = new JList();
+//        this.eventTypesList.setVisibleRowCount(5);
+//        this.eventTypesList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+//
+//        this.enableSynchronisationBox = new JCheckBox(getString("enable.sync.rapla.exchange"));
+//        UpdateComponentsListener updateComponentsListener = new UpdateComponentsListener();
+//        this.enableSynchronisationBox.addActionListener(updateComponentsListener);
+//        this.downloadFromExchangeBox = new JCheckBox(getString("enable.sync.exchange.rapla"));
+//        this.downloadFromExchangeBox.addActionListener(updateComponentsListener);
+//        this.securityInformationLabel = new JLabel(getString("security.info"));
+//        this.filterCategoryLabel = new JLabel(getString("category.filter"));
+//          this.optionsPanel.add(this.usernameLabel, "1,2");
+//      this.optionsPanel.add(this.usernameTextField, "3,2");
+//      this.optionsPanel.add(this.passwordLabel, "1,4");
+//      this.optionsPanel.add(this.passwordTextField, "3,4");
+//      this.optionsPanel.add(this.eventTypesLabel, "1,6");
+//      this.optionsPanel.add(filter.getButton(), "3,6");
+//
+//          this.optionsPanel.add(this.downloadFromExchangeBox, "1,8");
+//        this.optionsPanel.add(this.filterCategoryLabel, "1,10");
+//        this.optionsPanel.add(this.filterCategoryField, "3,10");
+//        this.optionsPanel.add(this.securityInformationLabel, "3,12");
+
     }
 
-	/**
-     *
-     */
-    
-
-    private void updateComponentState() {
-        //
-        //enableSynchronisationBox.setEnabled(ExchangeConnectorConfig.ENABLED_BY_ADMIN);
-        //syncButton.setEnabled( enableSynchronisationBox.isSelected());
-        //passwordTextField.setEnabled(enableSynchronisationBox.isSelected());
-        //downloadFromExchangeBox.setEnabled(ExchangeConnectorConfig.ENABLED_BY_ADMIN && enableSynchronisationBox.isSelected());
-        //filterCategoryField.setEnabled(ExchangeConnectorConfig.ENABLED_BY_ADMIN && enableSynchronisationBox.isSelected() && downloadFromExchangeBox.isSelected());
-        //filter.getButton().setEnabled( enableSynchronisationBox.isSelected());
-    }
-
-    /**
-     *
-     */
-    private void setValuesToJComponents() {
-    	//boolean    enableSynchronisation = preferences.getEntryAsBoolean(ExchangeConnectorConfig.ENABLED_BY_USER_KEY, ExchangeConnectorConfig.DEFAULT_ENABLED_BY_USER);
-            //downloadFromExchange = preferences.getEntryAsBoolean(ExchangeConnectorConfig.SYNC_FROM_EXCHANGE_ENABLED_KEY, ExchangeConnectorConfig.DEFAULT_SYNC_FROM_EXCHANGE_ENABLED);
-            //filterCategory = preferences.getEntryAsString(ExchangeConnectorConfig.EXCHANGE_INCOMING_FILTER_CATEGORY_KEY, ExchangeConnectorConfig.DEFAULT_EXCHANGE_INCOMING_FILTER_CATEGORY);
-    	//String eventTypeKeys = preferences.getEntryAsString(ExchangeConnectorConfig.EXPORT_EVENT_TYPE_KEY, ExchangeConnectorConfig.DEFAULT_EXPORT_EVENT_TYPE);
-//    	usernameTextField.setText( preferences.getEntryAsString( ExchangeConnectorConfig.USERNAME, ""));
-//        passwordTextField.setText( preferences.getEntryAsString( ExchangeConnectorConfig.PASSWORD, ""));
-        //enableSynchronisationBox.setSelected( enableSynchronisation);
-        //downloadFromExchangeBox.setSelected(ExchangeConnectorConfig.ENABLED_BY_ADMIN && downloadFromExchange);
-        //filterCategoryField.setText(filterCategory);
-
-//        final DefaultListModel model = new DefaultListModel();
-//        try {
-//            DynamicType[] dynamicTypes = getClientFacade().getDynamicTypes(DynamicTypeAnnotations.VALUE_CLASSIFICATION_TYPE_RESERVATION);
-//			for (DynamicType event : dynamicTypes) {
-//                // event type of "import from exchange" will (for now not) be ignored!
-// //               String elementKey = event.getElementKey();
-////				String iMPORT_EVENT_TYPE = ExchangeConnectorConfig.IMPORT_EVENT_TYPE;
-////				if (!iMPORT_EVENT_TYPE.equalsIgnoreCase(elementKey))
-//                    model.addElement(new StringWrapper<DynamicType>(event));
-//            }
-//        } catch (RaplaException e) {
+    private void setValuesToJComponents() throws RaplaException {
+    	boolean enableNotify = preferences.getEntryAsBoolean(ExchangeConnectorConfig.EXCHANGE_SEND_INVITATION_AND_CANCELATION, ExchangeConnectorConfig.DEFAULT_EXCHANGE_SEND_INVITATION_AND_CANCELATION);
+    	enableNotifyBox.setSelected( enableNotify);
+    	
+//        downloadFromExchange = preferences.getEntryAsBoolean(ExchangeConnectorConfig.SYNC_FROM_EXCHANGE_ENABLED_KEY, ExchangeConnectorConfig.DEFAULT_SYNC_FROM_EXCHANGE_ENABLED);
+//        filterCategory = preferences.getEntryAsString(ExchangeConnectorConfig.EXCHANGE_INCOMING_FILTER_CATEGORY_KEY, ExchangeConnectorConfig.DEFAULT_EXCHANGE_INCOMING_FILTER_CATEGORY);
+//	String eventTypeKeys = preferences.getEntryAsString(ExchangeConnectorConfig.EXPORT_EVENT_TYPE_KEY, ExchangeConnectorConfig.DEFAULT_EXPORT_EVENT_TYPE);
+//	usernameTextField.setText( preferences.getEntryAsString( ExchangeConnectorConfig.USERNAME, ""));
+//    passwordTextField.setText( preferences.getEntryAsString( ExchangeConnectorConfig.PASSWORD, ""));
+//    downloadFromExchangeBox.setSelected(ExchangeConnectorConfig.ENABLED_BY_ADMIN && downloadFromExchange);
+//    filterCategoryField.setText(filterCategory);
+//
+//    final DefaultListModel model = new DefaultListModel();
+//    try {
+//        DynamicType[] dynamicTypes = getClientFacade().getDynamicTypes(DynamicTypeAnnotations.VALUE_CLASSIFICATION_TYPE_RESERVATION);
+//		for (DynamicType event : dynamicTypes) {
+//            // event type of "import from exchange" will (for now not) be ignored!
+//            String elementKey = event.getElementKey();
+//			String iMPORT_EVENT_TYPE = ExchangeConnectorConfig.IMPORT_EVENT_TYPE;
+//			if (!iMPORT_EVENT_TYPE.equalsIgnoreCase(elementKey))
+//                model.addElement(new StringWrapper<DynamicType>(event));
 //        }
-//        eventTypesList.setModel(new SortedListModel(model));
-//        eventTypesList.setModel(model);
-//        selectEventTypesInListFromCSV(eventTypeKeys);
-        updateComponentState();
+//    } catch (RaplaException e) {
+//    }
+//    eventTypesList.setModel(new SortedListModel(model));
+//    eventTypesList.setModel(model);
+//    selectEventTypesInListFromCSV(eventTypeKeys);
+    	updateComponentState();
     }
 
-    /**
-     * @see org.rapla.gui.DefaultPluginOption#getPluginClass()
-     */
     public Class<? extends PluginDescriptor<?>> getPluginClass() {
         return ExchangeConnectorPlugin.class;
     }
-
-//    private class UpdateComponentsListener implements ActionListener {
-//        public void actionPerformed(ActionEvent e) {
-//            updateComponentState();
-//        }
-//    }
     
     class SyncDialog extends JPanel
     {
@@ -331,6 +259,7 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
         private JLabel passwordLabel;
         {
             this.usernameTextField = new JTextField();
+            usernameTextField.setEnabled( !connected);
             this.passwordTextField = new JPasswordField();
             this.passwordLabel = new JLabel(getString("password.server"));
             this.usernameLabel = new JLabel(getString("username.server"));
@@ -361,7 +290,58 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
         
         
     }
-    
+
+    private void updateComponentState() throws RaplaException {
+    	SynchronizationStatus synchronizationStatus = service.getSynchronizationStatus();
+    	this.connected = synchronizationStatus.enabled;
+    	this.usernameLabel.setText(  connected ? synchronizationStatus.username: "not connected");
+    	this.loginButton.setText( connected ? "change password" : "connect");
+    	this.enableNotifyBox.setEnabled( connected);
+    	this.removeButton.setEnabled( connected);
+    	this.syncButton.setEnabled( connected);
+
+    }
+//	enableSynchronisationBox.setEnabled(ExchangeConnectorConfig.ENABLED_BY_ADMIN);
+//    syncButton.setEnabled( enableSynchronisationBox.isSelected());
+//    passwordTextField.setEnabled(enableSynchronisationBox.isSelected());
+//    downloadFromExchangeBox.setEnabled(ExchangeConnectorConfig.ENABLED_BY_ADMIN && enableSynchronisationBox.isSelected());
+//    filterCategoryField.setEnabled(ExchangeConnectorConfig.ENABLED_BY_ADMIN && enableSynchronisationBox.isSelected() && downloadFromExchangeBox.isSelected());
+//    filter.getButton().setEnabled( enableSynchronisationBox.isSelected());
+//}
+//private void setValuesToJComponents() {
+//	boolean    enableSynchronisation = preferences.getEntryAsBoolean(ExchangeConnectorConfig.ENABLED_BY_USER_KEY, ExchangeConnectorConfig.DEFAULT_ENABLED_BY_USER);
+//        downloadFromExchange = preferences.getEntryAsBoolean(ExchangeConnectorConfig.SYNC_FROM_EXCHANGE_ENABLED_KEY, ExchangeConnectorConfig.DEFAULT_SYNC_FROM_EXCHANGE_ENABLED);
+//        filterCategory = preferences.getEntryAsString(ExchangeConnectorConfig.EXCHANGE_INCOMING_FILTER_CATEGORY_KEY, ExchangeConnectorConfig.DEFAULT_EXCHANGE_INCOMING_FILTER_CATEGORY);
+//	String eventTypeKeys = preferences.getEntryAsString(ExchangeConnectorConfig.EXPORT_EVENT_TYPE_KEY, ExchangeConnectorConfig.DEFAULT_EXPORT_EVENT_TYPE);
+//	usernameTextField.setText( preferences.getEntryAsString( ExchangeConnectorConfig.USERNAME, ""));
+//    passwordTextField.setText( preferences.getEntryAsString( ExchangeConnectorConfig.PASSWORD, ""));
+//    enableSynchronisationBox.setSelected( enableSynchronisation);
+//    downloadFromExchangeBox.setSelected(ExchangeConnectorConfig.ENABLED_BY_ADMIN && downloadFromExchange);
+//    filterCategoryField.setText(filterCategory);
+//
+//    final DefaultListModel model = new DefaultListModel();
+//    try {
+//        DynamicType[] dynamicTypes = getClientFacade().getDynamicTypes(DynamicTypeAnnotations.VALUE_CLASSIFICATION_TYPE_RESERVATION);
+//		for (DynamicType event : dynamicTypes) {
+//            // event type of "import from exchange" will (for now not) be ignored!
+//            String elementKey = event.getElementKey();
+//			String iMPORT_EVENT_TYPE = ExchangeConnectorConfig.IMPORT_EVENT_TYPE;
+//			if (!iMPORT_EVENT_TYPE.equalsIgnoreCase(elementKey))
+//                model.addElement(new StringWrapper<DynamicType>(event));
+//        }
+//    } catch (RaplaException e) {
+//    }
+//    eventTypesList.setModel(new SortedListModel(model));
+//    eventTypesList.setModel(model);
+//    selectEventTypesInListFromCSV(eventTypeKeys);
+//    updateComponentState();
+//}
+//    private class UpdateComponentsListener implements ActionListener {
+//        public void actionPerformed(ActionEvent e) {
+//            updateComponentState();
+//        }
+//    }
+
 }
 
 

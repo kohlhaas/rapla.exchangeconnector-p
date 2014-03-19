@@ -104,6 +104,11 @@ public class AppointmentSynchronizer extends RaplaComponent {
   		}
     }
     
+    public Appointment getRaplaAppointment() 
+    {
+		return raplaAppointment;
+	}
+    
     public void execute() throws Exception
     {
     	SyncStatus status = appointmentTask.getStatus();

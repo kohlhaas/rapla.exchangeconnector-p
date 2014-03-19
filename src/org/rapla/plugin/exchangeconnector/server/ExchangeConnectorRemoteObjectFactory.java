@@ -11,6 +11,7 @@ import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 import org.rapla.plugin.exchangeconnector.SynchronizationStatus;
 import org.rapla.plugin.exchangeconnector.server.exchange.EWSConnector;
 import org.rapla.server.RaplaKeyStorage;
+import org.rapla.server.RaplaKeyStorage.LoginInfo;
 import org.rapla.server.RemoteMethodFactory;
 import org.rapla.server.RemoteSession;
 
@@ -51,35 +52,38 @@ public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent impleme
 			@Override
 			public SynchronizationStatus getSynchronizationStatus() throws RaplaException {
 				SynchronizationStatus status = new SynchronizationStatus();
-				boolean connected = keyStorage.getSecrets(user, "exchange") != null;
+				LoginInfo secrets = keyStorage.getSecrets(user, "exchange");
+				boolean connected = secrets != null;
 				status.enabled = connected;
+				status.username = secrets != null ? secrets.login :"";
 				status.status = "synchronized";
 				return status;
 			}
+			
 	
 			@Override
-			public String changeUser(String exchangeUsername, String exchangePassword) throws RaplaException {
+			public void changeUser(String exchangeUsername, String exchangePassword) throws RaplaException {
 				String raplaUsername = user.getUsername();
 		        getLogger().debug("Invoked add exchange user for rapla " + raplaUsername + " with exchange user " + exchangeUsername);
-		        String returnMessage;
-	
+				boolean testConnection = true;
+				if(testConnection) {
+					String fqdn = config.get(ExchangeConnectorConfig.EXCHANGE_WS_FQDN);
+					EWSConnector connector = new EWSConnector(fqdn, exchangeUsername, exchangePassword);
 					try {
-						boolean testConnection = true;
-						if(testConnection) {
-							String fqdn = config.get(ExchangeConnectorConfig.EXCHANGE_WS_FQDN);
-							EWSConnector connector = new EWSConnector(fqdn, exchangeUsername, exchangePassword);
-							connector.test();
-						}
-						getLogger().debug("Invoked change connection for user " + user.getUsername());
-						keyStorage.storeLoginInfo( user, "exchange", exchangeUsername, exchangePassword);
-		                returnMessage = "Your registration was successful! " ;
-	
-		            } catch (Exception e) {
-		                returnMessage = "An error occurred - You are not registered!\n\n"+e.getMessage();
-	
-		                getLogger().error(e.getMessage(),e);
-					} 
-				return returnMessage;	
+						connector.test();
+					} catch (Exception e) {
+						throw new RaplaException("Kann die Verbindung zu Exchange nicht herstellen: " + e.getMessage());
+					}
+				}
+				getLogger().debug("Invoked change connection for user " + user.getUsername());
+				keyStorage.storeLoginInfo( user, "exchange", exchangeUsername, exchangePassword);
+			}
+			
+			public void removeUser() throws RaplaException 
+			{
+				getLogger().info("Removing exchange connection for user " + user);
+				keyStorage.removeLoginInfo(user, "exchange");
+				manager.removeTasks(user);
 			}
 		};
 	}

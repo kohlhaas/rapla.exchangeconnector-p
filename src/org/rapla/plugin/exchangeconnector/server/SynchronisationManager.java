@@ -71,26 +71,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 	}
 	
     
-    private AppointmentSynchronizer createSyncronizer(SynchronizationTask task) throws RaplaException, EntityNotFoundException
-    {
-    	String userId = task.getUserId();
-    	EntityResolver resolver = getContext().lookup(StorageOperator.class);
-		User user = (User) resolver.resolve( userId); 
-		LoginInfo secrets = keyStorage.getSecrets( user, "exchange");
-    	if ( secrets != null)
-    	{
-    		String username = secrets.login;
-    		String password = secrets.secret;
-    		String appointmentId = task.getAppointmentId();
-			// we don't resolve the appointment if we delete 
-    		Appointment appointment = task.getStatus() != SyncStatus.toDelete  ? (Appointment) resolver.resolve( appointmentId) : null;
-			Preferences preferences = getQuery().getPreferences( user);
-			boolean notificationMail = preferences.getEntryAsBoolean( ExchangeConnectorConfig.EXCHANGE_SEND_INVITATION_AND_CANCELATION, ExchangeConnectorConfig.DEFAULT_EXCHANGE_SEND_INVITATION_AND_CANCELATION);
-			return new AppointmentSynchronizer(getContext(), config,task, appointment,user,username,password, notificationMail);
-    	}
-    	throw new RaplaException("No exchange username and password set for user " + user.getUsername());
-    }
-
+    
 //    public synchronized void synchronizeUser(User user)  {
 //    	Collection<SynchronizationTask> tasks = new ArrayList<SynchronizationTask>();
 //    	try {
@@ -130,7 +111,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
  		}
  		else
  		{
- 			 if ( check( appointment))
+ 			 if ( isInSyncInterval( appointment))
  	         {
  				 Collection<String> matchingUserIds = findMatchingUser( appointment);
  				 for( String userId:matchingUserIds)
@@ -387,20 +368,47 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 		for ( SynchronizationTask task:tasks)
 		{
 			 final AppointmentSynchronizer worker; 
+			 String userId = task.getUserId();
+			 EntityResolver resolver = getContext().lookup(StorageOperator.class);
+			 String appointmentId = task.getAppointmentId();
+			 Appointment appointment;
+			 User user;
 			 try
 			 {
-				 worker = createSyncronizer(task);
+			 	// we don't resolve the appointment if we delete 
+				 appointment = task.getStatus() != SyncStatus.toDelete  ? (Appointment) resolver.tryResolve( appointmentId) : null;
+				 user = (User) resolver.resolve( userId);
 			 } catch (EntityNotFoundException e) {
-				 getLogger().warn( "Removing synchronize " + task + " due to " + e.getMessage() );
+				 getLogger().info( "Removing synchronize " + task + " due to " + e.getMessage() );
 				 appointmentStorage.remove( task);
 				 continue;
 			 }
-			try
-	        {
-	            worker.execute();
-	        } catch (Exception e) {
-	        	getLogger().warn( "Can't synchronize " + task , e );
-	        }
+			 if ( appointment != null && !isInSyncInterval( appointment))
+			 {
+				 appointmentStorage.remove( task);
+				 continue;
+			 }
+			 LoginInfo secrets = keyStorage.getSecrets( user, "exchange");
+			 if ( secrets != null)
+			 {
+				 String username = secrets.login;
+				 String password = secrets.secret;
+				 Preferences preferences = getQuery().getPreferences( user);
+				 boolean notificationMail = preferences.getEntryAsBoolean( ExchangeConnectorConfig.EXCHANGE_SEND_INVITATION_AND_CANCELATION, ExchangeConnectorConfig.DEFAULT_EXCHANGE_SEND_INVITATION_AND_CANCELATION);
+				 worker = new AppointmentSynchronizer(getContext(), config,task, appointment,user,username,password, notificationMail);
+			 }
+			 else
+			 {
+				 getLogger().info( "User no longer connected to exchange " );
+				 appointmentStorage.remove( task);
+				 continue;
+			 }
+			 try
+			 {
+				 worker.execute();
+			 } catch (Exception e) {
+				 getLogger().warn( "Can't synchronize " + task , e );
+			 }
 		}
 	}
         
@@ -413,7 +421,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
     	return new TimeInterval(start, end);
     }
 
-    private synchronized boolean check( Appointment appointment)  {
+    private boolean isInSyncInterval( Appointment appointment)  {
     	Date start = appointment.getStart();
 		TimeInterval appointmentRange = new TimeInterval(start, appointment.getMaxEnd());
 		TimeInterval syncRange = getSyncRange();
@@ -427,6 +435,11 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 			return true;
 		}
     }
+
+	public void removeTasks(User user) throws RaplaException 
+	{
+		appointmentStorage.removeTasks( user.getId());
+	}
 
     
 

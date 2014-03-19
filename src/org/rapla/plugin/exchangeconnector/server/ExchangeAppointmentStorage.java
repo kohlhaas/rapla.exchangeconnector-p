@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,20 +59,35 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		Attribute appointmentIdAtt = dynamicType.getAttribute("objectId");
 		Attribute exchangeAppointmentIdAtt = dynamicType.getAttribute("externalObjectId");
 		Attribute statusAtt = dynamicType.getAttribute("status");
+		Attribute retriesAtt = dynamicType.getAttribute("retries");
 		ClassificationFilter newClassificationFilter = dynamicType.newClassificationFilter();
         Collection<Allocatable> store = operator.getAllocatables( newClassificationFilter.toArray());        
 		for ( Allocatable persistant:store)
 		{
 			User user = persistant.getOwner();
-			String appointmentId = persistant.getClassification().getValueAsString(appointmentIdAtt, null);
-			String exchangeAppointmentId = persistant.getClassification().getValueAsString(exchangeAppointmentIdAtt, null);
-			String status = persistant.getClassification().getValueAsString(statusAtt, null);
+			String appointmentId = (String)persistant.getClassification().getValue(appointmentIdAtt);
+			String exchangeAppointmentId = (String) persistant.getClassification().getValue(exchangeAppointmentIdAtt);
+			String status = (String)persistant.getClassification().getValue(statusAtt);
+			String retriesString = (String) persistant.getClassification().getValue(retriesAtt); 
 			if ( user == null)
 			{
 				getLogger().error("Synchronization task " + persistant.getId() +  " has no userId. Ignoring.");
 				continue;
 			}
-			SynchronizationTask synchronizationTask = new SynchronizationTask(appointmentId, user.getId());
+			int retries = 0;
+			if ( retriesString != null)
+			{
+				try
+				{
+					retries = Integer.parseInt( retriesString);
+				}
+				catch ( Exception ex)
+				{
+					getLogger().error( "Synchronization task " + persistant.getId() +  " has invalid retriesString. Ignoring.");
+					continue;
+				}
+			}
+			SynchronizationTask synchronizationTask = new SynchronizationTask(appointmentId, user.getId(), retries);
 			if ( exchangeAppointmentId != null)
 			{
 				synchronizationTask.setExchangeAppointmentId( exchangeAppointmentId);
@@ -149,7 +165,8 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 	
 	synchronized public SynchronizationTask createTask(Appointment appointment, String userId) 
 	{
-		return new SynchronizationTask( appointment.getId(), userId);
+		int retries= 0;
+		return new SynchronizationTask( appointment.getId(), userId, retries);
 	}
 
 	
@@ -288,6 +305,40 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		}
 		User user = null;
 		operator.storeAndRemove(storeObjects, removeObjects, user);
+	}
+
+	public void removeTasks(String userId) throws RaplaException 
+	{
+		List<SynchronizationTask> taskList = new ArrayList<SynchronizationTask>();
+		Lock lock = writeLock();
+		try
+		{
+			for (String appointmentId : tasks.keySet())
+			{
+				Set<SynchronizationTask> set = tasks.get(appointmentId);
+				if ( set != null)
+				{
+					Iterator<SynchronizationTask> it = set.iterator();
+					while (it.hasNext())
+					{
+						SynchronizationTask task = it.next();
+						String taskUserId = task.getUserId();
+						if (userId == taskUserId || (userId!= null && userId.equals( taskUserId)))
+						{
+							it.remove();
+							taskList.add( task);
+						}
+					}
+				}
+			}
+		} 
+		finally
+		{
+			unlock( lock);
+		}
+		Collection<SynchronizationTask> toStore = Collections.emptyList();
+		Collection<SynchronizationTask> toRemove = taskList;
+		storeAndRemove(toStore, toRemove);
 	}
 
 	
