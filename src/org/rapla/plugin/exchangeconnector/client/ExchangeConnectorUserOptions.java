@@ -1,5 +1,6 @@
 package org.rapla.plugin.exchangeconnector.client;
 
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Locale;
@@ -25,9 +26,6 @@ import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 import org.rapla.plugin.exchangeconnector.SynchronizationStatus;
 
-/**
- * @author lutz
- */
 public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 
    // private static final String DEFAULT_DISPLAYED_VALUE = "******";
@@ -42,8 +40,9 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
     private JCheckBox enableNotifyBox;
     //private JCheckBox downloadFromExchangeBox;
     //private JLabel securityInformationLabel;
-    private JLabel usernameLabel = new JLabel();
-    private JLabel usernameInfoLabel = new JLabel();
+    private JLabel usernameLabel;
+    private JLabel usernameInfoLabel;
+    private JLabel unsynchronizedLabel;
     //private JTextField filterCategoryField;
     //private String filterCategory;
     //private JLabel eventTypesLabel;
@@ -52,6 +51,8 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
     RaplaButton loginButton;
     RaplaButton syncButton;
     RaplaButton removeButton;
+    RaplaButton retryButton;
+    
 	private boolean connected;
     
     public ExchangeConnectorUserOptions(RaplaContext raplaContext,ExchangeConnectorRemote service) throws Exception {
@@ -94,8 +95,12 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
     }
 
  
-    private void initJComponents() throws RaplaException {
+    private void initJComponents() {
         this.optionsPanel = new JPanel();
+        usernameLabel = new JLabel();
+        usernameInfoLabel = new JLabel();
+        unsynchronizedLabel = new JLabel();
+
         double[][] sizes = new double[][]{
                 {5, TableLayout.PREFERRED, 5, TableLayout.FILL, 5},
                 {TableLayout.PREFERRED, 5,
@@ -118,9 +123,11 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
         loginButton = new RaplaButton();
         syncButton = new RaplaButton();
         removeButton = new RaplaButton();
+        retryButton = new RaplaButton();
         loginButton.setText("Set Login");
-        removeButton.setText("Remove Login");
-        syncButton.setText("Sync");
+        removeButton.setText("Remove connection");
+        syncButton.setText("ReSync");
+        retryButton.setText("retry");
         usernameInfoLabel.setText( "exchange user");
         usernameLabel.setText("not connected");
         this.optionsPanel.add(usernameInfoLabel, "1, 0");
@@ -130,6 +137,8 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
         this.optionsPanel.add(removeButton, "3, 4");
         this.optionsPanel.add(syncButton, "3, 6");
         this.optionsPanel.add(this.enableNotifyBox, "1,8");
+        this.optionsPanel.add(unsynchronizedLabel, "1, 10");
+        this.optionsPanel.add(retryButton, "3, 10");
         loginButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -148,6 +157,8 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 					dialog.setTitle( "Exchange Login");
 					dialog.getButton( 0).setAction( new AbstractAction() {
 						
+						private static final long serialVersionUID = 1L;
+
 						@Override
 						public void actionPerformed(ActionEvent e) {
 							String username = content.getUsername();
@@ -171,6 +182,23 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 				}
             }
         });
+        syncButton.addActionListener( new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				try
+				{
+					service.synchronize();
+					updateComponentState();
+				}
+				catch (RaplaException ex)
+				{
+					 showException(ex, getMainComponent());
+                     getLogger().error("The operation was not successful!", ex);
+				}
+				
+			}
+		});
         removeButton.addActionListener( new ActionListener() {
 			
 			@Override
@@ -178,6 +206,22 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 				try
 				{
 					service.removeUser();
+					updateComponentState();
+				}
+				catch (RaplaException ex)
+				{
+					 showException(ex, getMainComponent());
+                     getLogger().error("The operation was not successful!", ex);
+				}
+			}
+		});
+        retryButton.addActionListener( new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				try
+				{
+					service.retry();
 					updateComponentState();
 				}
 				catch (RaplaException ex)
@@ -295,10 +339,18 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
     	SynchronizationStatus synchronizationStatus = service.getSynchronizationStatus();
     	this.connected = synchronizationStatus.enabled;
     	this.usernameLabel.setText(  connected ? synchronizationStatus.username: "not connected");
+    	int unsynchronizedEvents = synchronizationStatus.unsynchronizedEvents;
+    	unsynchronizedLabel.setText(unsynchronizedEvents + " unsynchronized Events");
+    	Color foreground = usernameLabel.getForeground();
+    	if ( foreground != null)
+    	{
+    		unsynchronizedLabel.setForeground( unsynchronizedEvents > 0 ? Color.RED : foreground);
+    	}
     	this.loginButton.setText( connected ? "change password" : "connect");
     	this.enableNotifyBox.setEnabled( connected);
     	this.removeButton.setEnabled( connected);
     	this.syncButton.setEnabled( connected);
+    	this.retryButton.setEnabled( connected && unsynchronizedEvents > 0);
 
     }
 //	enableSynchronisationBox.setEnabled(ExchangeConnectorConfig.ENABLED_BY_ADMIN);

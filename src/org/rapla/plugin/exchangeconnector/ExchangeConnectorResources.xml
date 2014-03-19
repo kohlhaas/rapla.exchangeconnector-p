@@ -35,8 +35,8 @@
 	<text lang="de">Nur Termine mit der folgenden Kategorie importieren</text>
 </entry>
 <entry key="button.sync.all">
-	<text lang="en">(Re-)Sync all</text>
-	<text lang="de">Alle (re-)synchronisieren</text>
+	<text lang="en">ReSync all</text>
+	<text lang="de">Alle resynchronisieren</text>
 </entry>
 <entry key="infobox.sync">
 	<text lang="en">Synchronize all Appointments in chosen

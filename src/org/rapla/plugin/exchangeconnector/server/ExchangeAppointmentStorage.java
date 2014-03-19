@@ -123,6 +123,54 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		return RaplaComponent.lock( lock.readLock(), 10);
 	}
 	
+	public Collection<SynchronizationTask> getAllTasks() throws RaplaException {
+		List<SynchronizationTask> result = new ArrayList<SynchronizationTask>();
+		Lock lock = readLock();
+		try
+		{	
+			for (Collection<SynchronizationTask> list:tasks.values())
+			{
+				if ( list != null)
+				{
+					result.addAll( list);
+				}
+			}
+			
+			return result;
+		}
+		finally
+		{
+			unlock( lock);
+		}
+	}
+	
+	public Collection<SynchronizationTask> getTasks(User user) throws RaplaException {
+		List<SynchronizationTask> result = new ArrayList<SynchronizationTask>();
+		Lock lock = readLock();
+		try
+		{	
+			for (Collection<SynchronizationTask> list:tasks.values())
+			{
+				if ( list != null)
+				{
+					for ( SynchronizationTask task:list)
+					{
+						if ( task.matches( user))
+						{
+							result.add( task);
+						}
+					}
+				}
+			}
+			return result;
+		}
+		finally
+		{
+			unlock( lock);
+		}
+	}
+
+
 	
 	synchronized public SynchronizationTask getTask(Appointment appointment, String userId) throws RaplaException {
 		String appointmentId = appointment.getId();
@@ -134,8 +182,7 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 			{
 				for (SynchronizationTask task: set)
 				{
-					String taskUserId = task.getUserId();
-					if (userId == taskUserId || (userId!= null && userId.equals( taskUserId)))
+					if (task.matchesUserId(userId))
 					{
 						return task;
 					}
@@ -168,21 +215,6 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		int retries= 0;
 		return new SynchronizationTask( appointment.getId(), userId, retries);
 	}
-
-	
-	
-	// FIXME implement sync range
-//	synchronized public Collection<SynchronizationTask> getTasks(User user, TimeInterval syncRange) {
-//		Collection<SynchronizationTask> result = new ArrayList<SynchronizationTask>();
-//		for (SynchronizationTask task: tasks)
-//		{
-//			if (task.matches( user))
-//			{
-//				result.add(task);
-//			}
-//		}
-//		return result;
-//	}
 	
 	synchronized public void addOrReplace(Collection<SynchronizationTask> toStore) throws RaplaException 
 	{
@@ -237,14 +269,8 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		}
 	}
 	
-	synchronized public void changeStatus(SynchronizationTask task,SyncStatus newStatus) throws RaplaException {
-		task.setStatus( newStatus );
-		List<SynchronizationTask> toStore = Collections.singletonList(task);
-		List<SynchronizationTask> toRemove = Collections.emptyList();
-		storeAndRemove( toStore,toRemove);
-	}
 	
-	private void storeAndRemove(Collection<SynchronizationTask> toStore, Collection<SynchronizationTask> toRemove) throws RaplaException
+	public void storeAndRemove(Collection<SynchronizationTask> toStore, Collection<SynchronizationTask> toRemove) throws RaplaException
 	{
 		Collection<Entity> storeObjects = new HashSet<Entity>();
 		Collection<Entity> removeObjects = new HashSet<Entity>();
@@ -300,6 +326,7 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 				newClassification.setValue("objectId", task.getAppointmentId());
 				newClassification.setValue("externalObjectId", task.getExchangeAppointmentId());
 				newClassification.setValue("status", task.getStatus().name());
+				newClassification.setValue("retries", task.getRetries());
 			}
 
 		}
@@ -322,8 +349,7 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 					while (it.hasNext())
 					{
 						SynchronizationTask task = it.next();
-						String taskUserId = task.getUserId();
-						if (userId == taskUserId || (userId!= null && userId.equals( taskUserId)))
+						if (task.matchesUserId(userId))
 						{
 							it.remove();
 							taskList.add( task);
@@ -340,46 +366,4 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		Collection<SynchronizationTask> toRemove = taskList;
 		storeAndRemove(toStore, toRemove);
 	}
-
-	
-	
-	
-//	/**
-//	 * loads the file into the mapping table
-//	 * @return {@link Boolean} true if loading the serialized file succeeded
-//	 */
-//	@SuppressWarnings("unchecked")
-//	public boolean load() {
-//		try {
-//			File file = new File(storageFilePath );
-//			FileInputStream fileInputStream = new FileInputStream(file);
-//			ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-//			Object appointmentsObject = objectInputStream.readObject();
-//			if(appointmentsObject.getClass().equals(tasks.getClass()))
-//				tasks = (Collection<SynchronizationTask>) appointmentsObject;
-//			objectInputStream.close();
-//			fileInputStream.close();
-//			return true;
-//		} catch (Exception e) {
-//			return false;
-//		}
-//	}
-	
-	/**
-	 * save all data (the mapping table) to a serialized file
-	 * @return {@link Boolean} true if saving the serialized file succeeded
-	 */
-//	public boolean save() {
-//		try {
-//			File file = new File(storageFilePath );
-//			FileOutputStream fileOutputStream = new FileOutputStream(file);
-//			ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
-//			objectOutputStream.writeObject(tasks);
-//			objectOutputStream.close();
-//			fileOutputStream.close();
-//			return true;
-//		} catch (IOException e) {
-//			return false;
-//		}
-//	}
 }

@@ -9,10 +9,21 @@ public class SynchronizationTask implements Serializable
 {
 	public enum SyncStatus implements Serializable
 	{
-		toUpdate
-		,toDelete
-		,toReplace
-		,synched
+		toUpdate(true)
+		,toDelete(true)
+		,toReplace(true)
+		,synched(false)
+		,deleted(false);
+		boolean open;
+		private SyncStatus(boolean open) 
+		{
+			this.open =open;
+		}
+		
+		public boolean isOpen() {
+			return open;
+		}
+		
 	}
 	private static final long serialVersionUID = 219323872273312836L;
 	String userId;
@@ -63,7 +74,12 @@ public class SynchronizationTask implements Serializable
 	public SyncStatus getStatus() {
 		return status;
 	}
-	
+
+	public int getRetries() 
+	{
+		return retries;
+	}
+
 	public void setStatus(SyncStatus status) {
 		if ( status != this.status)
 		{
@@ -108,7 +124,7 @@ public class SynchronizationTask implements Serializable
 		return "SynchronizationTask [userId=" + userId + ", appointmentId="
 				+ appointmentId + ", exchangeAppointmentId="
 				+ exchangeAppointmentId 
-				//+ ", syncInterval=" + syncInterval
+				+ ", retries=" + retries
 				+ ", status=" + status + "]";
 	}
 
@@ -153,6 +169,13 @@ public class SynchronizationTask implements Serializable
 	{
 		return persistantId;
 	}
+
+	public boolean matchesUserId(String otherId) 
+	{
+		boolean b = otherId == this.userId || (otherId!= null && otherId.equals( this.userId));
+		return b;
+	}
+
 
 	
 }

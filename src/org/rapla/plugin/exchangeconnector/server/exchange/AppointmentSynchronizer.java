@@ -45,13 +45,10 @@ import org.rapla.entities.dynamictype.Attribute;
 import org.rapla.entities.dynamictype.AttributeAnnotations;
 import org.rapla.entities.dynamictype.Classification;
 import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
-import org.rapla.facade.RaplaComponent;
-import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.framework.logger.Logger;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig.ConfigReader;
-import org.rapla.plugin.exchangeconnector.server.ExchangeAppointmentStorage;
 import org.rapla.plugin.exchangeconnector.server.SynchronizationTask;
 import org.rapla.plugin.exchangeconnector.server.SynchronizationTask.SyncStatus;
 import org.rapla.server.TimeZoneConverter;
@@ -62,7 +59,7 @@ import org.rapla.server.TimeZoneConverter;
  * contains the interface to the exchange api 
  *
  */
-public class AppointmentSynchronizer extends RaplaComponent {
+public class AppointmentSynchronizer  {
 	
 	public static ExtendedPropertyDefinition raplaAppointmentPropertyDefinition;
 	private ExchangeService service;
@@ -75,17 +72,16 @@ public class AppointmentSynchronizer extends RaplaComponent {
     TimeZoneConverter timeZoneConverter;
     Appointment raplaAppointment;
     TimeZone systemTimeZone = TimeZone.getDefault();
-    ExchangeAppointmentStorage appointmentStorage;
     SynchronizationTask appointmentTask;
     boolean sendNotificationMail;
+    Logger logger;
     
-    public AppointmentSynchronizer(RaplaContext context, ConfigReader config, SynchronizationTask appointmentTask,Appointment appointment,User user, String exchangeUsername, String password, boolean sendNotificationMail) throws RaplaException {
-        super(context);
+    public AppointmentSynchronizer(Logger logger, ConfigReader config, TimeZoneConverter converter,SynchronizationTask appointmentTask,Appointment appointment,User user, String exchangeUsername, String password, boolean sendNotificationMail) throws RaplaException {
         this.sendNotificationMail = sendNotificationMail;
+        this.logger = logger;
         this.raplaUser = user;
     	WebCredentials 	credentials = new WebCredentials(exchangeUsername, password);
-        timeZoneConverter = context.lookup( TimeZoneConverter.class);
-        appointmentStorage = context.lookup( ExchangeAppointmentStorage.class);
+        timeZoneConverter = converter;
         this.raplaAppointment = appointment;
         this.appointmentTask = appointmentTask;
         this.config = config;
@@ -104,6 +100,10 @@ public class AppointmentSynchronizer extends RaplaComponent {
   		}
     }
     
+    public Logger getLogger() {
+		return logger;
+	}
+    
     public Appointment getRaplaAppointment() 
     {
 		return raplaAppointment;
@@ -114,10 +114,11 @@ public class AppointmentSynchronizer extends RaplaComponent {
     	SyncStatus status = appointmentTask.getStatus();
     	switch ( status)
     	{
+    	case deleted: return;
     	case synched: return;
-    	case toDelete: delete();appointmentStorage.remove(appointmentTask);return;
-    	case toReplace: delete();appointmentStorage.changeStatus(appointmentTask,SyncStatus.toUpdate);// no return here
-    	case toUpdate: addOrUpdate();appointmentStorage.changeStatus(appointmentTask,SyncStatus.synched);return;
+    	case toDelete: delete();appointmentTask.setStatus(SyncStatus.deleted);return;
+    	case toReplace: delete();appointmentTask.setStatus(SyncStatus.toUpdate);
+    	case toUpdate: addOrUpdate();appointmentTask.setStatus(SyncStatus.synched);return;
     	}
     }
 
