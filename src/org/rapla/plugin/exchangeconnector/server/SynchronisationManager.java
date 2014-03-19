@@ -326,7 +326,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
         	for ( String key:exportMap.keySet())
         	{
         		CalendarModelConfiguration calendarModelConfiguration = exportMap.get( key);
-        		if ( hasExchangeExport( modelConfig))
+        		if ( hasExchangeExport( calendarModelConfiguration))
             	{
         			Collection<SynchronizationTask> updateTasks = updateTasks(user, calendarModelConfiguration, configList, addUpdate);
             		result.addAll(updateTasks);
