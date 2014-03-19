@@ -202,6 +202,10 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		try
 		{
 			Set<SynchronizationTask> set = tasks.get(appointmentId);
+			if ( set == null)
+			{
+				return Collections.emptyList();
+			}
 			return new ArrayList<SynchronizationTask>( set);
 		}
 		finally
