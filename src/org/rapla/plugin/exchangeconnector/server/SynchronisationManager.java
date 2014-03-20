@@ -127,7 +127,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
     }
 
 	protected Collection<SynchronizationTask> updateTasks(Appointment appointment, boolean remove) throws RaplaException  {
-		Collection<SynchronizationTask> result = new ArrayList<SynchronizationTask>();
+		Collection<SynchronizationTask> result = new HashSet<SynchronizationTask>();
 		if ( remove){
      		Collection<SynchronizationTask> taskList = appointmentStorage.getTasks( appointment);
         	for (SynchronizationTask task:taskList)
@@ -140,6 +140,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
  		{
  			 if ( isInSyncInterval( appointment))
  	         {
+ 				 result.addAll(appointmentStorage.getTasks(appointment));
  				 Collection<String> matchingUserIds = findMatchingUser( appointment);
  				 for( String userId:matchingUserIds)
  				 {
