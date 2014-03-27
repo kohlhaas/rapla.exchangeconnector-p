@@ -252,8 +252,11 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 				if ( !(operation instanceof UpdateResult.Remove))
 				{
 					User owner = preferences.getOwner();
-					Collection<SynchronizationTask> result =  updateCalendarMap(owner, false);
-					tasks.addAll(result);
+					if ( owner != null)
+					{
+						Collection<SynchronizationTask> result =  updateCalendarMap(owner, false);
+						tasks.addAll(result);
+					}
 				}
 			}
 			if ( current.getRaplaType() ==  User.TYPE )
