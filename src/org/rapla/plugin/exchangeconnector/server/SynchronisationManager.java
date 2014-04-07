@@ -443,7 +443,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 			 }
 			 try
 			 {
-				 LoginInfo secrets = keyStorage.getSecrets( user, "exchange");
+				 LoginInfo secrets = keyStorage.getSecrets( user, ExchangeConnectorServerPlugin.EXCHANGE_USER_STORAGE);
 				 if ( secrets != null)
 				 {
 					 String username = secrets.login;

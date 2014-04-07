@@ -1,16 +1,22 @@
 package org.rapla.plugin.exchangeconnector.server;
 
 import org.rapla.entities.User;
+import org.rapla.entities.configuration.Preferences;
+import org.rapla.entities.configuration.internal.PreferencesImpl;
 import org.rapla.facade.RaplaComponent;
+import org.rapla.framework.DefaultConfiguration;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaContextException;
 import org.rapla.framework.RaplaException;
+import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
+import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 import org.rapla.plugin.exchangeconnector.SynchronizationStatus;
 import org.rapla.server.RaplaKeyStorage;
 import org.rapla.server.RaplaKeyStorage.LoginInfo;
 import org.rapla.server.RemoteMethodFactory;
 import org.rapla.server.RemoteSession;
+import org.rapla.storage.RaplaSecurityException;
 
 public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent implements RemoteMethodFactory<ExchangeConnectorRemote>{
 	final SynchronisationManager manager;
@@ -23,7 +29,7 @@ public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent impleme
 	}
 
 	@Override
-	public ExchangeConnectorRemote createService(RemoteSession remoteSession) throws RaplaContextException  {
+	public ExchangeConnectorRemote createService(final RemoteSession remoteSession) throws RaplaContextException  {
 		final User user  = remoteSession.getUser();
 		return new ExchangeConnectorRemote() {
 			@Override
@@ -37,7 +43,7 @@ public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent impleme
 			@Override
 			public SynchronizationStatus getSynchronizationStatus() throws RaplaException {
 				SynchronizationStatus status = new SynchronizationStatus();
-				LoginInfo secrets = keyStorage.getSecrets(user, "exchange");
+				LoginInfo secrets = keyStorage.getSecrets(user, ExchangeConnectorServerPlugin.EXCHANGE_USER_STORAGE);
 				boolean connected = secrets != null;
 				status.enabled = connected;
 				status.username = secrets != null ? secrets.login :"";
@@ -51,7 +57,7 @@ public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent impleme
 			@Override
 			public void retry() throws RaplaException 
 			{
-				LoginInfo secrets = keyStorage.getSecrets(user, "exchange");
+				LoginInfo secrets = keyStorage.getSecrets(user, ExchangeConnectorServerPlugin.EXCHANGE_USER_STORAGE);
 				if ( secrets != null)
 				{
 					String exchangeUsername = secrets.login;
@@ -72,14 +78,31 @@ public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent impleme
 		        getLogger().debug("Invoked add exchange user for rapla " + raplaUsername + " with exchange user " + exchangeUsername);
 		        manager.testConnection( exchangeUsername, exchangePassword);
 				getLogger().debug("Invoked change connection for user " + user.getUsername());
-				keyStorage.storeLoginInfo( user, "exchange", exchangeUsername, exchangePassword);
+				keyStorage.storeLoginInfo( user, ExchangeConnectorServerPlugin.EXCHANGE_USER_STORAGE, exchangeUsername, exchangePassword);
 			}
 			
 			public void removeUser() throws RaplaException 
 			{
 				getLogger().info("Removing exchange connection for user " + user);
-				keyStorage.removeLoginInfo(user, "exchange");
+				keyStorage.removeLoginInfo(user, ExchangeConnectorServerPlugin.EXCHANGE_USER_STORAGE);
 				manager.removeTasksAndExports(user);
+			}
+			
+			@SuppressWarnings("restriction")
+            @Override
+			public DefaultConfiguration getConfig() throws RaplaException {
+			    User user = remoteSession.getUser();
+                if ( !user.isAdmin())
+                {
+                    throw new RaplaSecurityException("Access only for admin users");
+                }
+                Preferences preferences = getQuery().getSystemPreferences();
+                DefaultConfiguration config = preferences.getEntry( ExchangeConnectorConfig.EXCHANGESERVER_CONFIG);
+                if ( config == null)
+                {
+                    config = (DefaultConfiguration) ((PreferencesImpl)preferences).getOldPluginConfig(ExchangeConnectorPlugin.class.getName());
+                }
+                return config;
 			}
 		};
 	}

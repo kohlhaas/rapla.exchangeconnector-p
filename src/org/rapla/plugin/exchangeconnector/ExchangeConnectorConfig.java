@@ -4,11 +4,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.rapla.components.xmlbundle.I18nBundle;
+import org.rapla.entities.configuration.RaplaConfiguration;
 import org.rapla.framework.Configuration;
 import org.rapla.framework.TypedComponentRole;
 
 public interface ExchangeConnectorConfig 
 {
+    public static final TypedComponentRole<RaplaConfiguration> EXCHANGESERVER_CONFIG = new TypedComponentRole<RaplaConfiguration>("org.rapla.exchange.server.config");
+    
 	public static final TypedComponentRole<I18nBundle> RESOURCE_FILE = new TypedComponentRole<I18nBundle>(ExchangeConnectorPlugin.class.getPackage().getName() + ".ExchangeConnectorResources");
 	
 	public static final TypedComponentRole<String> EXCHANGE_WS_FQDN = new TypedComponentRole<String>("ews_fqdn");

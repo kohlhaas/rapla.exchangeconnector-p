@@ -9,6 +9,7 @@ import javax.swing.JTextField;
 
 import org.rapla.components.calendar.RaplaNumber;
 import org.rapla.components.layout.TableLayout;
+import org.rapla.entities.configuration.RaplaConfiguration;
 import org.rapla.framework.Configuration;
 import org.rapla.framework.DefaultConfiguration;
 import org.rapla.framework.PluginDescriptor;
@@ -18,6 +19,7 @@ import org.rapla.framework.TypedComponentRole;
 import org.rapla.gui.DefaultPluginOption;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
+import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 
 
 public class ExchangeConnectorAdminOptions extends DefaultPluginOption implements ExchangeConnectorConfig {
@@ -47,9 +49,11 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
     //private JTextField cbRaplaRessourceEmailAttribute;
     //private JLabel importAlwaysPrivateLabel;
     //private JCheckBox chkAlwaysPrivate;
+    ExchangeConnectorRemote configService;
 
-    public ExchangeConnectorAdminOptions(RaplaContext raplaContext) throws Exception {
+    public ExchangeConnectorAdminOptions(RaplaContext raplaContext,ExchangeConnectorRemote configService) throws Exception {
         super(raplaContext);
+        this.configService = configService;
         setChildBundleName(ExchangeConnectorPlugin.RESOURCE_FILE);
         initJComponents();
 
@@ -156,6 +160,15 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 
 
     }
+    
+    @Override
+    public void commit() throws RaplaException {
+        writePluginConfig(false);
+        TypedComponentRole<RaplaConfiguration> configEntry = EXCHANGESERVER_CONFIG;
+        RaplaConfiguration newConfig = new RaplaConfiguration("config" );
+        addChildren( newConfig );
+        preferences.putEntry( configEntry,newConfig);
+    }
 
 
 	public void set(DefaultConfiguration newConfig,TypedComponentRole<String> key, String value) {
@@ -168,6 +181,14 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 
 
     protected void readConfig(Configuration config) {
+        try
+        {
+            config = configService.getConfig();
+        } 
+        catch (RaplaException ex)
+        {
+            showException(ex, getComponent());
+        }
 //        try {
 //            DynamicType[] dynamicTypes = getClientFacade().getDynamicTypes(DynamicTypeAnnotations.VALUE_CLASSIFICATION_TYPE_RESERVATION);
 //            StringWrapper<DynamicType>[] eventTypes = new StringWrapper[dynamicTypes.length];
@@ -194,6 +215,7 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 //            this.cbRoomTypes.setModel(new DefaultComboBoxModel(roomTypes));
 //        } catch (RaplaException e) {
 //        }
+      
         ConfigReader reader = new ConfigReader(config);
         //enableSynchronisationBox.setSelected(ExchangeConnectorPlugin.ENABLED_BY_ADMIN);
         exchangeWebServiceFQDNTextField.setText(reader.get(EXCHANGE_WS_FQDN));

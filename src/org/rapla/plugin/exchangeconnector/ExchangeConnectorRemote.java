@@ -2,12 +2,13 @@ package org.rapla.plugin.exchangeconnector;
 
 import javax.jws.WebService;
 
+import org.rapla.framework.DefaultConfiguration;
 import org.rapla.framework.RaplaException;
 
 @WebService
 public interface ExchangeConnectorRemote 
 {
-	public SynchronizationStatus getSynchronizationStatus() throws RaplaException;
+    public SynchronizationStatus getSynchronizationStatus() throws RaplaException;
 	public void synchronize() throws RaplaException;
 
 	/** 
@@ -22,6 +23,8 @@ public interface ExchangeConnectorRemote
 	public void changeUser(String exchangeUsername, String exchangePassword/*, Boolean downloadFromExchange*/) throws RaplaException;
 	public void removeUser() throws RaplaException;
 	void retry() throws RaplaException;
+	
+	public DefaultConfiguration getConfig() throws RaplaException;
 
 	/**
 	 * Remove an existing user from the user list (unregister a user from the Exchange Server)
