@@ -1,14 +1,18 @@
 package org.rapla.plugin.exchangeconnector.server;
 
+import static org.rapla.entities.configuration.CalendarModelConfiguration.EXPORT_ENTRY;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -546,19 +550,34 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 		}
 		preferences = getModification().edit( preferences);
 		CalendarModelConfiguration modelConfig = preferences.getEntry(CalendarModelConfiguration.CONFIG_ENTRY);
-        Map<String,CalendarModelConfiguration> exportMap= preferences.getEntry(CalendarModelConfiguration.EXPORT_ENTRY);
         if ( modelConfig != null )
         {
-        	modelConfig.getOptionMap().remove(ExchangeConnectorPlugin.EXCHANGE_EXPORT);
+        	Map<String, String> optionMap = modelConfig.getOptionMap();
+        	if ( optionMap.containsKey(ExchangeConnectorPlugin.EXCHANGE_EXPORT))
+        	{
+        	    Map<String,String> newMap = new LinkedHashMap<String, String>( optionMap);
+        	    newMap.remove( ExchangeConnectorPlugin.EXCHANGE_EXPORT);
+        	    CalendarModelConfiguration newConfig = modelConfig.cloneWithNewOptions(newMap);
+        	    preferences.putEntry( CalendarModelConfiguration.CONFIG_ENTRY, newConfig);
+        	}
         }
+        Map<String,CalendarModelConfiguration> exportMap= preferences.getEntry(CalendarModelConfiguration.EXPORT_ENTRY);
         if ( exportMap != null)
         {
-        	for ( String key:exportMap.keySet())
+            Map<String,CalendarModelConfiguration> newExportMap = new TreeMap<String,CalendarModelConfiguration>( exportMap);
+            for ( String key:exportMap.keySet())
         	{
         		CalendarModelConfiguration calendarModelConfiguration = exportMap.get( key);
-        		calendarModelConfiguration.getOptionMap().remove(ExchangeConnectorPlugin.EXCHANGE_EXPORT);
-        		
+                Map<String, String> optionMap = calendarModelConfiguration.getOptionMap();
+        		if ( optionMap.containsKey(ExchangeConnectorPlugin.EXCHANGE_EXPORT))
+                {
+                    Map<String,String> newMap = new LinkedHashMap<String, String>( optionMap);
+                    newMap.remove( ExchangeConnectorPlugin.EXCHANGE_EXPORT);
+                    CalendarModelConfiguration newConfig = calendarModelConfiguration.cloneWithNewOptions(newMap);
+                    newExportMap.put( key, newConfig);
+                }
         	}
+            preferences.putEntry( EXPORT_ENTRY, getModification().newRaplaMap( newExportMap ));
         }
 		getModification().store( preferences);
 	}

@@ -102,14 +102,14 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
         unsynchronizedLabel = new JLabel();
 
         double[][] sizes = new double[][]{
-                {5, TableLayout.PREFERRED, 5, TableLayout.FILL, 5},
-                {TableLayout.PREFERRED, 5,
-                        TableLayout.PREFERRED, 5,
-                        TableLayout.PREFERRED, 5,
-                        TableLayout.PREFERRED, 5,
-                        TableLayout.PREFERRED, 5,
-                        TableLayout.PREFERRED, 5,
-                        TableLayout.PREFERRED, 5,
+                {5, TableLayout.PREFERRED, 30, TableLayout.FILL, 5},
+                {TableLayout.PREFERRED, 10,
+                        TableLayout.PREFERRED, 10,
+                        TableLayout.PREFERRED, 40,
+                        TableLayout.PREFERRED, 10,
+                        TableLayout.PREFERRED, 40,
+                        TableLayout.PREFERRED, 10,
+                        TableLayout.PREFERRED, 10,
                         TableLayout.PREFERRED, 5,
                         TableLayout.PREFERRED, 5,
                         TableLayout.PREFERRED, 5,
@@ -119,32 +119,35 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 
         TableLayout tableLayout = new TableLayout(sizes);
         this.optionsPanel.setLayout(tableLayout);
-        this.optionsPanel.add(new JLabel("Exchange Login"), "1, 2");
         loginButton = new RaplaButton();
         syncButton = new RaplaButton();
         removeButton = new RaplaButton();
         retryButton = new RaplaButton();
-        loginButton.setText("Set Login");
-        removeButton.setText("Remove connection");
-        syncButton.setText("ReSync");
-        retryButton.setText("retry");
-        usernameInfoLabel.setText( "exchange user");
-        usernameLabel.setText("not connected");
+        //loginButton.setText("Set Login");
+        removeButton.setText(getString("disconnect"));
+        syncButton.setText(getString("resync.exchange"));
+        syncButton.setToolTipText(getString("resync.exchange.tooltip"));
+        retryButton.setText(getString("retry"));
+        usernameInfoLabel.setText( getString("exchange_user"));
+        //usernameLabel.setText("not connected");
         this.optionsPanel.add(usernameInfoLabel, "1, 0");
         this.optionsPanel.add(usernameLabel, "3, 0");
-        enableNotifyBox = new JCheckBox("Send mail on invitation/cancelation");
         this.optionsPanel.add(loginButton, "3, 2");
         this.optionsPanel.add(removeButton, "3, 4");
-        this.optionsPanel.add(syncButton, "3, 6");
-        this.optionsPanel.add(this.enableNotifyBox, "1,8");
-        this.optionsPanel.add(unsynchronizedLabel, "1, 10");
-        this.optionsPanel.add(retryButton, "3, 10");
+
+        this.optionsPanel.add(new JLabel(getString("synchronization")), "1, 6");
+        enableNotifyBox = new JCheckBox(getString("mail_on_invitation_cancelation"));
+        this.optionsPanel.add(this.enableNotifyBox, "3,6");
+        
+        this.optionsPanel.add(syncButton, "3, 8");
+        this.optionsPanel.add(unsynchronizedLabel, "3, 10");
+        this.optionsPanel.add(retryButton, "3, 12");
         loginButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
             	
             	boolean modal = true;
-				String[] options = new String[] {getString("connect"),getString("abort")};
+				String[] options = new String[] {getConnectButtonString(),getString("abort")};
 				final SyncDialog content = new SyncDialog();
 				if ( connected)
 				{
@@ -181,6 +184,8 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
                      getLogger().error("The operation was not successful!", ex);
 				}
             }
+
+           
         });
         syncButton.addActionListener( new ActionListener() {
 			
@@ -258,6 +263,14 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 //        this.optionsPanel.add(this.filterCategoryField, "3,10");
 //        this.optionsPanel.add(this.securityInformationLabel, "3,12");
 
+    }
+
+    private String getConnectButtonString() {
+        return connected ? getString("change_account") : getString("connect");
+    }
+    
+    private String getConnectButtonTooltip() {
+        return connected ?  getString("change_account") : getString("enable.sync.rapla.exchange");
     }
 
     private void setValuesToJComponents() throws RaplaException {
@@ -338,17 +351,20 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
     private void updateComponentState() throws RaplaException {
     	SynchronizationStatus synchronizationStatus = service.getSynchronizationStatus();
     	this.connected = synchronizationStatus.enabled;
-    	this.usernameLabel.setText(  connected ? synchronizationStatus.username: "not connected");
+    	this.usernameLabel.setText(  connected ? synchronizationStatus.username: getString("disconnected"));
+    	
     	int unsynchronizedEvents = synchronizationStatus.unsynchronizedEvents;
-    	unsynchronizedLabel.setText(unsynchronizedEvents + " unsynchronized Events");
+    	unsynchronizedLabel.setText(getI18n().format("format.unsynchronized_events", unsynchronizedEvents));
     	Color foreground = usernameLabel.getForeground();
     	if ( foreground != null)
     	{
     		unsynchronizedLabel.setForeground( unsynchronizedEvents > 0 ? Color.RED : foreground);
     	}
-    	this.loginButton.setText( connected ? "change password" : "connect");
+    	this.loginButton.setText( getConnectButtonString());
+    	this.loginButton.setToolTipText( getConnectButtonTooltip());
     	this.enableNotifyBox.setEnabled( connected);
     	this.removeButton.setEnabled( connected);
+    	this.removeButton.setToolTipText(getString("disable.sync.rapla.exchange"));
     	this.syncButton.setEnabled( connected);
     	this.retryButton.setEnabled( connected && unsynchronizedEvents > 0);
 

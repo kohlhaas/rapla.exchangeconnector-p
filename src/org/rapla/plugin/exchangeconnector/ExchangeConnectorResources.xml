@@ -5,6 +5,50 @@
 	<text lang="en">Enable syncing from Rapla to Exchange</text>
 	<text lang="de">Synchronisieren von Rapla zu Exchange aktivieren</text>
 </entry>
+<entry key="disable.sync.rapla.exchange">
+	<text lang="en">Disable syncing from Exchchange to Rapla</text>
+	<text lang="de">Synchronisieren von Exchange zu Rapla deaktivieren</text>
+</entry>
+<entry key="exchange_user">
+	<text lang="en">exchange user</text>
+	<text lang="de">Exchange Benutzer</text>
+</entry>
+<entry key="change_account">
+	<text lang="en">Change account</text>
+	<text lang="de">Zugangsdaten ändern</text>
+</entry>
+<entry key="retry">
+	<text lang="en">retry sync</text>
+	<text lang="de">erneut versuchen</text>
+</entry>
+<entry key="resync.exchange">
+	<text lang="en">resynchronise all</text>
+	<text lang="de">resynchronisieren</text>
+</entry>
+<entry key="synchronization">
+	<text lang="en">synchronization</text>
+	<text lang="de">Synchronisierung</text>
+</entry>
+<entry key="resync.exchange.tooltip">
+	<text lang="en">synchronize all exported appointments again</text>
+	<text lang="de">Alle exportierten Termine erneut synchronisieren</text>
+</entry>
+<entry key="format.unsynchronized_events">
+	<text lang="en">Unsynchronized appointments: {0}</text>
+	<text lang="de">Unsynchronisierte Termine: {0}</text>
+</entry>
+<entry key="mail_on_invitation_cancelation">
+	<text lang="en">Send mail on invitation/cancelation</text>
+	<text lang="de">Einladungs-/Änderungsmail versenden</text>
+</entry>
+<entry key="disconnected">
+	<text lang="en">disconnected</text>
+	<text lang="de">nicht verbunden</text>
+</entry>
+<entry key="disconnect">
+	<text lang="en">disconnect</text>
+	<text lang="de">Verbindung trennen</text>
+</entry>
 <entry key="enable.sync.exchange.rapla">
 	<text lang="en">Enable syncing from Exchchange to Rapla</text>
 	<text lang="de">Synchronisieren von Exchange zu Rapla aktivieren</text>
@@ -21,14 +65,16 @@
         <text lang="en">Username on Exchange-Server</text>
         <text lang="de">Username auf dem Exchange-Server</text>
     </entry>
+
 <entry key ="button.sync.user">
 	<text lang="en">Synchronize Rapla to Exchange</text>
 	<text lang="de">Existierende Raplatermine nach Exchange übertragen</text>
 </entry>
-    <entry key ="button.sync">
-        <text lang="en">Synchronize</text>
-        <text lang="de">Synchronisieren</text>
-    </entry>
+
+<entry key ="button.sync">
+   <text lang="en">Synchronize</text>
+   <text lang="de">Synchronisieren</text>
+</entry>
 
 <entry key="category.filter">
 	<text lang="en">Exchange Category Filter</text>
@@ -75,34 +121,34 @@
 	<text lang="en">Choose rapla event type for imported events</text>
 	<text lang="de">Rapla-Veranstaltungstyp für die Veranstaltungen aus Exchange</text>
 </entry>
-    <entry key="event.raplatypes">
-        <text lang="en">Choose rapla event types to be pushed to Exchange</text>
-        <text lang="de">Veranstaltungsfilter (Rapla -> Exchange)</text>
-    </entry>
+<entry key="event.raplatypes">
+    <text lang="en">Choose rapla event types to be pushed to Exchange</text>
+    <text lang="de">Veranstaltungsfilter (Rapla -> Exchange)</text>
+</entry>
 
-    <entry key="event.roomtype">
-        <text lang="en">Choose room types to be used for location</text>
-        <text lang="de">Raum-Ressourcentyp</text>
-    </entry>
+<entry key="event.roomtype">
+    <text lang="en">Choose room types to be used for location</text>
+    <text lang="de">Raum-Ressourcentyp</text>
+</entry>
 
-    <entry key="resource.mail.attr">
-        <text lang="en">Provide element key of mail attribute in resources for mapping </text>
-        <text lang="de">Schlüssel des Mailattributes für Ressourcen</text>
-    </entry>
+<entry key="resource.mail.attr">
+    <text lang="en">Provide element key of mail attribute in resources for mapping </text>
+    <text lang="de">Schlüssel des Mailattributes für Ressourcen</text>
+</entry>
 
-    <entry key="event.title.attr">
-        <text lang="en">Provide element key of title attribute of event</text>
-        <text lang="de">Schlüssel des Titel-Attributes für Veranstaltungen (Exchange -> Rapla)</text>
-    </entry>
+<entry key="event.title.attr">
+    <text lang="en">Provide element key of title attribute of event</text>
+    <text lang="de">Schlüssel des Titel-Attributes für Veranstaltungen (Exchange -> Rapla)</text>
+</entry>
 
-    <entry key="msexchange.alwaysprivate">
-        <text lang="en">Import event always as private</text>
-        <text lang="de">Veranstaltungen werden immer als "privat" importiert (Exchange -> Rapla)</text>
-    </entry>
+<entry key="msexchange.alwaysprivate">
+    <text lang="en">Import event always as private</text>
+    <text lang="de">Veranstaltungen werden immer als "privat" importiert (Exchange -> Rapla)</text>
+</entry>
 
-    <entry key="msexchange.notify">
-        <text lang="en">Import event always as private</text>
-        <text lang="de">Veranstaltungen werden immer als "privat" importiert (Exchange -> Rapla)</text>
-    </entry>
+<entry key="msexchange.notify">
+    <text lang="en">Import event always as private</text>
+    <text lang="de">Veranstaltungen werden immer als "privat" importiert (Exchange -> Rapla)</text>
+</entry>
 
 </resources>

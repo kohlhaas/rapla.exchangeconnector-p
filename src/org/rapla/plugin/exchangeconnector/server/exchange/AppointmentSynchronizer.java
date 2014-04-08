@@ -140,8 +140,7 @@ public class AppointmentSynchronizer  {
     		Recurrence recurrence = getExchangeRecurrence(repeating);
     		exchangeAppointment.setRecurrence(recurrence);
         }	
-
-        String messageBody = getMessageBody();
+    	String messageBody = getMessageBody();
         exchangeAppointment.setBody(new MessageBody(BodyType.Text, messageBody));
 
         addPersonsAndResources(exchangeAppointment );
@@ -221,8 +220,8 @@ public class AppointmentSynchronizer  {
         }
         if (exchangeAppointment == null) {
             exchangeAppointment = new microsoft.exchange.webservices.data.Appointment(service);
-    
         }
+        //exchangeAppointment.setICalUid( raplaAppointment.getId());
 
         Date start = raplaAppointment.getStart();
         Date end = raplaAppointment.getEnd();
