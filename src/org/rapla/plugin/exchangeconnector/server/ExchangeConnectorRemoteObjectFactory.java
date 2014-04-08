@@ -2,14 +2,13 @@ package org.rapla.plugin.exchangeconnector.server;
 
 import org.rapla.entities.User;
 import org.rapla.entities.configuration.Preferences;
-import org.rapla.entities.configuration.internal.PreferencesImpl;
+import org.rapla.entities.configuration.RaplaConfiguration;
 import org.rapla.facade.RaplaComponent;
 import org.rapla.framework.DefaultConfiguration;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaContextException;
 import org.rapla.framework.RaplaException;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
-import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 import org.rapla.plugin.exchangeconnector.SynchronizationStatus;
 import org.rapla.server.RaplaKeyStorage;
@@ -88,7 +87,6 @@ public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent impleme
 				manager.removeTasksAndExports(user);
 			}
 			
-			@SuppressWarnings("restriction")
             @Override
 			public DefaultConfiguration getConfig() throws RaplaException {
 			    User user = remoteSession.getUser();
@@ -97,11 +95,7 @@ public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent impleme
                     throw new RaplaSecurityException("Access only for admin users");
                 }
                 Preferences preferences = getQuery().getSystemPreferences();
-                DefaultConfiguration config = preferences.getEntry( ExchangeConnectorConfig.EXCHANGESERVER_CONFIG);
-                if ( config == null)
-                {
-                    config = (DefaultConfiguration) ((PreferencesImpl)preferences).getOldPluginConfig(ExchangeConnectorPlugin.class.getName());
-                }
+                RaplaConfiguration config = preferences.getEntry( ExchangeConnectorConfig.EXCHANGESERVER_CONFIG, new RaplaConfiguration());
                 return config;
 			}
 		};

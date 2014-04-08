@@ -17,7 +17,6 @@ public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceCo
 
     public static final String PLUGIN_CLASS = ExchangeConnectorPlugin.class.getName();
     public static final String EXCHANGE_EXPORT = PLUGIN_CLASS+".selected";
-
     
     public String toString() {
         return "Exchange-Connector";

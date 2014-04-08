@@ -22,6 +22,7 @@ import org.rapla.entities.EntityNotFoundException;
 import org.rapla.entities.User;
 import org.rapla.entities.configuration.CalendarModelConfiguration;
 import org.rapla.entities.configuration.Preferences;
+import org.rapla.entities.configuration.RaplaConfiguration;
 import org.rapla.entities.domain.Allocatable;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.Reservation;
@@ -31,7 +32,6 @@ import org.rapla.facade.ModificationEvent;
 import org.rapla.facade.ModificationListener;
 import org.rapla.facade.RaplaComponent;
 import org.rapla.facade.internal.CalendarModelImpl;
-import org.rapla.framework.Configuration;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.framework.logger.Logger;
@@ -54,13 +54,13 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 	Map<String,List<CalendarModelImpl>> calendarModels = new HashMap<String,List<CalendarModelImpl>>();
 	protected ReadWriteLock lock = new ReentrantReadWriteLock();
 
-	public SynchronisationManager(RaplaContext context,Configuration config) throws RaplaException {
+	public SynchronisationManager(RaplaContext context) throws RaplaException {
 		super(context);
 		
 		final ClientFacade clientFacade =  context.lookup(ClientFacade.class);
 		clientFacade.addModificationListener(this);
         keyStorage = context.lookup( RaplaKeyStorage.class);
-        this.config  = new ExchangeConnectorConfig.ConfigReader(config);
+        this.config  = new ExchangeConnectorConfig.ConfigReader(clientFacade.getSystemPreferences().getEntry( ExchangeConnectorConfig.EXCHANGESERVER_CONFIG, new RaplaConfiguration()));
         this.appointmentStorage = context.lookup( ExchangeAppointmentStorage.class);
         for ( User user : getClientFacade().getUsers())
         {

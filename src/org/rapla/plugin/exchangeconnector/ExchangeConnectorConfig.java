@@ -10,7 +10,7 @@ import org.rapla.framework.TypedComponentRole;
 
 public interface ExchangeConnectorConfig 
 {
-    public static final TypedComponentRole<RaplaConfiguration> EXCHANGESERVER_CONFIG = new TypedComponentRole<RaplaConfiguration>("org.rapla.exchange.server.config");
+    public static final TypedComponentRole<RaplaConfiguration> EXCHANGESERVER_CONFIG = new TypedComponentRole<RaplaConfiguration>("org.rapla.plugin.exchangeconnector.server.Config");
     
 	public static final TypedComponentRole<I18nBundle> RESOURCE_FILE = new TypedComponentRole<I18nBundle>(ExchangeConnectorPlugin.class.getPackage().getName() + ".ExchangeConnectorResources");
 	
