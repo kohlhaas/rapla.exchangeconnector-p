@@ -11,6 +11,7 @@ import org.rapla.framework.RaplaException;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 import org.rapla.plugin.exchangeconnector.SynchronizationStatus;
+import org.rapla.plugin.exchangeconnector.SynchronizeResult;
 import org.rapla.server.RaplaKeyStorage;
 import org.rapla.server.RaplaKeyStorage.LoginInfo;
 import org.rapla.server.RemoteMethodFactory;
@@ -32,11 +33,12 @@ public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent impleme
 		final User user  = remoteSession.getUser();
 		return new ExchangeConnectorRemote() {
 			@Override
-			public void synchronize() throws RaplaException {
+			public SynchronizeResult synchronize() throws RaplaException {
 	
 				// Synchronize this user after registering
 				getLogger().debug("Invoked change sync for user " + user.getUsername());
-				manager.synchronizeUser(user);
+				SynchronizeResult result = manager.synchronizeUser(user);
+				return result;
 			}
 			
 			@Override
@@ -54,7 +56,7 @@ public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent impleme
 			}
 			
 			@Override
-			public void retry() throws RaplaException 
+			public SynchronizeResult retry() throws RaplaException 
 			{
 				LoginInfo secrets = keyStorage.getSecrets(user, ExchangeConnectorServerPlugin.EXCHANGE_USER_STORAGE);
 				if ( secrets != null)
@@ -62,7 +64,7 @@ public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent impleme
 					String exchangeUsername = secrets.login;
 					String exchangePassword = secrets.secret;
 					manager.testConnection(exchangeUsername, exchangePassword);
-					manager.retry(user);
+					return manager.retry(user);
 				}
 				else
 				{

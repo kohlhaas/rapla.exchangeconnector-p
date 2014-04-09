@@ -25,6 +25,7 @@ import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 import org.rapla.plugin.exchangeconnector.SynchronizationStatus;
+import org.rapla.plugin.exchangeconnector.SynchronizeResult;
 
 public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 
@@ -193,7 +194,8 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 			public void actionPerformed(ActionEvent e) {
 				try
 				{
-					service.synchronize();
+					SynchronizeResult result = service.synchronize();
+					showResultDialog(result);
 					updateComponentState();
 				}
 				catch (RaplaException ex)
@@ -203,6 +205,7 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 				}
 				
 			}
+
 		});
         removeButton.addActionListener( new ActionListener() {
 			
@@ -226,7 +229,8 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 			public void actionPerformed(ActionEvent e) {
 				try
 				{
-					service.retry();
+					SynchronizeResult result = service.retry();
+					showResultDialog( result);
 					updateComponentState();
 				}
 				catch (RaplaException ex)
@@ -263,6 +267,13 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 //        this.optionsPanel.add(this.filterCategoryField, "3,10");
 //        this.optionsPanel.add(this.securityInformationLabel, "3,12");
 
+    }
+
+    private void showResultDialog(SynchronizeResult result) throws RaplaException {
+        String title = getString("synchronization") + " " + getString("appointment");
+        String text = "Aktualisiert: "   + result.changed + " Gelöscht: " + result.removed + " Fehler: " + result.open ;
+        DialogUI dialog = DialogUI.create(getContext(), getComponent(),false, title, text);
+        dialog.start();
     }
 
     private String getConnectButtonString() {

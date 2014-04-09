@@ -41,6 +41,7 @@ import org.rapla.framework.RaplaException;
 import org.rapla.framework.logger.Logger;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
+import org.rapla.plugin.exchangeconnector.SynchronizeResult;
 import org.rapla.plugin.exchangeconnector.server.SynchronizationTask.SyncStatus;
 import org.rapla.plugin.exchangeconnector.server.exchange.AppointmentSynchronizer;
 import org.rapla.plugin.exchangeconnector.server.exchange.EWSConnector;
@@ -89,10 +90,10 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 		synchronize((UpdateResult) evt);
 	}
 	
-	public synchronized void retry(User user) throws RaplaException  
+	public synchronized SynchronizeResult retry(User user) throws RaplaException  
 	{
 		Collection<SynchronizationTask> existingTasks = appointmentStorage.getTasks(user);
-		execute( existingTasks);
+		return execute( existingTasks);
 	}
 	
 	public int getOpenTasksCount(User user) throws RaplaException 
@@ -109,25 +110,23 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 		return count;
 	}
 	
-	public synchronized void synchronizeUser(User user)  {
-    	try {
-    		Collection<SynchronizationTask> tasks = new HashSet<SynchronizationTask>();
+	
+	public synchronized SynchronizeResult synchronizeUser(User user) throws RaplaException  {
+	    Collection<SynchronizationTask> tasks = new HashSet<SynchronizationTask>();
+		{
+    		Collection<SynchronizationTask> existingTasks = appointmentStorage.getTasks(user);
+			for ( SynchronizationTask task:existingTasks)
     		{
-	    		Collection<SynchronizationTask> existingTasks = appointmentStorage.getTasks(user);
-				for ( SynchronizationTask task:existingTasks)
-	    		{
-	    			task.setStatus( SyncStatus.toDelete);
-	    			tasks.add( task);
-	    		}
+    			task.setStatus( SyncStatus.toDelete);
+    			tasks.add( task);
     		}
-    		// then insert and update the new tasks
-    		Collection<SynchronizationTask> updateTasks = updateCalendarMap(user, true);
-    		tasks.addAll( updateTasks);
-    		// we skip notification on a resync
-    		execute( tasks, true);
-        } catch (Exception e) {
-            getLogger().error(e.getMessage(), e);
-        }
+		}
+		// then insert and update the new tasks
+		Collection<SynchronizationTask> updateTasks = updateCalendarMap(user, true);
+		tasks.addAll( updateTasks);
+		// we skip notification on a resync
+		SynchronizeResult result = execute( tasks, true);
+		return result;
     }
 
 	protected Collection<SynchronizationTask> updateTasks(Appointment appointment, boolean remove) throws RaplaException  {
@@ -405,19 +404,21 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
     	return task;
     }
     
-	public void execute(Collection<SynchronizationTask> tasks) throws RaplaException {
-		execute( tasks, false);
+	public SynchronizeResult execute(Collection<SynchronizationTask> tasks) throws RaplaException {
+		return execute( tasks, false);
 	}
 	
-	private void execute(Collection<SynchronizationTask> tasks, boolean skipNotification) throws RaplaException {
+	private SynchronizeResult execute(Collection<SynchronizationTask> tasks, boolean skipNotification) throws RaplaException {
 		Collection<SynchronizationTask> toStore = new HashSet<SynchronizationTask>();
 		Collection<SynchronizationTask> toRemove = new HashSet<SynchronizationTask>();
-		processTasks(tasks, toStore, toRemove, skipNotification);
+		SynchronizeResult result = processTasks(tasks, toStore, toRemove, skipNotification);
 		appointmentStorage.storeAndRemove(toStore, toRemove);
+		return result;
 	}
 
-	protected void processTasks(Collection<SynchronizationTask> tasks,Collection<SynchronizationTask> toStore,Collection<SynchronizationTask> toRemove, boolean skipNotification) {
-		for ( SynchronizationTask task:tasks)
+	protected SynchronizeResult processTasks(Collection<SynchronizationTask> tasks,Collection<SynchronizationTask> toStore,Collection<SynchronizationTask> toRemove, boolean skipNotification) {
+		SynchronizeResult result = new SynchronizeResult();
+	    for ( SynchronizationTask task:tasks)
 		{
 			 final AppointmentSynchronizer worker; 
 			 String userId = task.getUserId();
@@ -486,6 +487,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 				 getLogger().warn( "Can't synchronize " + task +  " Cause "  + e.getMessage() );
 				 task.increaseRetries();
 				 toStore.add( task);
+				 result.open++;
 				 continue;
 			 }
 			 SyncStatus after = task.getStatus();
@@ -503,9 +505,15 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 				 if ( after == SyncStatus.synched)
 				 {
 					 toStore.add( task);
+					 result.changed ++;
 				 }
+				 if ( after == SyncStatus.deleted)
+                 {
+				     result.removed ++;
+                 }
 			 }
 		}
+	    return result;
 	}
         
     private TimeInterval getSyncRange()

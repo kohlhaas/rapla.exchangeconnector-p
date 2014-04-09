@@ -9,7 +9,7 @@ import org.rapla.framework.RaplaException;
 public interface ExchangeConnectorRemote 
 {
     public SynchronizationStatus getSynchronizationStatus() throws RaplaException;
-	public void synchronize() throws RaplaException;
+	public SynchronizeResult synchronize() throws RaplaException;
 
 	/** 
 	 * Add an Exchange user to the user list (register a user to the Exchange Server)
@@ -22,7 +22,7 @@ public interface ExchangeConnectorRemote
 	 */
 	public void changeUser(String exchangeUsername, String exchangePassword/*, Boolean downloadFromExchange*/) throws RaplaException;
 	public void removeUser() throws RaplaException;
-	void retry() throws RaplaException;
+	SynchronizeResult retry() throws RaplaException;
 	
 	public DefaultConfiguration getConfig() throws RaplaException;
 
