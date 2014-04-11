@@ -41,6 +41,7 @@ import org.rapla.framework.RaplaException;
 import org.rapla.framework.logger.Logger;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
+import org.rapla.plugin.exchangeconnector.SynchronizationStatus;
 import org.rapla.plugin.exchangeconnector.SynchronizeResult;
 import org.rapla.plugin.exchangeconnector.server.SynchronizationTask.SyncStatus;
 import org.rapla.plugin.exchangeconnector.server.exchange.AppointmentSynchronizer;
@@ -96,18 +97,30 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 		return execute( existingTasks);
 	}
 	
-	public int getOpenTasksCount(User user) throws RaplaException 
+	public SynchronizationStatus getSynchronizationStatus(User user) throws RaplaException 
 	{
-		Collection<SynchronizationTask> existingTasks = appointmentStorage.getTasks(user);
-		int count= 0;
-		for ( SynchronizationTask task:existingTasks)
-		{
-			if (task.getStatus().isOpen( ))
-			{
-				count++;
-			}
-		}
-		return count;
+	    SynchronizationStatus result = new SynchronizationStatus();
+        LoginInfo secrets = keyStorage.getSecrets(user, ExchangeConnectorServerPlugin.EXCHANGE_USER_STORAGE);
+        boolean connected = secrets != null;
+        result.enabled = connected;
+        result.username = secrets != null ? secrets.login :"";
+        if ( secrets != null)
+        {
+            Collection<SynchronizationTask> existingTasks = appointmentStorage.getTasks(user);
+            for ( SynchronizationTask task:existingTasks)
+            {
+                SyncStatus status = task.getStatus();
+                if (status.isOpen( ))
+                {
+                    result.unsynchronizedEvents++;
+                }
+                if (status == SyncStatus.synched)
+                {
+                    result.synchronizedEvents++;
+                }
+            }
+        }
+        return result;
 	}
 	
 	
@@ -429,8 +442,8 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 			 try
 			 {
 			 	// we don't resolve the appointment if we delete 
-				 appointment = task.getStatus() != SyncStatus.toDelete  ? (Appointment) resolver.tryResolve( appointmentId) : null;
-				 user = (User) resolver.resolve( userId);
+				 appointment = task.getStatus() != SyncStatus.toDelete  ? resolver.tryResolve( appointmentId, Appointment.class) : null;
+				 user = resolver.resolve( userId, User.class);
 			 } catch (EntityNotFoundException e) {
 				 getLogger().info( "Removing synchronize " + task + " due to " + e.getMessage() );
 				 toRemove.add( task);

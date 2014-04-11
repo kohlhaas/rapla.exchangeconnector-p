@@ -43,16 +43,7 @@ public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent impleme
 			
 			@Override
 			public SynchronizationStatus getSynchronizationStatus() throws RaplaException {
-				SynchronizationStatus status = new SynchronizationStatus();
-				LoginInfo secrets = keyStorage.getSecrets(user, ExchangeConnectorServerPlugin.EXCHANGE_USER_STORAGE);
-				boolean connected = secrets != null;
-				status.enabled = connected;
-				status.username = secrets != null ? secrets.login :"";
-				if ( secrets != null)
-				{
-					status.unsynchronizedEvents = manager.getOpenTasksCount( user);
-				}
-				return status;
+			    return manager.getSynchronizationStatus( user);
 			}
 			
 			@Override

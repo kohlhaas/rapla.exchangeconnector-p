@@ -34,8 +34,12 @@
 	<text lang="de">Alle exportierten Termine erneut synchronisieren</text>
 </entry>
 <entry key="format.unsynchronized_events">
-	<text lang="en">Unsynchronized appointments: {0}</text>
-	<text lang="de">Unsynchronisierte Termine: {0}</text>
+	<text lang="en">{0} appointment(s) failed to synchronize</text>
+	<text lang="de">{0} Termin(e) noch nicht synchronisiert</text>
+</entry>
+<entry key="format.synchronized_events">
+	<text lang="en">{0} appointment(s) synchronized</text>
+	<text lang="de">{0} Termin(e) synchronisiert</text>
 </entry>
 <entry key="mail_on_invitation_cancelation">
 	<text lang="en">Send mail on invitation/cancelation</text>

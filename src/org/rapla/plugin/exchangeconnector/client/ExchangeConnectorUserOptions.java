@@ -43,7 +43,7 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
     //private JLabel securityInformationLabel;
     private JLabel usernameLabel;
     private JLabel usernameInfoLabel;
-    private JLabel unsynchronizedLabel;
+    private JLabel synchronizedLabel;
     //private JTextField filterCategoryField;
     //private String filterCategory;
     //private JLabel eventTypesLabel;
@@ -100,8 +100,8 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
         this.optionsPanel = new JPanel();
         usernameLabel = new JLabel();
         usernameInfoLabel = new JLabel();
-        unsynchronizedLabel = new JLabel();
-
+        synchronizedLabel = new JLabel();
+        
         double[][] sizes = new double[][]{
                 {5, TableLayout.PREFERRED, 30, TableLayout.FILL, 5},
                 {TableLayout.PREFERRED, 10,
@@ -141,7 +141,8 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
         this.optionsPanel.add(this.enableNotifyBox, "3,6");
         
         this.optionsPanel.add(syncButton, "3, 8");
-        this.optionsPanel.add(unsynchronizedLabel, "3, 10");
+        this.optionsPanel.add(new JLabel(getString("appointments") + ":"), "1, 10");
+        this.optionsPanel.add(synchronizedLabel, "3, 10");
         this.optionsPanel.add(retryButton, "3, 12");
         loginButton.addActionListener(new ActionListener() {
             @Override
@@ -364,12 +365,18 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
     	this.connected = synchronizationStatus.enabled;
     	this.usernameLabel.setText(  connected ? synchronizationStatus.username: getString("disconnected"));
     	
+    	int synchronizedEvents = synchronizationStatus.synchronizedEvents;
     	int unsynchronizedEvents = synchronizationStatus.unsynchronizedEvents;
-    	unsynchronizedLabel.setText(getI18n().format("format.unsynchronized_events", unsynchronizedEvents));
+        String format = getI18n().format("format.synchronized_events", synchronizedEvents);
+        if ( unsynchronizedEvents > 0)
+        {
+            format += ",  " +getI18n().format("format.unsynchronized_events", unsynchronizedEvents);
+        }
+        synchronizedLabel.setText(format);
     	Color foreground = usernameLabel.getForeground();
     	if ( foreground != null)
     	{
-    		unsynchronizedLabel.setForeground( unsynchronizedEvents > 0 ? Color.RED : foreground);
+    		synchronizedLabel.setForeground( unsynchronizedEvents > 0 ? Color.RED : foreground);
     	}
     	this.loginButton.setText( getConnectButtonString());
     	this.loginButton.setToolTipText( getConnectButtonTooltip());

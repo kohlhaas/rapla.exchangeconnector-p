@@ -12,7 +12,6 @@ import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 import org.rapla.server.RaplaServerExtensionPoints;
 import org.rapla.server.ServerServiceContainer;
-import org.rapla.server.internal.RemoteStorageImpl;
 
 
 public class ExchangeConnectorServerPlugin implements PluginDescriptor<ServerServiceContainer> {
@@ -35,13 +34,14 @@ public class ExchangeConnectorServerPlugin implements PluginDescriptor<ServerSer
         container.addRemoteMethodFactory(ExchangeConnectorRemote.class, ExchangeConnectorRemoteObjectFactory.class);
     }
     
+    @SuppressWarnings("restriction")
     private void convertSettings(RaplaContext context,Configuration config) throws RaplaContextException
     {
         String className = ExchangeConnectorPlugin.class.getName();
         TypedComponentRole<RaplaConfiguration> newConfKey = ExchangeConnectorConfig.EXCHANGESERVER_CONFIG;
         if ( config.getChildren().length > 0)
         {
-            RemoteStorageImpl.convertToNewPluginConfig(context, className, newConfKey);
+            org.rapla.server.internal.RemoteStorageImpl.convertToNewPluginConfig(context, className, newConfKey);
         }
     }
 

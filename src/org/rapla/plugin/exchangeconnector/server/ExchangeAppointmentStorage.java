@@ -283,7 +283,7 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 			String persistantId = task.getPersistantId();
 			if ( persistantId != null)
 			{
-				Entity persistant = operator.tryResolve( persistantId);
+			    Allocatable persistant = operator.tryResolve( persistantId, Allocatable.class);
 				if ( persistant != null)
 				{
 					removeObjects.add( persistant);
@@ -296,7 +296,7 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 			Classification newClassification = null;
 			if ( persistantId != null)
 			{
-				Entity persistant = operator.tryResolve( persistantId);
+			    Entity persistant = operator.tryResolve( persistantId, Allocatable.class);
 				if ( persistant != null)
 				{
 					Set<Entity> singleton = Collections.singleton( persistant);
@@ -313,7 +313,7 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 				Allocatable newObject = getModification().newAllocatable(newClassification, null );
 				String userId = task.getUserId();
 				task.setPersistantId( newObject.getId());
-				User owner = (User) operator.tryResolve(userId);
+				User owner =  operator.tryResolve(userId, User.class);
 				if ( owner == null)
 				{
 					getLogger().error("User for id " + userId + " not found. Ignoring appointmentTask for appointment " + task.getAppointmentId());

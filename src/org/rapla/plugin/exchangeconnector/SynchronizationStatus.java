@@ -4,4 +4,5 @@ public class SynchronizationStatus {
 	public String username;
 	public boolean enabled;
 	public int unsynchronizedEvents;
+	public int synchronizedEvents;
 }
