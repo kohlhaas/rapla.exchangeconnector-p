@@ -139,7 +139,7 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
         this.optionsPanel.add(new JLabel(getString("synchronization")), "1, 6");
         enableNotifyBox = new JCheckBox(getString("mail_on_invitation_cancelation"));
         this.optionsPanel.add(this.enableNotifyBox, "3,6");
-        
+        enableNotifyBox.setEnabled( false );
         this.optionsPanel.add(syncButton, "3, 8");
         this.optionsPanel.add(new JLabel(getString("appointments") + ":"), "1, 10");
         this.optionsPanel.add(synchronizedLabel, "3, 10");
