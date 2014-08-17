@@ -272,7 +272,7 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 
     private void showResultDialog(SynchronizeResult result) throws RaplaException {
         String title = getString("synchronization") + " " + getString("appointment");
-        String text = "Aktualisiert: "   + result.changed + " Gelöscht: " + result.removed + " Fehler: " + result.open ;
+        String text = "Aktualisiert: "   + result.changed + " Geloescht: " + result.removed + " Fehler: " + result.open ;
         DialogUI dialog = DialogUI.create(getContext(), getComponent(),false, title, text);
         dialog.start();
     }
