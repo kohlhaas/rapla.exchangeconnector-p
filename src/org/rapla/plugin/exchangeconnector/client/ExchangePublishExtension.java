@@ -26,12 +26,12 @@ class ExchangePublishExtension extends RaplaGUIComponent implements PublishExten
 	public ExchangePublishExtension(RaplaContext context, CalendarSelectionModel model, ExchangeConnectorRemote remote)  {
 		super(context);
 		this.model = model;
-
+		setChildBundleName(ExchangeConnectorPlugin.RESOURCE_FILE);
         panel.setLayout(new TableLayout( new double[][] {{TableLayout.PREFERRED,5,TableLayout.PREFERRED,5,TableLayout.FILL},
                 {TableLayout.PREFERRED,5,TableLayout.PREFERRED       }}));
         dummyURL = new JTextField();
 
-    	checkbox = new JCheckBox("Exchange " + getString("publish"));
+    	checkbox = new JCheckBox(getString("exchange.publish"));
     	checkbox.addChangeListener(new ChangeListener()
     	{
            public void stateChanged(ChangeEvent e)
