@@ -120,6 +120,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
                 }
             }
         }
+        result.syncInterval = getSyncRange();
         return result;
 	}
 	

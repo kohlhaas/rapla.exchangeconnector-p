@@ -3,6 +3,7 @@ package org.rapla.plugin.exchangeconnector.client;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Date;
 import java.util.Locale;
 
 import javax.swing.AbstractAction;
@@ -14,6 +15,7 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
 import org.rapla.components.layout.TableLayout;
+import org.rapla.components.util.TimeInterval;
 import org.rapla.entities.configuration.Preferences;
 import org.rapla.framework.PluginDescriptor;
 import org.rapla.framework.RaplaContext;
@@ -44,6 +46,7 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
     private JLabel usernameLabel;
     private JLabel usernameInfoLabel;
     private JLabel synchronizedLabel;
+    private JLabel syncIntervalLabel;
     //private JTextField filterCategoryField;
     //private String filterCategory;
     //private JLabel eventTypesLabel;
@@ -101,12 +104,14 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
         usernameLabel = new JLabel();
         usernameInfoLabel = new JLabel();
         synchronizedLabel = new JLabel();
+        syncIntervalLabel =new JLabel();
         
         double[][] sizes = new double[][]{
                 {5, TableLayout.PREFERRED, 30, TableLayout.FILL, 5},
                 {TableLayout.PREFERRED, 10,
                         TableLayout.PREFERRED, 10,
                         TableLayout.PREFERRED, 40,
+                        TableLayout.PREFERRED, 10,
                         TableLayout.PREFERRED, 10,
                         TableLayout.PREFERRED, 40,
                         TableLayout.PREFERRED, 10,
@@ -143,10 +148,11 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
             this.optionsPanel.add(this.enableNotifyBox, "3,6");
         }
         enableNotifyBox.setEnabled( false );
-        this.optionsPanel.add(syncButton, "3, 8");
-        this.optionsPanel.add(new JLabel(getString("appointments") + ":"), "1, 10");
-        this.optionsPanel.add(synchronizedLabel, "3, 10");
-        this.optionsPanel.add(retryButton, "3, 12");
+        this.optionsPanel.add(syncIntervalLabel, "3, 8");
+        this.optionsPanel.add(syncButton, "3, 10");
+        this.optionsPanel.add(new JLabel(getString("appointments") + ":"), "1, 12");
+        this.optionsPanel.add(synchronizedLabel, "3, 12");
+        this.optionsPanel.add(retryButton, "3, 14");
         loginButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -381,6 +387,28 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
     	{
     		synchronizedLabel.setForeground( unsynchronizedEvents > 0 ? Color.RED : foreground);
     	}
+    	
+    	String intervalText = "";
+    	TimeInterval syncInterval = synchronizationStatus.syncInterval;
+    	if ( syncInterval != null)
+    	{
+    	    StringBuilder buf = new StringBuilder();
+    	    Date start = syncInterval.getStart();
+    	    if ( start != null)
+    	    {
+    	        buf.append( getRaplaLocale().formatDate( start)) ;
+    	    }
+    	    buf.append(" - ");
+    	    Date end = syncInterval.getEnd();
+            if ( end != null)
+            {
+                buf.append( getRaplaLocale().formatDate( end)) ;
+                
+            }
+            intervalText = buf.toString();
+    	}
+    	    
+    	this.syncIntervalLabel.setText(getI18n().format("in_period.format",intervalText ));
     	this.loginButton.setText( getConnectButtonString());
     	this.loginButton.setToolTipText( getConnectButtonTooltip());
     	this.enableNotifyBox.setEnabled( connected);

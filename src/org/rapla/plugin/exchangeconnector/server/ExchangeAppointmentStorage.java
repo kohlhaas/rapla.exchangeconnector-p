@@ -289,6 +289,11 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 					removeObjects.add( persistant);
 				}
 			}
+			String appointmentId = task.getAppointmentId();
+			if ( appointmentId != null)
+			{
+			    tasks.remove( appointmentId);
+			}
 		}
 		for ( SynchronizationTask task:toStore)
 		{
