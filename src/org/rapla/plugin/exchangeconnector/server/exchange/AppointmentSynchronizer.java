@@ -41,6 +41,7 @@ import org.rapla.entities.domain.Allocatable;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.Repeating;
 import org.rapla.entities.domain.RepeatingType;
+import org.rapla.entities.domain.Reservation;
 import org.rapla.entities.dynamictype.Attribute;
 import org.rapla.entities.dynamictype.AttributeAnnotations;
 import org.rapla.entities.dynamictype.Classification;
@@ -230,7 +231,7 @@ public class AppointmentSynchronizer  {
         exchangeAppointment.setStart(startDate);
         exchangeAppointment.setEnd(endDate);
         exchangeAppointment.setIsAllDayEvent(raplaAppointment.isWholeDaysSet());
-        exchangeAppointment.setSubject(raplaAppointment.getReservation().getName(Locale.GERMAN));
+        exchangeAppointment.setSubject(getName(raplaAppointment.getReservation(),Locale.GERMAN));
         exchangeAppointment.setIsResponseRequested(false);
         exchangeAppointment.setIsReminderSet(ExchangeConnectorConfig.DEFAULT_EXCHANGE_REMINDER_SET);
         exchangeAppointment.setLegacyFreeBusyStatus(LegacyFreeBusyStatus.valueOf(ExchangeConnectorConfig.DEFAULT_EXCHANGE_FREE_AND_BUSY));
@@ -246,7 +247,13 @@ public class AppointmentSynchronizer  {
         return exchangeAppointment;
     }
 
-	private Date rapla2exchange(Date date) {
+	private Object getName(Reservation reservation, Locale locale) {
+	    String annotationName = reservation.getClassification().getType().getAnnotation( DynamicTypeAnnotations.KEY_NAME_FORMAT_EXPORT) != null ? DynamicTypeAnnotations.KEY_NAME_FORMAT_EXPORT :DynamicTypeAnnotations.KEY_NAME_FORMAT; 
+        String eventDescription = reservation.format(locale, annotationName);
+        return eventDescription;
+    }
+
+    private Date rapla2exchange(Date date) {
 		TimeZone timeZone = timeZoneConverter.getImportExportTimeZone();
 		Date exportDate = timeZoneConverter.fromRaplaTime(timeZone, date);
 		Date exchangeDate = timeZoneConverter.fromRaplaTime(systemTimeZone, exportDate);
