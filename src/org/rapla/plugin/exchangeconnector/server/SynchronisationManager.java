@@ -157,8 +157,18 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
  		{
  			 if ( isInSyncInterval( appointment))
  	         {
- 				 result.addAll(appointmentStorage.getTasks(appointment));
- 				 Collection<String> matchingUserIds = findMatchingUser( appointment);
+ 			     Collection<SynchronizationTask> taskList = appointmentStorage.getTasks( appointment);
+ 			     Collection<String> matchingUserIds = findMatchingUser( appointment);
+ 			     // delete all appointments that are no longer covered  
+ 			     for (SynchronizationTask task:taskList)
+ 			     {
+ 			         String userId = task.getUserId();
+ 			         if ( userId != null && !matchingUserIds.contains( userId) && task.getStatus() != SyncStatus.deleted)
+ 			         {
+ 			             task.setStatus( SyncStatus.toDelete);
+ 			         }
+ 			     }
+ 			     result.addAll(taskList);
  				 for( String userId:matchingUserIds)
  				 {
  					 SynchronizationTask task = addOrUpdateAppointment(appointment,userId);
@@ -322,6 +332,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 		}
 		CalendarModelConfiguration modelConfig = preferences.getEntry(CalendarModelConfiguration.CONFIG_ENTRY);
         Map<String,CalendarModelConfiguration> exportMap= preferences.getEntry(CalendarModelConfiguration.EXPORT_ENTRY);
+        List<CalendarModelConfiguration> configList = new ArrayList<CalendarModelConfiguration>();
         if ( modelConfig == null && exportMap == null)
         {
         	Lock lock = writeLock();
@@ -332,33 +343,43 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 			}
         	return result;
         }
-        List<CalendarModelImpl> configList = new ArrayList<CalendarModelImpl>();
+        List<CalendarModelImpl> calendarModelList = new ArrayList<CalendarModelImpl>();
+        Set<String> appointmentsFound = new HashSet<String>();
         if ( modelConfig!= null)
         {
-        	if ( hasExchangeExport( modelConfig))
-        	{
-        		Collection<SynchronizationTask> updateTasks = updateTasks(user, modelConfig, configList, addUpdate);
-				result.addAll(updateTasks);
-        	}
+            configList.add( modelConfig);
         }
-        
         if ( exportMap != null)
         {
-        	for ( String key:exportMap.keySet())
+            configList.addAll( exportMap.values());
+        }
+        for ( CalendarModelConfiguration config:configList)
+        {
+    		if ( hasExchangeExport( config))
         	{
-        		CalendarModelConfiguration calendarModelConfiguration = exportMap.get( key);
-        		if ( hasExchangeExport( calendarModelConfiguration))
-            	{
-        			Collection<SynchronizationTask> updateTasks = updateTasks(user, calendarModelConfiguration, configList, addUpdate);
-            		result.addAll(updateTasks);
-            	}
+    			Collection<SynchronizationTask> updateTasks = updateTasks(user, config, calendarModelList,appointmentsFound, addUpdate);
+        		result.addAll(updateTasks);
         	}
         }
+        Collection<SynchronizationTask> userTasks = appointmentStorage.getTasks(user);
+        //TimeInterval syncRange = getSyncRange();
+        // if a calendar changes delete all the appointments that are now longer covered by the calendars
+        for ( SynchronizationTask task: userTasks)
+        {
+            String appointmentId = task.getAppointmentId();
+            SyncStatus status = task.getStatus();
+            if ( !appointmentsFound.contains( appointmentId) && (status != SynchronizationTask.SyncStatus.deleted && status != SynchronizationTask.SyncStatus.toDelete) && !result.contains( task))
+            {
+                task.setStatus( SyncStatus.toDelete);
+                result.add( task);
+            }
+        }
+        
         Lock lock = writeLock();
 		try	{
-    		if ( configList.size() > 0)
+    		if ( calendarModelList.size() > 0)
             {
-    			this.calendarModels.put( userId, configList);
+    			this.calendarModels.put( userId, calendarModelList);
             }
     		else
     		{
@@ -370,7 +391,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 		return result;
 	}
 
-	protected Collection<SynchronizationTask> updateTasks(User user,CalendarModelConfiguration modelConfig,List<CalendarModelImpl> configList, boolean addUpdated) throws RaplaException {
+	protected Collection<SynchronizationTask> updateTasks(User user,CalendarModelConfiguration modelConfig,List<CalendarModelImpl> configList, Set<String> appointmentsFound,boolean addUpdated) throws RaplaException {
 		String userId = user.getId();
 		
 		Set<SynchronizationTask> result = new HashSet<SynchronizationTask>();
@@ -383,6 +404,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 		for ( Appointment app:appointments)
 		{
 			SynchronizationTask task = appointmentStorage.getTask(app, userId);
+			appointmentsFound.add( app.getId());
 			// add new appointments to the appointment store, we don't need to check for updates here as this, will be triggered by a reservation change
 			if ( task == null)
 			{
