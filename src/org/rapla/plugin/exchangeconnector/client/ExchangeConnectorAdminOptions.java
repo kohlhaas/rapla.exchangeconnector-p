@@ -1,8 +1,11 @@
 package org.rapla.plugin.exchangeconnector.client;
 
 import java.awt.BorderLayout;
+import java.util.List;
 import java.util.Locale;
 
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -18,8 +21,8 @@ import org.rapla.framework.RaplaException;
 import org.rapla.framework.TypedComponentRole;
 import org.rapla.gui.DefaultPluginOption;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
+import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfigRemote;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
-import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 
 
 public class ExchangeConnectorAdminOptions extends DefaultPluginOption implements ExchangeConnectorConfig {
@@ -39,8 +42,8 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
     private JLabel syncIntervalPastLabel;// = new JLabel("Synchronise months in past");
     private JLabel categoryForRaplaAppointmentsOnExchangeLabel;// = new JLabel("Default Category on Exchange");
     private JLabel exchangeWebServiceFQDNLabel;// = new JLabel("Exchange-Webservice FQDN");
-   // private JLabel eventTypeLabel;
-   // private JComboBox cbEventTypes;
+    private JLabel eventTypeLabel;
+    private JComboBox cbEventTypes;
 //    private JLabel roomResourceTypeLabel;
 //    private JComboBox cbRoomTypes;
     //private JLabel raplaEventTitleAttributeLabel;
@@ -49,9 +52,9 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
     //private JTextField cbRaplaRessourceEmailAttribute;
     //private JLabel importAlwaysPrivateLabel;
     //private JCheckBox chkAlwaysPrivate;
-    ExchangeConnectorRemote configService;
+    ExchangeConnectorConfigRemote configService;
 
-    public ExchangeConnectorAdminOptions(RaplaContext raplaContext,ExchangeConnectorRemote configService) throws Exception {
+    public ExchangeConnectorAdminOptions(RaplaContext raplaContext,ExchangeConnectorConfigRemote configService) throws Exception {
         super(raplaContext);
         this.configService = configService;
         setChildBundleName(ExchangeConnectorPlugin.RESOURCE_FILE);
@@ -77,8 +80,8 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
         this.categoryForRaplaAppointmentsOnExchangeLabel = new JLabel(getString("appointment.category"));
         this.exchangeWebServiceFQDNLabel = new JLabel(getString("msexchange.hosturl"));
 
-//        this.eventTypeLabel = new JLabel(getString("event.raplatype"));
-//        this.cbEventTypes = new JComboBox();
+        this.eventTypeLabel = new JLabel("Timezone");
+        this.cbEventTypes = new JComboBox();
 
 //        this.roomResourceTypeLabel = new JLabel(getString("event.roomtype"));
 //        this.cbRoomTypes = new JComboBox();
@@ -121,8 +124,8 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 //        content.add(pullFrequency, "3,10");
 //        content.add(syncallButton, "1,12");
 //        content.add(infoBox, "3,12");
-//        content.add(eventTypeLabel, "1,16");
-//        content.add(cbEventTypes, "3,16");
+        content.add(eventTypeLabel, "1,10");
+        content.add(cbEventTypes, "3,10");
 
 //        content.add(roomResourceTypeLabel, "1,14");
 //        content.add(cbRoomTypes, "3,14");
@@ -151,8 +154,9 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 		set(newConfig,EXCHANGE_APPOINTMENT_CATEGORY, categoryForRaplaAppointmentsOnExchangeTextField.getText());
 		set(newConfig,SYNCING_PERIOD_PAST, syncIntervalPast.getNumber().intValue());
 		set(newConfig,SYNCING_PERIOD_FUTURE, syncIntervalFuture.getNumber().intValue());
+		set(newConfig, EXCHANGE_TIMEZONE, (String)cbEventTypes.getSelectedItem()); 
         //ExchangeConnectorPlugin.PULL_FREQUENCY, pullFrequency.getNumber().intValue();
-        //ExchangeConnectorPlugin.IMPORT_EVENT_TYPE, ((StringWrapper<DynamicType>) cbEventTypes.getSelectedItem()).forObject.getElementKey();
+		//ExchangeConnectorPlugin.IMPORT_EVENT_TYPE, cbEventTypes.getSelectedItem()).forObject.getElementKey();
 		//set(newConfig,ROOM_TYPE, ((StringWrapper<DynamicType>) cbRoomTypes.getSelectedItem()).forObject.getElementKey());
 		//set(newConfig,RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL, cbRaplaRessourceEmailAttribute.getText());
         //ExchangeConnectorPlugin.RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE = cbEventTitleAttribute.getSelectedItem() instanceof  Attribute?((Attribute) cbEventTitleAttribute.getSelectedItem()).getKey() : ExchangeConnectorPlugin.DEFAULT_RAPLA_EVENT_TYPE_ATTRIBUTE_TITLE;
@@ -181,13 +185,17 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 
 
     protected void readConfig(Configuration config) {
+        List<String> timezones;
         try
         {
             config = configService.getConfig();
+            timezones = configService.getTimezones();
+            
         } 
         catch (RaplaException ex)
         {
             showException(ex, getComponent());
+            return;
         }
 //        try {
 //            DynamicType[] dynamicTypes = getClientFacade().getDynamicTypes(DynamicTypeAnnotations.VALUE_CLASSIFICATION_TYPE_RESERVATION);
@@ -222,6 +230,9 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
         categoryForRaplaAppointmentsOnExchangeTextField.setText(reader.get(EXCHANGE_APPOINTMENT_CATEGORY));
         syncIntervalPast.setNumber(reader.get(SYNCING_PERIOD_PAST));
         syncIntervalFuture.setNumber(reader.get(SYNCING_PERIOD_FUTURE));
+        cbEventTypes.setModel( new DefaultComboBoxModel( timezones.toArray(new String[]{} )));
+        cbEventTypes.setSelectedItem(reader.get( EXCHANGE_TIMEZONE));
+        
         //pullFrequency.setNumber(ExchangeConnectorPlugin.PULL_FREQUENCY);
 //        DynamicType importEventType = null;
 //        try {

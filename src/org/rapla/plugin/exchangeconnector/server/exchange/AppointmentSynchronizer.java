@@ -1,5 +1,8 @@
 package org.rapla.plugin.exchangeconnector.server.exchange;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -33,6 +36,7 @@ import microsoft.exchange.webservices.data.SendInvitationsMode;
 import microsoft.exchange.webservices.data.SendInvitationsOrCancellationsMode;
 import microsoft.exchange.webservices.data.ServiceLocalException;
 import microsoft.exchange.webservices.data.ServiceResponseException;
+import microsoft.exchange.webservices.data.TimeZoneDefinition;
 import microsoft.exchange.webservices.data.WebCredentials;
 
 import org.rapla.components.util.DateTools;
@@ -61,9 +65,8 @@ import org.rapla.server.TimeZoneConverter;
  *
  */
 public class AppointmentSynchronizer  {
-	
+ 
 	public static ExtendedPropertyDefinition raplaAppointmentPropertyDefinition;
-	private ExchangeService service;
 	User raplaUser;
 	protected ConfigReader config;
 
@@ -76,7 +79,7 @@ public class AppointmentSynchronizer  {
     SynchronizationTask appointmentTask;
     boolean sendNotificationMail;
     Logger logger;
-    
+    EWSConnector ewsConnector;
     public AppointmentSynchronizer(Logger logger, ConfigReader config, TimeZoneConverter converter,SynchronizationTask appointmentTask,Appointment appointment,User user, String exchangeUsername, String password, boolean sendNotificationMail) throws RaplaException {
         this.sendNotificationMail = sendNotificationMail;
         this.logger = logger;
@@ -88,8 +91,7 @@ public class AppointmentSynchronizer  {
         this.config = config;
         
         String url = config.get(ExchangeConnectorConfig.EXCHANGE_WS_FQDN);
-		EWSConnector ewsConnector = new EWSConnector(url, credentials);
-  		this.service = ewsConnector.getService();
+		ewsConnector = new EWSConnector(url, credentials);
   		if (raplaAppointmentPropertyDefinition == null)
   		{
   			try {
@@ -152,6 +154,38 @@ public class AppointmentSynchronizer  {
     }
     
     private synchronized void delete() throws Exception {
+        String source = "2014-11-21+01:00";
+        try
+        {
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd'Z'");
+            df.parse(source);
+        }
+        catch ( ParseException ex)
+        {
+            int offset = 0;
+            char offsetChar = '+';   
+            if ( source.length() >= 10)
+            {
+                offsetChar = source.charAt( 10);
+                if ( offsetChar == '+' || offsetChar == '-')
+                {
+                    String time = source.substring( 11);
+                    source = source.substring(0, 10);
+                    Date timeString = new SimpleDateFormat("hh:mm").parse( time);
+                    Calendar instance = Calendar.getInstance();
+                    instance.setTime(timeString);
+                    offset = instance.get(Calendar.HOUR_OF_DAY);
+                }
+            }
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+            df.setTimeZone( TimeZone.getTimeZone("UTC" + offsetChar + offset));
+            df.parse(source);
+        }
+
+        ExchangeService service = ewsConnector.getService();
+        ewsConnector.test();
+        
+        
     	Comparable identifier = appointmentTask.getAppointmentId();
     	Logger logger = getLogger().getChildLogger("exchangeupdate");
     	long time = System.currentTimeMillis();
@@ -162,9 +196,15 @@ public class AppointmentSynchronizer  {
         try {
         	microsoft.exchange.webservices.data.Appointment exchangeAppointment;
 			ItemId exchangIdObj = new ItemId(exchangeId);
+            
 			try {
-                exchangeAppointment = microsoft.exchange.webservices.data.Appointment.bindToRecurringMaster(service, exchangIdObj);
+			    ewsConnector.test();
+			    service = ewsConnector.getService();
+			    exchangeAppointment = microsoft.exchange.webservices.data.Appointment.bindToRecurringMaster(service, exchangIdObj);
+//                exchangeAppointment = microsoft.exchange.webservices.data.Appointment.bind(service, exchangIdObj);
             } catch (Exception e) {
+                ewsConnector.test();
+                service = ewsConnector.getService();
                 exchangeAppointment = microsoft.exchange.webservices.data.Appointment.bind(service, exchangIdObj);
             }
             try {
@@ -215,6 +255,7 @@ public class AppointmentSynchronizer  {
 
     private microsoft.exchange.webservices.data.Appointment getEquivalentExchangeAppointment( Appointment raplaAppointment) throws ArgumentOutOfRangeException, ArgumentException, Exception {
         String exchangeId = appointmentTask.getExchangeAppointmentId();
+        ExchangeService service = ewsConnector.getService();
         microsoft.exchange.webservices.data.Appointment exchangeAppointment = null;
         if (exchangeId != null && !exchangeId.isEmpty()) {
         	exchangeAppointment = getExchangeAppointmentByID(service, exchangeId);
@@ -229,7 +270,27 @@ public class AppointmentSynchronizer  {
         Date startDate = rapla2exchange(start);
         Date endDate = rapla2exchange(end);
         exchangeAppointment.setStart(startDate);
+        //String[] availableIDs = TimeZone.getAvailableIDs();
+//        TimeZone timeZone = TimeZone.getTimeZone("Etc/UTC");//timeZoneConverter.getImportExportTimeZone();
+//        Collection<TimeZoneDefinition> serverTimeZones = service.getServerTimeZones();
+//        
+//        ArrayList list = new ArrayList();
+//        TimeZoneDefinition tDef = null;
+//        for ( TimeZoneDefinition def: serverTimeZones)
+//            
+//        {
+//            if ( def.getId().indexOf("Berlin")>=0 )
+//            {
+//                tDef = def;
+//                continue;
+//            }
+//        }
+        String id = config.get(ExchangeConnectorConfig.EXCHANGE_TIMEZONE);
+        String name = id;
+        TimeZoneDefinition tDef = new MyTimeZoneDefinition(id,name);
+        exchangeAppointment.setStartTimeZone(tDef);
         exchangeAppointment.setEnd(endDate);
+        exchangeAppointment.setEndTimeZone( tDef);
         exchangeAppointment.setIsAllDayEvent(raplaAppointment.isWholeDaysSet());
         exchangeAppointment.setSubject(getName(raplaAppointment.getReservation(),Locale.GERMAN));
         exchangeAppointment.setIsResponseRequested(false);
@@ -247,17 +308,33 @@ public class AppointmentSynchronizer  {
         return exchangeAppointment;
     }
 
-	private Object getName(Reservation reservation, Locale locale) {
+	static class MyTimeZoneDefinition extends TimeZoneDefinition
+	{
+	    public MyTimeZoneDefinition(String id, String name) {
+	        super();
+	        this.id = id;
+	        this.name = name;
+        }
+	    
+	    @Override
+	    public void validate() throws ServiceLocalException {
+	     
+	    }
+	}
+
+    private Object getName(Reservation reservation, Locale locale) {
 	    String annotationName = reservation.getClassification().getType().getAnnotation( DynamicTypeAnnotations.KEY_NAME_FORMAT_EXPORT) != null ? DynamicTypeAnnotations.KEY_NAME_FORMAT_EXPORT :DynamicTypeAnnotations.KEY_NAME_FORMAT; 
         String eventDescription = reservation.format(locale, annotationName);
         return eventDescription;
     }
 
     private Date rapla2exchange(Date date) {
+//        return new Date( date.getTime() - DateTools.MILLISECONDS_PER_HOUR);
 		TimeZone timeZone = timeZoneConverter.getImportExportTimeZone();
 		Date exportDate = timeZoneConverter.fromRaplaTime(timeZone, date);
-		Date exchangeDate = timeZoneConverter.fromRaplaTime(systemTimeZone, exportDate);
-		return exchangeDate ;
+		return exportDate;
+//		Date exchangeDate = timeZoneConverter.fromRaplaTime(systemTimeZone, exportDate);
+//		return exchangeDate ;
 	}
 
 	private Date exchange2rapla(Date date) {
@@ -431,6 +508,7 @@ public class AppointmentSynchronizer  {
                 int occurrenceIndex = 1;
                 while ( true )
                 {
+                    ExchangeService service = ewsConnector.getService();
                 	microsoft.exchange.webservices.data.Appointment occurrence= microsoft.exchange.webservices.data.Appointment.bindToOccurrence(service, id, occurrenceIndex);
                 	if ( occurrence == null)
                 	{

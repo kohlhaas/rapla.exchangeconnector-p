@@ -1,14 +1,10 @@
 package org.rapla.plugin.exchangeconnector.server;
 
 import org.rapla.entities.User;
-import org.rapla.entities.configuration.Preferences;
-import org.rapla.entities.configuration.RaplaConfiguration;
 import org.rapla.facade.RaplaComponent;
-import org.rapla.framework.DefaultConfiguration;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaContextException;
 import org.rapla.framework.RaplaException;
-import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 import org.rapla.plugin.exchangeconnector.SynchronizationStatus;
 import org.rapla.plugin.exchangeconnector.SynchronizeResult;
@@ -16,7 +12,6 @@ import org.rapla.server.RaplaKeyStorage;
 import org.rapla.server.RaplaKeyStorage.LoginInfo;
 import org.rapla.server.RemoteMethodFactory;
 import org.rapla.server.RemoteSession;
-import org.rapla.storage.RaplaSecurityException;
 
 public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent implements RemoteMethodFactory<ExchangeConnectorRemote>{
 	final SynchronisationManager manager;
@@ -80,17 +75,6 @@ public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent impleme
 				manager.removeTasksAndExports(user);
 			}
 			
-            @Override
-			public DefaultConfiguration getConfig() throws RaplaException {
-			    User user = remoteSession.getUser();
-                if ( !user.isAdmin())
-                {
-                    throw new RaplaSecurityException("Access only for admin users");
-                }
-                Preferences preferences = getQuery().getSystemPreferences();
-                RaplaConfiguration config = preferences.getEntry( ExchangeConnectorConfig.EXCHANGESERVER_CONFIG, new RaplaConfiguration());
-                return config;
-			}
 		};
 	}
 	

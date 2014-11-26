@@ -31,6 +31,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry exported="true" kind="lib" path="lib/server/jcifs-1.3.17.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/server/org.apache.commons.httpclient_3.1.0.v201012070820.jar"/>
-	<classpathentry kind="lib" path="lib/server/EWSJavaAPI_1.2.jar" sourcepath="lib/EWSJavaAPI_1.2-sources.jar"/>
+	<classpathentry kind="lib" path="lib/server/ews-java-api-1.3-SNAPSHOT.jar"/>
 	<classpathentry kind="output" path="eclipse-build"/>
 </classpath>

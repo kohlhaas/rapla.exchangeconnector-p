@@ -25,6 +25,9 @@ public interface ExchangeConnectorConfig
 
 	public static final TypedComponentRole<String> EXCHANGE_APPOINTMENT_CATEGORY  = new TypedComponentRole<String>( "exchange.default.category");
 	public static final String DEFAULT_EXCHANGE_APPOINTMENT_CATEGORY = "RAPLA";
+	
+	public static final TypedComponentRole<String> EXCHANGE_TIMEZONE  = new TypedComponentRole<String>( "exchange.timezone");
+	public static final String DEFAULT_EXCHANGE_TIMEZONE = "W. Europe Standard Time";
 
 	public static final TypedComponentRole<Boolean> EXCHANGE_SEND_INVITATION_AND_CANCELATION  = new TypedComponentRole<Boolean>( "exchange.sendInvitationAndCancelation");
 	public static final boolean DEFAULT_EXCHANGE_SEND_INVITATION_AND_CANCELATION = false;
@@ -75,6 +78,7 @@ public interface ExchangeConnectorConfig
 		        loadInt(config,SYNCING_PERIOD_PAST,DEFAULT_SYNCING_PERIOD_PAST);
 		        loadInt(config,SYNCING_PERIOD_FUTURE,DEFAULT_SYNCING_PERIOD_FUTURE);
 		        load(config,EXCHANGE_APPOINTMENT_CATEGORY,DEFAULT_EXCHANGE_APPOINTMENT_CATEGORY);
+		        load(config,EXCHANGE_TIMEZONE,DEFAULT_EXCHANGE_TIMEZONE);
 		        //loadBoolean(config,ENABLED_BY_ADMIN, DEFAULT_ENABLED_BY_ADMIN);
 		        //loadInt(config,PULL_FREQUENCY_KEY,DEFAULT_PULL_FREQUENCY);
 		        //load(config,IMPORT_EVENT_TYPE_KEY,DEFAULT_IMPORT_EVENT_TYPE);

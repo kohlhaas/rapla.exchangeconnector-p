@@ -520,7 +520,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 			 {
 				 worker.execute();
 			 } catch (Exception e) {
-				 getLogger().warn( "Can't synchronize " + task +  " Cause "  + e.getMessage() );
+				 getLogger().warn( "Can't synchronize " + task +  " Cause "  + e.getMessage() ,e);
 				 task.increaseRetries();
 				 toStore.add( task);
 				 result.open++;

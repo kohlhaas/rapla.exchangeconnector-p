@@ -20,9 +20,10 @@ import org.rapla.framework.RaplaException;
 public class EWSConnector {
 
     private static final int SERVICE_DEFAULT_TIMEOUT = 10000;
-    private ExchangeService service;
     String user;
-	
+    String fqdn;
+    WebCredentials credentials;
+    
 //	private final Character DOMAIN_SEPERATION_SYMBOL = new Character('@');
 
     public EWSConnector(String fqdn, String exchangeUsername,String exchangePassword) throws RaplaException  {
@@ -37,24 +38,12 @@ public class EWSConnector {
      */
     public EWSConnector(String fqdn, WebCredentials credentials) throws RaplaException  {
         super();
-        ExchangeService tmpService = new ExchangeService(ExchangeVersion.Exchange2010_SP1); //, DateTools.getTimeZone());//, DateTools.getTimeZone());
-
-        tmpService.setCredentials(credentials);
-        tmpService.setTimeout(SERVICE_DEFAULT_TIMEOUT);
-
-        //define connection url to mail server, assume https
-        this.user = credentials.getUser();
-        URI uri;
-		try {
-			uri = new URI(fqdn + "/ews/Exchange.asmx");
-			tmpService.setUrl(uri);
-		} catch (URISyntaxException e) {
-			throw new RaplaException(e.getMessage(), e);
-		}
-
+        this.fqdn = fqdn;
+        this.credentials = credentials;
+        
         // removed because auto is discovery not yet support
         // tmpService.autodiscoverUrl(getUserName()+this.DOMAIN_SEPERATION_SYMBOL+getFqdn());//autodiscover the URL with the parameter "username@fqdn
-        this.service = tmpService;
+        //this.service = tmpService;
 
         /*   // test if connection works
         getService().resolveName(getUserName(), ResolveNameSearchLocation.DirectoryOnly, true);
@@ -69,13 +58,29 @@ public class EWSConnector {
     /**
      * @return {@link ExchangeService} the service
      */
-    public ExchangeService getService() {
-        return service;
+    public ExchangeService getService() throws RaplaException {
+        ExchangeService tmpService = new ExchangeService(ExchangeVersion.Exchange2010_SP1); //, DateTools.getTimeZone());//, DateTools.getTimeZone());
+
+        tmpService.setCredentials(credentials);
+        tmpService.setTimeout(SERVICE_DEFAULT_TIMEOUT);
+
+        //define connection url to mail server, assume https
+        this.user = credentials.getUser();
+        URI uri;
+        try {
+            uri = new URI(fqdn + "/EWS/Exchange.asmx");
+            tmpService.setUrl(uri);
+        } catch (URISyntaxException e) {
+            throw new RaplaException(e.getMessage(), e);
+        }
+
+        return tmpService;
     }
 
 
     public void test( ) throws Exception {
-		NameResolutionCollection nameResolutionCollection = getService().resolveName(user, ResolveNameSearchLocation.DirectoryOnly, true);
+		ExchangeService service = getService();
+        NameResolutionCollection nameResolutionCollection = service.resolveName(user, ResolveNameSearchLocation.DirectoryOnly, true);
 		if (nameResolutionCollection.getCount() == 1) {
 			String smtpAddress = nameResolutionCollection.nameResolutionCollection(0).getMailbox().getAddress();
 			if (!smtpAddress.isEmpty()) {
