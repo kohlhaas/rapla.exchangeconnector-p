@@ -3,6 +3,7 @@ package org.rapla.plugin.exchangeconnector.server;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -60,6 +61,7 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		Attribute exchangeAppointmentIdAtt = dynamicType.getAttribute("externalObjectId");
 		Attribute statusAtt = dynamicType.getAttribute("status");
 		Attribute retriesAtt = dynamicType.getAttribute("retries");
+		Attribute lastRetryAtt = dynamicType.getAttribute("lastRetry");
 		ClassificationFilter newClassificationFilter = dynamicType.newClassificationFilter();
         Collection<Allocatable> store = operator.getAllocatables( newClassificationFilter.toArray());        
 		for ( Allocatable persistant:store)
@@ -68,7 +70,8 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 			String appointmentId = (String)persistant.getClassification().getValue(appointmentIdAtt);
 			String exchangeAppointmentId = (String) persistant.getClassification().getValue(exchangeAppointmentIdAtt);
 			String status = (String)persistant.getClassification().getValue(statusAtt);
-			String retriesString = (String) persistant.getClassification().getValue(retriesAtt); 
+			String retriesString = (String) persistant.getClassification().getValue(retriesAtt);
+			Date lastRetry = (Date) persistant.getClassification().getValue(lastRetryAtt); 
 			if ( user == null)
 			{
 				getLogger().error("Synchronization task " + persistant.getId() +  " has no userId. Ignoring.");
@@ -87,7 +90,7 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 					continue;
 				}
 			}
-			SynchronizationTask synchronizationTask = new SynchronizationTask(appointmentId, user.getId(), retries);
+			SynchronizationTask synchronizationTask = new SynchronizationTask(appointmentId, user.getId(), retries,lastRetry);
 			if ( exchangeAppointmentId != null)
 			{
 				synchronizationTask.setExchangeAppointmentId( exchangeAppointmentId);
@@ -217,7 +220,8 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 	synchronized public SynchronizationTask createTask(Appointment appointment, String userId) 
 	{
 		int retries= 0;
-		return new SynchronizationTask( appointment.getId(), userId, retries);
+		Date date = null;
+		return new SynchronizationTask( appointment.getId(), userId, retries, date);
 	}
 	
 	synchronized public void addOrReplace(Collection<SynchronizationTask> toStore) throws RaplaException 
@@ -336,6 +340,7 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 				newClassification.setValue("externalObjectId", task.getExchangeAppointmentId());
 				newClassification.setValue("status", task.getStatus().name());
 				newClassification.setValue("retries", task.getRetries());
+	            newClassification.setValue("lastRety", task.getLastRetry());
 			}
 
 		}

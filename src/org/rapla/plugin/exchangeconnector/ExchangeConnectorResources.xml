@@ -66,8 +66,8 @@
 	<text lang="de"><html> <br>Aus Datenschutzgründen werden nur Termine der gegebenen Kategorie importiert.</br></html></text>
 </entry>
 <entry key ="password.server">
-	<text lang="en">Password on Exchange-Server</text>
-	<text lang="de">Passwort auf dem Exchange-Server</text>
+	<text lang="en">password</text>
+	<text lang="de">Passwort</text>
 </entry>
     <entry key ="username.server">
         <text lang="en">Username on Exchange-Server</text>

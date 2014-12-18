@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -27,7 +28,6 @@ import org.rapla.entities.User;
 import org.rapla.entities.configuration.CalendarModelConfiguration;
 import org.rapla.entities.configuration.Preferences;
 import org.rapla.entities.configuration.RaplaConfiguration;
-import org.rapla.entities.domain.Allocatable;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.Reservation;
 import org.rapla.entities.storage.EntityResolver;
@@ -54,6 +54,7 @@ import org.rapla.storage.UpdateResult;
 
 
 public class SynchronisationManager extends RaplaComponent implements ModificationListener {
+    long SCHEDULE_PERIOD = DateTools.MILLISECONDS_PER_HOUR * 2;
 	ExchangeAppointmentStorage appointmentStorage;
 	ExchangeConnectorConfig.ConfigReader config;
 	RaplaKeyStorage keyStorage;
@@ -74,17 +75,39 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
         }
         CommandScheduler scheduler = context.lookup( CommandScheduler.class);
         long delay =0;
-		long period = DateTools.MILLISECONDS_PER_HOUR * 2;
-		scheduler.schedule( new RetryCommand(), delay, period);
+		
+		scheduler.schedule( new RetryCommand(), delay, SCHEDULE_PERIOD);
         //final Timer scheduledDownloadTimer = new Timer("ScheduledDownloadThread",true);
         //scheduledDownloadTimer.schedule(new ScheduledDownloadHandler(context, clientFacade, getLogger()), 30000, ExchangeConnectorPlugin.PULL_FREQUENCY*1000);
 	}
 	
 	class RetryCommand implements Command
 	{
+	    boolean firstExecution = true;
+	    
 		public void execute() throws Exception {
 			Collection<SynchronizationTask> allTasks = appointmentStorage.getAllTasks();
-			SynchronisationManager.this.execute(allTasks);
+			Collection<SynchronizationTask> includedTasks = new ArrayList<SynchronizationTask>();
+			Date now = new Date();
+			for ( SynchronizationTask task:allTasks)
+			{
+			    int retries = task.getRetries();
+			    if ( retries > 5 && !firstExecution)
+			    {
+			        Date lastRetry = task.getLastRetry();
+			        if ( lastRetry != null )
+			        {
+			            // skip a schedule Period for the time of retries
+			            if (lastRetry.getTime() < now.getTime() + (retries-5) * SCHEDULE_PERIOD)
+			            {
+			                continue;
+			            }
+			        }
+			    }
+			    includedTasks.add( task );
+			}
+			firstExecution = false;
+			SynchronisationManager.this.execute(includedTasks);
 		}
 	}
 	public synchronized void dataChanged(ModificationEvent evt) throws RaplaException {
@@ -94,6 +117,10 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 	public synchronized SynchronizeResult retry(User user) throws RaplaException  
 	{
 		Collection<SynchronizationTask> existingTasks = appointmentStorage.getTasks(user);
+		for (SynchronizationTask task:existingTasks)
+		{
+		    task.resetRetries();
+		}
 		return execute( existingTasks);
 	}
 	
@@ -230,7 +257,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 				}
 				if ( operation instanceof UpdateResult.Change)
 				{
-					Reservation oldReservation = (Reservation) ((UpdateResult.Change) operation).getOld();
+				    Reservation oldReservation = (Reservation) ((UpdateResult.Change) operation).getOld();
 					Reservation newReservation =(Reservation) ((UpdateResult.Change) operation).getNew();
 					Set<Appointment> oldAppointments =  new HashSet<Appointment>(Arrays.asList(oldReservation.getAppointments()));
 					Set<Appointment> newAppointments =  new HashSet<Appointment>(Arrays.asList(newReservation.getAppointments()));
@@ -245,29 +272,29 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 					}
 					for ( Appointment newApp: newAppointments)
 					{
-						boolean notChanged =false;
-						if ( oldAppointments.contains( newApp))
-						{
-							for ( Appointment oldApp: oldAppointments)
-							{
-								if ( oldApp.equals( newApp))
-								{
-									if ( oldApp.matches( newApp))
-									{
-										Allocatable[] oldAllocatables = oldReservation.getAllocatablesFor( oldApp);
-										Allocatable[] newAllocatables = newReservation.getAllocatablesFor( newApp);
-										if (Arrays.equals( oldAllocatables,  newAllocatables))
-										{
-											notChanged = true;
-										}
-									}
-								}
-							}
-						}
-						if ( notChanged )
-						{
-							continue;
-						}
+//						boolean notChanged =false;
+//						if ( oldAppointments.contains( newApp))
+//						{
+//							for ( Appointment oldApp: oldAppointments)
+//							{
+//								if ( oldApp.equals( newApp))
+//								{
+//									if ( oldApp.matches( newApp))
+//									{
+//										Allocatable[] oldAllocatables = oldReservation.getAllocatablesFor( oldApp);
+//										Allocatable[] newAllocatables = newReservation.getAllocatablesFor( newApp);
+//										if (Arrays.equals( oldAllocatables,  newAllocatables))
+//										{
+//											notChanged = true;
+//										}
+//									}
+//								}
+//							}
+//						}
+//						if ( notChanged )
+//						{
+//							continue;
+//						}
 						Collection<SynchronizationTask> result =  updateTasks(  newApp, false);
 						tasks.addAll(result);
 					}
@@ -440,7 +467,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
     	return task;
     }
     
-	public SynchronizeResult execute(Collection<SynchronizationTask> tasks) throws RaplaException {
+	private SynchronizeResult execute(Collection<SynchronizationTask> tasks) throws RaplaException {
 		return execute( tasks, false);
 	}
 	
@@ -531,6 +558,25 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 				 }
 				 task.increaseRetries();
 				 toStore.add( task);
+				 StringBuilder errorMessage = new StringBuilder();
+				 if ( appointment != null)
+				 {
+				     Reservation reservation = appointment.getReservation();
+				     if ( reservation != null)
+				     {
+				         Locale locale = getLocale();
+				         errorMessage.append(reservation.getName( locale));
+				     }
+				     errorMessage.append(" ");
+				     String shortSummary = getAppointmentFormater().getShortSummary(appointment);
+				     errorMessage.append(shortSummary);
+                     errorMessage.append(" Cause ");
+				 }
+				 if ( message != null)
+				 {
+				     errorMessage.append(message);
+				 }
+				 result.errorMessages.add(errorMessage.toString());
 				 result.open++;
 				 continue;
 			 }

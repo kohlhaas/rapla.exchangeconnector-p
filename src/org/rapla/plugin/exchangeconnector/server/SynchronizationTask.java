@@ -1,6 +1,7 @@
 package org.rapla.plugin.exchangeconnector.server;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import org.rapla.entities.User;
 import org.rapla.entities.domain.Appointment;
@@ -29,22 +30,25 @@ public class SynchronizationTask implements Serializable
 	String userId;
 	String appointmentId;
 	String exchangeAppointmentId;
-	int retries = 0;
+	Date lastRetry;
+	private int retries = 0;
 	
 	//TimeInterval syncInterval;
 	SyncStatus status;
 	private String persistantId;
 	
-	public SynchronizationTask(String appointmentId, String userId, int retries) {
+	public SynchronizationTask(String appointmentId, String userId, int retries, Date lastRetry) {
 		this.userId = userId;
 		this.appointmentId = appointmentId;
 		status = SyncStatus.toUpdate;
 		this.retries = retries;
+		this.lastRetry = lastRetry;
 	}
 	
 	public void increaseRetries()
 	{
 		retries++;
+		this.lastRetry = new Date();
 	}
 
 	
@@ -79,11 +83,17 @@ public class SynchronizationTask implements Serializable
 	{
 		return retries;
 	}
+	
+	public void resetRetries()
+	{
+	    retries = 0;
+        lastRetry = null;
+	}
 
 	public void setStatus(SyncStatus status) {
 		if ( status != this.status)
 		{
-			retries = 0;
+		    resetRetries();
 		}
 		this.status = status;
 	}
@@ -175,6 +185,16 @@ public class SynchronizationTask implements Serializable
 		boolean b = otherId == this.userId || (otherId!= null && otherId.equals( this.userId));
 		return b;
 	}
+
+    public Date getLastRetry() 
+    {
+        return lastRetry;
+    }
+    
+    public void setLastRetry(Date lastRetry) 
+    {
+        this.lastRetry = lastRetry;
+    }
 
 
 	

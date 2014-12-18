@@ -30,7 +30,7 @@ public class EWSConnector {
     
 //	private final Character DOMAIN_SEPERATION_SYMBOL = new Character('@');
 
-    public EWSConnector(String fqdn, String exchangeUsername,String exchangePassword) throws RaplaException  {
+    public EWSConnector(String fqdn, String exchangeUsername,String exchangePassword)  {
     	this( fqdn,new WebCredentials(exchangeUsername, exchangePassword));
     }
     /**
@@ -40,7 +40,7 @@ public class EWSConnector {
      * @param credentials : {@link WebCredentials}
      * @throws Exception
      */
-    public EWSConnector(String fqdn, WebCredentials credentials) throws RaplaException  {
+    public EWSConnector(String fqdn, WebCredentials credentials)  {
         super();
         this.fqdn = fqdn;
         this.credentials = credentials;

@@ -38,7 +38,6 @@ public class ExchangeConnectorRemoteConfigFactory extends RaplaComponent impleme
                 return config;
 			}
             
-            @SuppressWarnings("unused")
             public List<String> getTimezones() throws RaplaException 
             {
                 return ExchangeConnectorServerPlugin.TIMEZONES;
