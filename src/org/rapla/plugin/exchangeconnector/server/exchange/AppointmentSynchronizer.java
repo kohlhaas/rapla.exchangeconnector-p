@@ -92,6 +92,8 @@ public class AppointmentSynchronizer  {
         
         String url = config.get(ExchangeConnectorConfig.EXCHANGE_WS_FQDN);
 		ewsConnector = new EWSConnector(url, credentials);
+		Logger requestLogger = logger.getChildLogger("webservice");
+		ewsConnector.setLogger(requestLogger);
   		if (raplaAppointmentPropertyDefinition == null)
   		{
   			try {
@@ -331,9 +333,15 @@ public class AppointmentSynchronizer  {
     private Date rapla2exchange(Date date) {
 //        return new Date( date.getTime() - DateTools.MILLISECONDS_PER_HOUR);
 		TimeZone timeZone = timeZoneConverter.getImportExportTimeZone();
-		Date exportDate = timeZoneConverter.fromRaplaTime(timeZone, date);
-		return exportDate;
-//		Date exchangeDate = timeZoneConverter.fromRaplaTime(systemTimeZone, exportDate);
+		long time = date.getTime();
+        int offset = 0;//TimeZoneConverterImpl.getOffset(timeZone, systemTimeZone, time);
+		Date offsetToSystemTime = new Date( time + offset);
+        Date exportDate = timeZoneConverter.fromRaplaTime(timeZone, offsetToSystemTime);
+        getLogger().debug("Rapladate " + date + " converted to exchange " + exportDate);
+        return exportDate;
+        //Date exchangeDate = timeZoneConverter.fromRaplaTime(systemTimeZone, exportDate);
+        //return exchangeDate;
+
 //		return exchangeDate ;
 	}
 
@@ -349,7 +357,7 @@ public class AppointmentSynchronizer  {
 
     private String getMessageBody() throws Exception 
     {
-    	String bodyAttendeeList =BODY_ATTENDEE_LIST_OPENING_LINE+raplaAppointment.getOwner().getUsername()+LINE_BREAK+getStringForRessources(raplaAppointment) + LINE_BREAK;
+    	String bodyAttendeeList =BODY_ATTENDEE_LIST_OPENING_LINE+getStringForRessources(raplaAppointment) + LINE_BREAK;
         String content = RAPLA_BODY_MESSAGE;
         content += bodyAttendeeList.isEmpty() ? "" : bodyAttendeeList;
         content += RAPLA_NOSYNC_KEYWORD;
@@ -455,8 +463,35 @@ public class AppointmentSynchronizer  {
         Date start = raplaAppointment.getStart();
 		calendar.setTime(start);
         int dayOfMonthInt = calendar.get(Calendar.DAY_OF_MONTH);
-        DayOfTheWeekIndex weekOfMonth = DayOfTheWeekIndex.values()[calendar.get(Calendar.WEEK_OF_MONTH) - 1];
-        DayOfTheWeek dayOfWeek = DayOfTheWeek.values()[calendar.get(Calendar.DAY_OF_WEEK) - 1];
+        DayOfTheWeekIndex weekOfMonth;
+        {
+            DayOfTheWeekIndex[] values = DayOfTheWeekIndex.values();
+            int i = calendar.get(Calendar.WEEK_OF_MONTH) - 1;
+            if (i<0 || i>= values.length)
+            {
+                getLogger().error("Illegal exchange values for repeating in week of month " + values  + " does not have index " + i);
+                weekOfMonth = DayOfTheWeekIndex.First;
+            }
+            else
+            {
+                weekOfMonth = values[i];
+            }
+        }
+        
+        DayOfTheWeek dayOfWeek;
+        {
+            DayOfTheWeek[] values = DayOfTheWeek.values();
+            int i = calendar.get(Calendar.DAY_OF_WEEK) - 1;
+            if (i<0 || i>= values.length)
+            {
+                getLogger().error("Illegal exchange values for repeating in day of week " + values  + " does not have index " + i);
+                dayOfWeek = DayOfTheWeek.Monday;
+            }
+            else
+            {
+                dayOfWeek = values[i];
+            }
+        }
         Month month = Month.values()[calendar.get(Calendar.MONTH)];
         RepeatingType type = repeating.getType();
         int interval = repeating.getInterval();

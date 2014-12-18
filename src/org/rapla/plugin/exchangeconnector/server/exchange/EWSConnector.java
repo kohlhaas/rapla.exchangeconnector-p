@@ -5,11 +5,14 @@ import java.net.URISyntaxException;
 
 import microsoft.exchange.webservices.data.ExchangeService;
 import microsoft.exchange.webservices.data.ExchangeVersion;
+import microsoft.exchange.webservices.data.ITraceListener;
 import microsoft.exchange.webservices.data.NameResolutionCollection;
 import microsoft.exchange.webservices.data.ResolveNameSearchLocation;
+import microsoft.exchange.webservices.data.TraceFlags;
 import microsoft.exchange.webservices.data.WebCredentials;
 
 import org.rapla.framework.RaplaException;
+import org.rapla.framework.logger.Logger;
 
 /**
  * This class is obliged with the task to provide a connection to a specific Exchange Server-instance
@@ -23,6 +26,7 @@ public class EWSConnector {
     String user;
     String fqdn;
     WebCredentials credentials;
+    Logger logger;
     
 //	private final Character DOMAIN_SEPERATION_SYMBOL = new Character('@');
 
@@ -54,13 +58,30 @@ public class EWSConnector {
         //SynchronisationManager.logInfo("Connected to Exchange at + " + uri + " at timezone: " + DateTools.getTimeZone());
     }
 
-
+    public void setLogger(Logger logger)
+    {
+        this.logger = logger;
+    }
+    
     /**
      * @return {@link ExchangeService} the service
      */
     public ExchangeService getService() throws RaplaException {
         ExchangeService tmpService = new ExchangeService(ExchangeVersion.Exchange2010_SP1); //, DateTools.getTimeZone());//, DateTools.getTimeZone());
-
+        if ( logger!= null && logger.isDebugEnabled())
+        {
+            tmpService.setTraceEnabled( true );
+            tmpService.setTraceListener( new ITraceListener() {
+                
+                @Override
+                public void trace(String traceType, String traceMessage) {
+                    if ( traceType.equals(TraceFlags.EwsRequest.toString()))
+                    {
+                        logger.debug(traceMessage);
+                    }
+                }
+            });
+        }
         tmpService.setCredentials(credentials);
         tmpService.setTimeout(SERVICE_DEFAULT_TIMEOUT);
 

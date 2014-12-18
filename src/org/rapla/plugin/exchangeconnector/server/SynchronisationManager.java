@@ -500,7 +500,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 						 notificationMail = preferences.getEntryAsBoolean( ExchangeConnectorConfig.EXCHANGE_SEND_INVITATION_AND_CANCELATION, ExchangeConnectorConfig.DEFAULT_EXCHANGE_SEND_INVITATION_AND_CANCELATION);
 					 }
 					 RaplaContext context = getContext();
-					 Logger logger = getLogger();
+					 Logger logger = getLogger().getChildLogger("exchange");
 					 TimeZoneConverter converter = context.lookup( TimeZoneConverter.class);
 					 worker = new AppointmentSynchronizer(logger, config,converter,task, appointment,user,username,password, notificationMail);
 				 }
@@ -520,7 +520,15 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 			 {
 				 worker.execute();
 			 } catch (Exception e) {
-				 getLogger().warn( "Can't synchronize " + task +  " Cause "  + e.getMessage() ,e);
+				 String message = e.getMessage();
+				 if ( message != null && message.indexOf("Connection not estab") >=0)
+				 {
+				     getLogger().warn( "Can't synchronize " + task +  " Cause "  + message );
+				 }
+				 else
+				 {
+				     getLogger().warn( "Can't synchronize " + task +  " Cause "  + message );
+				 }
 				 task.increaseRetries();
 				 toStore.add( task);
 				 result.open++;
