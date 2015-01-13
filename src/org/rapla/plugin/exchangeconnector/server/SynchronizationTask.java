@@ -135,6 +135,7 @@ public class SynchronizationTask implements Serializable
 				+ appointmentId + ", exchangeAppointmentId="
 				+ exchangeAppointmentId 
 				+ ", retries=" + retries
+		        + ", lastRetry=" + lastRetry
 				+ ", status=" + status + "]";
 	}
 

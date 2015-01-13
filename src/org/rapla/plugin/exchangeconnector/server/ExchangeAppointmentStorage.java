@@ -340,7 +340,7 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 				newClassification.setValue("externalObjectId", task.getExchangeAppointmentId());
 				newClassification.setValue("status", task.getStatus().name());
 				newClassification.setValue("retries", task.getRetries());
-	            newClassification.setValue("lastRety", task.getLastRetry());
+	            newClassification.setValue("lastRetry", task.getLastRetry());
 			}
 
 		}

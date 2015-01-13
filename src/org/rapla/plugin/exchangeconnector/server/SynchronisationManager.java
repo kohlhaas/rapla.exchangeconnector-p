@@ -98,7 +98,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 			        if ( lastRetry != null )
 			        {
 			            // skip a schedule Period for the time of retries
-			            if (lastRetry.getTime() < now.getTime() + (retries-5) * SCHEDULE_PERIOD)
+			            if (lastRetry.getTime() > now.getTime() - (retries-5) * SCHEDULE_PERIOD)
 			            {
 			                continue;
 			            }
@@ -548,14 +548,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 				 worker.execute();
 			 } catch (Exception e) {
 				 String message = e.getMessage();
-				 if ( message != null && message.indexOf("Connection not estab") >=0)
-				 {
-				     getLogger().warn( "Can't synchronize " + task +  " Cause "  + message );
-				 }
-				 else
-				 {
-				     getLogger().warn( "Can't synchronize " + task +  " Cause "  + message );
-				 }
+				 //if ( message != null && message.indexOf("Connection not estab") >=0)
 				 task.increaseRetries();
 				 toStore.add( task);
 				 StringBuilder errorMessage = new StringBuilder();
@@ -577,6 +570,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 				     errorMessage.append(message);
 				 }
 				 result.errorMessages.add(errorMessage.toString());
+				 getLogger().warn( "Can't synchronize " + task + " "  + errorMessage);
 				 result.open++;
 				 continue;
 			 }
