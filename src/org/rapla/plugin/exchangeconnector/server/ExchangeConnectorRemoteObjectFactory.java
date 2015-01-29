@@ -49,7 +49,7 @@ public class ExchangeConnectorRemoteObjectFactory extends RaplaComponent impleme
 				{
 					String exchangeUsername = secrets.login;
 					String exchangePassword = secrets.secret;
-					manager.testConnection(exchangeUsername, exchangePassword);
+					//manager.testConnection(exchangeUsername, exchangePassword);
 					return manager.retry(user);
 				}
 				else

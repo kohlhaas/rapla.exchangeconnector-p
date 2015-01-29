@@ -7,5 +7,5 @@ public class SynchronizeResult {
     public int changed;
     public int removed;
     public int open;
-    public List<String> errorMessages = new ArrayList<String>();
+    public List<SyncError> errorMessages = new ArrayList<SyncError>();
 }

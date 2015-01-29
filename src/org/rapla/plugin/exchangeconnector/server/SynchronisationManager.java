@@ -2,6 +2,7 @@ package org.rapla.plugin.exchangeconnector.server;
 
 import static org.rapla.entities.configuration.CalendarModelConfiguration.EXPORT_ENTRY;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -17,6 +18,8 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import microsoft.exchange.webservices.data.HttpErrorException;
 
 import org.rapla.components.util.Command;
 import org.rapla.components.util.CommandScheduler;
@@ -41,6 +44,7 @@ import org.rapla.framework.RaplaException;
 import org.rapla.framework.logger.Logger;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
+import org.rapla.plugin.exchangeconnector.SyncError;
 import org.rapla.plugin.exchangeconnector.SynchronizationStatus;
 import org.rapla.plugin.exchangeconnector.SynchronizeResult;
 import org.rapla.plugin.exchangeconnector.server.SynchronizationTask.SyncStatus;
@@ -137,8 +141,14 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
             for ( SynchronizationTask task:existingTasks)
             {
                 SyncStatus status = task.getStatus();
-                if (status.isOpen( ))
+                if (status.isUnsynchronized( ))
                 {
+                    String lastError = task.getLastError();
+                    if ( lastError != null)
+                    {
+                        String appointmentDetail = getAppointmentMessage(task);
+                        result.synchronizationErrors.add( new SyncError(appointmentDetail, lastError) );
+                    }
                     result.unsynchronizedEvents++;
                 }
                 if (status == SyncStatus.synched)
@@ -478,6 +488,37 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 		appointmentStorage.storeAndRemove(toStore, toRemove);
 		return result;
 	}
+	
+	public String getAppointmentMessage( SynchronizationTask task)
+	{
+	    StringBuilder appointmentMessage = new StringBuilder();
+        if ( task.status == SyncStatus.toDelete)
+        {
+            appointmentMessage.append(getString("delete"));
+            appointmentMessage.append(" ");
+        }
+        String appointmentId = task.getAppointmentId();
+        // we don't resolve the appointment if we delete
+        EntityResolver resolver = getClientFacade().getOperator();
+        Appointment appointment = task.getStatus() != SyncStatus.toDelete  ? resolver.tryResolve( appointmentId, Appointment.class) : null;
+        if ( appointment != null)
+        {
+            Reservation reservation = appointment.getReservation();
+            if ( reservation != null)
+            {
+                Locale locale = getLocale();
+                appointmentMessage.append(reservation.getName( locale));
+            }
+            appointmentMessage.append(" ");
+            String shortSummary = getAppointmentFormater().getShortSummary(appointment);
+            appointmentMessage.append(shortSummary);
+        } else {
+            appointmentMessage.append(getString("appointment"));
+            appointmentMessage.append(" ");
+            appointmentMessage.append(appointmentId);            
+        }
+        return appointmentMessage.toString();
+	}
 
 	protected SynchronizeResult processTasks(Collection<SynchronizationTask> tasks,Collection<SynchronizationTask> toStore,Collection<SynchronizationTask> toRemove, boolean skipNotification) {
 		SynchronizeResult result = new SynchronizeResult();
@@ -540,7 +581,9 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 			 } 
 			 catch (RaplaException ex)
 			 {
-				 getLogger().error( "Internal error while processing SynchronizationTask " + task  +". Ignoring task. ", ex);
+				 String message = "Internal error while processing SynchronizationTask " + task  +". Ignoring task. ";
+				 task.increaseRetries(message);
+                 getLogger().error( message, ex);
 				 continue;
 			 }
 			 try
@@ -548,54 +591,55 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 				 worker.execute();
 			 } catch (Exception e) {
 				 String message = e.getMessage();
-				 //if ( message != null && message.indexOf("Connection not estab") >=0)
-				 task.increaseRetries();
-				 toStore.add( task);
-				 StringBuilder errorMessage = new StringBuilder();
-				 if ( appointment != null)
+				 Throwable cause = e.getCause();
+				 if ( cause != null && cause.getCause() != null)
 				 {
-				     Reservation reservation = appointment.getReservation();
-				     if ( reservation != null)
-				     {
-				         Locale locale = getLocale();
-				         errorMessage.append(reservation.getName( locale));
-				     }
-				     errorMessage.append(" ");
-				     String shortSummary = getAppointmentFormater().getShortSummary(appointment);
-				     errorMessage.append(shortSummary);
-                     errorMessage.append(" Cause ");
+				     cause = cause.getCause();
 				 }
+				 if ( cause instanceof HttpErrorException)
+				 {
+				     int httpErrorCode = ((HttpErrorException)cause).getHttpErrorCode();
+				     if ( httpErrorCode == 401)
+				     {
+				         message = "Exchangezugriff verweigert. Ist das eingetragenen Exchange Passwort noch aktuell?";
+				     }
+				 }
+				 if ( cause instanceof IOException)
+				 {
+				     message = "Keine Verbindung zum Exchange " + cause.getMessage();
+				 }
+				     
+				 //if ( message != null && message.indexOf("Connection not estab") >=0)
+				
+				 String toString = getAppointmentMessage(task);
+                 
 				 if ( message != null)
 				 {
-				     errorMessage.append(message);
+				     message = message.replaceAll("The request failed. ", "");
+				     message = message.replaceAll("The request failed.", "");
 				 }
-				 result.errorMessages.add(errorMessage.toString());
-				 getLogger().warn( "Can't synchronize " + task + " "  + errorMessage);
+				 else
+				 {
+				     message = "Synchronisierungsfehler mit exchange " + e.toString();
+				 }
+                 task.increaseRetries( message );
+                 result.errorMessages.add(new SyncError(toString, message));
+				 getLogger().warn( "Can't synchronize " + task + " "  + toString + " " + message);
 				 result.open++;
-				 continue;
-			 }
-			 SyncStatus after = task.getStatus();
-			 switch (after)
-			 {
-		    	case deleted: toRemove.add( task);break;
-		    	case synched: break;
-		    	case toDelete: 
-		    	case toReplace:
-		    	case toUpdate:  task.increaseRetries(); toStore.add( task);
+				 toStore.add( task);
 
 			 }
-			 if ( after != before)
+			 SyncStatus after = task.getStatus();
+			 if ( after == SyncStatus.deleted && before != SyncStatus.deleted)
 			 {
-				 if ( after == SyncStatus.synched)
-				 {
-					 toStore.add( task);
-					 result.changed ++;
-				 }
-				 if ( after == SyncStatus.deleted)
-                 {
-				     result.removed ++;
-                 }
+		           toRemove.add( task);
+                   result.removed ++;
 			 }
+             if ( after == SyncStatus.synched && before != SyncStatus.synched)
+             {
+                 toStore.add( task);
+                 result.changed ++;
+             }
 		}
 	    return result;
 	}

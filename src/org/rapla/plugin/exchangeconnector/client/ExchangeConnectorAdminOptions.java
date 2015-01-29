@@ -183,12 +183,20 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 		newConfig.getMutableChild(key.getId(), true).setValue(value);
 	}
 
+    protected Configuration getConfig() throws RaplaException {
+        Configuration config = preferences.getEntry( ExchangeConnectorPlugin.EXCHANGESERVER_CONFIG, null);
+        if ( config == null )
+        {
+            config =  configService.getConfig();
+        } 
+        return config;
+    }
+
 
     protected void readConfig(Configuration config) {
         List<String> timezones;
         try
         {
-            config = configService.getConfig();
             timezones = configService.getTimezones();
             
         } 

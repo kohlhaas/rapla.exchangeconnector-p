@@ -15,43 +15,50 @@ public class SynchronizationTask implements Serializable
 		,toReplace(true)
 		,synched(false)
 		,deleted(false);
-		boolean open;
-		private SyncStatus(boolean open) 
+		boolean unsynchronized;
+		private SyncStatus(boolean unszynchronized) 
 		{
-			this.open =open;
+			this.unsynchronized =unszynchronized;
 		}
 		
-		public boolean isOpen() {
-			return open;
+		public boolean isUnsynchronized() {
+			return unsynchronized;
 		}
-		
 	}
+
 	private static final long serialVersionUID = 219323872273312836L;
 	String userId;
 	String appointmentId;
 	String exchangeAppointmentId;
 	Date lastRetry;
 	private int retries = 0;
+	String lastError;
 	
 	//TimeInterval syncInterval;
 	SyncStatus status;
 	private String persistantId;
 	
-	public SynchronizationTask(String appointmentId, String userId, int retries, Date lastRetry) {
+	public SynchronizationTask(String appointmentId, String userId, int retries, Date lastRetry, String lastError) {
 		this.userId = userId;
 		this.appointmentId = appointmentId;
 		status = SyncStatus.toUpdate;
 		this.retries = retries;
 		this.lastRetry = lastRetry;
+		this.lastError = lastError;
 	}
 	
-	public void increaseRetries()
+	public void increaseRetries(String lastError)
 	{
-		retries++;
+        this.lastError = lastError;
+        retries++;
 		this.lastRetry = new Date();
 	}
-
 	
+    public String getLastError() 
+    {
+        return lastError;
+    }
+
 	public String getUserId() {
 		return userId;
 	}
@@ -96,7 +103,12 @@ public class SynchronizationTask implements Serializable
 		    resetRetries();
 		}
 		this.status = status;
+		if ( !status.isUnsynchronized())
+		{
+		    lastError = null;
+		}
 	}
+	
 	
 	@Override
 	public int hashCode() {
@@ -196,6 +208,7 @@ public class SynchronizationTask implements Serializable
     {
         this.lastRetry = lastRetry;
     }
+
 
 
 	

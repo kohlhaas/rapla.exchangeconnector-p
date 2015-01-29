@@ -7,7 +7,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.rapla.components.xmlbundle.impl.I18nBundleImpl;
 import org.rapla.entities.configuration.RaplaConfiguration;
 import org.rapla.framework.Configuration;
 import org.rapla.framework.PluginDescriptor;
@@ -64,7 +63,7 @@ public class ExchangeConnectorServerPlugin implements PluginDescriptor<ServerSer
       */
     public void provideServices(ServerServiceContainer container, Configuration config) throws RaplaContextException {
         convertSettings(container.getContext(), config);
-        container.addContainerProvidedComponent(ExchangeConnectorPlugin.RESOURCE_FILE, I18nBundleImpl.class, I18nBundleImpl.createConfig(ExchangeConnectorPlugin.RESOURCE_FILE.getId()));
+        container.addResourceFile(ExchangeConnectorPlugin.RESOURCE_FILE);
         container.addRemoteMethodFactory(ExchangeConnectorConfigRemote.class, ExchangeConnectorRemoteConfigFactory.class);
         if (!config.getAttributeAsBoolean("enabled", ExchangeConnectorPlugin.ENABLE_BY_DEFAULT)) {
         	return;

@@ -3,10 +3,12 @@ package org.rapla.plugin.exchangeconnector;
 import javax.jws.WebService;
 
 import org.rapla.framework.RaplaException;
+import org.rapla.framework.TypedComponentRole;
 
 @WebService
 public interface ExchangeConnectorRemote 
 {
+    TypedComponentRole<String> LAST_SYNC_ERROR_CHANGE = new TypedComponentRole<String>("org.rapla.plugin.exchangconnector.last_sync_error_change");
     public SynchronizationStatus getSynchronizationStatus() throws RaplaException;
 	public SynchronizeResult synchronize() throws RaplaException;
 

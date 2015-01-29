@@ -4,11 +4,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -16,6 +18,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.rapla.entities.Entity;
 import org.rapla.entities.User;
+import org.rapla.entities.configuration.Preferences;
 import org.rapla.entities.domain.Allocatable;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.dynamictype.Attribute;
@@ -25,9 +28,12 @@ import org.rapla.entities.dynamictype.DynamicType;
 import org.rapla.facade.RaplaComponent;
 import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
+import org.rapla.framework.TypedComponentRole;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
+import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 import org.rapla.plugin.exchangeconnector.server.SynchronizationTask.SyncStatus;
 import org.rapla.storage.StorageOperator;
+import org.rapla.storage.impl.server.LocalAbstractCachableOperator;
 
 
 
@@ -45,6 +51,8 @@ import org.rapla.storage.StorageOperator;
 public class ExchangeAppointmentStorage extends RaplaComponent {
 	Map<String,Set<SynchronizationTask>> tasks =  new LinkedHashMap<String,Set<SynchronizationTask>>();
 	StorageOperator operator;
+    TypedComponentRole<String> LAST_SYNC_ERROR_CHANGE_HASH = new TypedComponentRole<String>("org.rapla.plugin.exchangconnector.last_sync_error_change_hash");
+
 	//private static String DEFAULT_STORAGE_FILE_PATH = "data/exchangeConnector.dat";
 //	private String storageFilePath = DEFAULT_STORAGE_FILE_PATH;
 	protected ReadWriteLock lock = new ReentrantReadWriteLock();
@@ -62,6 +70,7 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		Attribute statusAtt = dynamicType.getAttribute("status");
 		Attribute retriesAtt = dynamicType.getAttribute("retries");
 		Attribute lastRetryAtt = dynamicType.getAttribute("lastRetry");
+		Attribute lastErrorAtt = dynamicType.getAttribute("lastError");
 		ClassificationFilter newClassificationFilter = dynamicType.newClassificationFilter();
         Collection<Allocatable> store = operator.getAllocatables( newClassificationFilter.toArray());        
 		for ( Allocatable persistant:store)
@@ -72,6 +81,7 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 			String status = (String)persistant.getClassification().getValue(statusAtt);
 			String retriesString = (String) persistant.getClassification().getValue(retriesAtt);
 			Date lastRetry = (Date) persistant.getClassification().getValue(lastRetryAtt); 
+			String lastError = (String) persistant.getClassification().getValue(lastErrorAtt); 
 			if ( user == null)
 			{
 				getLogger().error("Synchronization task " + persistant.getId() +  " has no userId. Ignoring.");
@@ -90,7 +100,7 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 					continue;
 				}
 			}
-			SynchronizationTask synchronizationTask = new SynchronizationTask(appointmentId, user.getId(), retries,lastRetry);
+			SynchronizationTask synchronizationTask = new SynchronizationTask(appointmentId, user.getId(), retries,lastRetry, lastError);
 			if ( exchangeAppointmentId != null)
 			{
 				synchronizationTask.setExchangeAppointmentId( exchangeAppointmentId);
@@ -221,7 +231,8 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 	{
 		int retries= 0;
 		Date date = null;
-		return new SynchronizationTask( appointment.getId(), userId, retries, date);
+		String lastError = null;
+        return new SynchronizationTask( appointment.getId(), userId, retries, date, lastError);
 	}
 	
 	synchronized public void addOrReplace(Collection<SynchronizationTask> toStore) throws RaplaException 
@@ -277,9 +288,9 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		}
 	}
 	
-	
 	public void storeAndRemove(Collection<SynchronizationTask> toStore, Collection<SynchronizationTask> toRemove) throws RaplaException
 	{
+	    Map<String,Set<String>> hashMap = new HashMap<String,Set<String>>();
 		Collection<Entity> storeObjects = new HashSet<Entity>();
 		Collection<Entity> removeObjects = new HashSet<Entity>();
 		for ( SynchronizationTask task:toRemove)
@@ -334,21 +345,64 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 					storeObjects.add( newObject);
 				}
 			}
-			if ( newClassification != null)
+			String lastError = task.getLastError();
+            if ( newClassification != null)
 			{
 				newClassification.setValue("objectId", task.getAppointmentId());
 				newClassification.setValue("externalObjectId", task.getExchangeAppointmentId());
 				newClassification.setValue("status", task.getStatus().name());
 				newClassification.setValue("retries", task.getRetries());
 	            newClassification.setValue("lastRetry", task.getLastRetry());
+	            newClassification.setValue("lastError", lastError);
 			}
-
+			if ( lastError != null)
+			{
+			    addHash( hashMap, task, lastError );
+			}
+		}
+		for ( Entry<String, Set<String>> entry : hashMap.entrySet())
+		{
+		    String userid = entry.getKey();
+		    Set<String> hashKeys = entry.getValue();
+            User user = operator.tryResolve( userid, User.class);
+            if ( user == null)
+            {
+                // User is deleted we don't have to update his preferences
+                continue;
+            }
+            
+            StringBuilder hashableString = new StringBuilder();
+            for (String hashEntry: hashKeys)
+            {
+                hashableString.append( hashEntry );
+            }
+            Preferences userPreferences = operator.getPreferences(user,true ); 
+            String newHash = LocalAbstractCachableOperator.encrypt("sha-1",hashableString.toString());
+            String hash = userPreferences.getEntryAsString(LAST_SYNC_ERROR_CHANGE_HASH, null);
+	        if ( hash == null || !newHash.equals(hash))
+	        {
+                Preferences edit = getModification().edit( userPreferences);
+	            edit.putEntry(ExchangeConnectorRemote.LAST_SYNC_ERROR_CHANGE, getRaplaLocale().getSerializableFormat().formatTimestamp( getClientFacade().getOperator().getCurrentTimestamp()));
+	            edit.putEntry(LAST_SYNC_ERROR_CHANGE_HASH, newHash);
+	            storeObjects.add( edit );
+	        }
 		}
 		User user = null;
 		operator.storeAndRemove(storeObjects, removeObjects, user);
 	}
 
-	public void removeTasks(String userId) throws RaplaException 
+	private void addHash(Map<String, Set<String>> hashMap, SynchronizationTask task, String useInHashCalc) {
+	    String userId = task.getUserId();
+	    Set<String> set = hashMap.get( userId );
+	    if ( set == null)
+	    {
+	        set= new HashSet<String>();
+	        hashMap.put(userId, set);
+	    }
+	    set.add( useInHashCalc );
+    }
+
+    public void removeTasks(String userId) throws RaplaException 
 	{
 		List<SynchronizationTask> taskList = new ArrayList<SynchronizationTask>();
 		Lock lock = writeLock();

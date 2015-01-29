@@ -18,10 +18,10 @@ public interface ExchangeConnectorConfig
 	public static final String DEFAULT_EXCHANGE_WS_FQDN = "https://myexchange.com";
 	
 	public static final TypedComponentRole<Integer> SYNCING_PERIOD_PAST = new TypedComponentRole<Integer>("exch-sync-past");
-	public static final Integer DEFAULT_SYNCING_PERIOD_PAST = 5;
+	public static final Integer DEFAULT_SYNCING_PERIOD_PAST = 30;
 	
 	public static final TypedComponentRole<Integer> SYNCING_PERIOD_FUTURE = new TypedComponentRole<Integer>("exch-sync-future");
-	public static final Integer DEFAULT_SYNCING_PERIOD_FUTURE = 5;
+	public static final Integer DEFAULT_SYNCING_PERIOD_FUTURE = 300;
 
 	public static final TypedComponentRole<String> EXCHANGE_APPOINTMENT_CATEGORY  = new TypedComponentRole<String>( "exchange.default.category");
 	public static final String DEFAULT_EXCHANGE_APPOINTMENT_CATEGORY = "RAPLA";

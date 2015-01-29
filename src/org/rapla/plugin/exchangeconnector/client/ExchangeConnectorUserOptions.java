@@ -274,18 +274,16 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
 //
 //          this.optionsPanel.add(this.downloadFromExchangeBox, "1,8");
 //        this.optionsPanel.add(this.filterCategoryLabel, "1,10");
-//        this.optionsPanel.add(this.filterCategoryField, "3,10");
+
+        //        this.optionsPanel.add(this.filterCategoryField, "3,10");
 //        this.optionsPanel.add(this.securityInformationLabel, "3,12");
 
     }
-
-    private void showResultDialog(SynchronizeResult result) throws RaplaException {
-        String title = getString("synchronization") + " " + getString("appointment");
-        String text = "Aktualisiert: "   + result.changed + " Geloescht: " + result.removed + " Fehler: " + result.open ;
-        DialogUI dialog = DialogUI.create(getContext(), getComponent(),false, title, text);
-        dialog.start();
+   
+    public void showResultDialog(SynchronizeResult result) throws RaplaException {
+        new SyncResultDialog(getContext()).showResultDialog(result);
     }
-
+    
     private String getConnectButtonString() {
         return connected ? getString("change_account") : getString("connect");
     }
@@ -375,7 +373,7 @@ public class ExchangeConnectorUserOptions extends DefaultPluginOption  {
     	this.usernameLabel.setText(  connected ? synchronizationStatus.username: getString("disconnected"));
     	
     	int synchronizedEvents = synchronizationStatus.synchronizedEvents;
-    	int unsynchronizedEvents = synchronizationStatus.unsynchronizedEvents;
+    	int unsynchronizedEvents = synchronizationStatus.synchronizationErrors.size();
         String format = getI18n().format("format.synchronized_events", synchronizedEvents);
         if ( unsynchronizedEvents > 0)
         {

@@ -133,7 +133,9 @@ public class AppointmentSynchronizer  {
      */
     private void addOrUpdate( ) throws Exception 
     {
-    	long time = System.currentTimeMillis();
+        
+        ewsConnector.test();
+        long time = System.currentTimeMillis();
     	Logger logger = getLogger().getChildLogger("exchangeupdate");
     	logger.info("Updating appointment " + raplaAppointment);
         microsoft.exchange.webservices.data.Appointment exchangeAppointment = getEquivalentExchangeAppointment( raplaAppointment);
@@ -200,12 +202,10 @@ public class AppointmentSynchronizer  {
 			ItemId exchangIdObj = new ItemId(exchangeId);
             
 			try {
-			    ewsConnector.test();
 			    service = ewsConnector.getService();
 			    exchangeAppointment = microsoft.exchange.webservices.data.Appointment.bindToRecurringMaster(service, exchangIdObj);
 //                exchangeAppointment = microsoft.exchange.webservices.data.Appointment.bind(service, exchangIdObj);
             } catch (Exception e) {
-                ewsConnector.test();
                 service = ewsConnector.getService();
                 exchangeAppointment = microsoft.exchange.webservices.data.Appointment.bind(service, exchangIdObj);
             }
@@ -243,7 +243,8 @@ public class AppointmentSynchronizer  {
     
     public static microsoft.exchange.webservices.data.Appointment getExchangeAppointmentByID(ExchangeService service, String exchangeId) throws Exception {
         try {
-            return microsoft.exchange.webservices.data.Appointment.bind(service, new ItemId(exchangeId));
+            ItemId id = new ItemId(exchangeId);
+            return microsoft.exchange.webservices.data.Appointment.bind(service, id);
         } catch (ServiceResponseException e) {
             // item not found error is to be expected sometimes so do not raise!
             int ordinal = e.getErrorCode().ordinal();
@@ -463,35 +464,7 @@ public class AppointmentSynchronizer  {
         Date start = raplaAppointment.getStart();
 		calendar.setTime(start);
         int dayOfMonthInt = calendar.get(Calendar.DAY_OF_MONTH);
-        DayOfTheWeekIndex weekOfMonth;
-        {
-            DayOfTheWeekIndex[] values = DayOfTheWeekIndex.values();
-            int i = calendar.get(Calendar.WEEK_OF_MONTH) - 1;
-            if (i<0 || i>= values.length)
-            {
-                getLogger().error("Illegal exchange values for repeating in week of month " + values  + " does not have index " + i);
-                weekOfMonth = DayOfTheWeekIndex.First;
-            }
-            else
-            {
-                weekOfMonth = values[i];
-            }
-        }
         
-        DayOfTheWeek dayOfWeek;
-        {
-            DayOfTheWeek[] values = DayOfTheWeek.values();
-            int i = calendar.get(Calendar.DAY_OF_WEEK) - 1;
-            if (i<0 || i>= values.length)
-            {
-                getLogger().error("Illegal exchange values for repeating in day of week " + values  + " does not have index " + i);
-                dayOfWeek = DayOfTheWeek.Monday;
-            }
-            else
-            {
-                dayOfWeek = values[i];
-            }
-        }
         Month month = Month.values()[calendar.get(Calendar.MONTH)];
         RepeatingType type = repeating.getType();
         int interval = repeating.getInterval();
@@ -501,10 +474,13 @@ public class AppointmentSynchronizer  {
         } 
 		else if ( type.is( RepeatingType.WEEKLY))
 		{	
+		    DayOfTheWeek dayOfWeek = getDayOfWeek(calendar);
 			returnVal = new Recurrence.WeeklyPattern( start, interval, dayOfWeek);
 		}
 		else if ( type.is( RepeatingType.MONTHLY))
 		{
+		    DayOfTheWeekIndex weekOfMonth = getWeekOfMonth(calendar);
+	        DayOfTheWeek dayOfWeek = getDayOfWeek(calendar);
 			returnVal = new Recurrence.RelativeMonthlyPattern(start, interval, dayOfWeek, weekOfMonth);
 		}
 		else
@@ -523,6 +499,42 @@ public class AppointmentSynchronizer  {
             }
         }
         return returnVal;
+    }
+
+    private DayOfTheWeek getDayOfWeek(Calendar calendar) {
+        DayOfTheWeek dayOfWeek;
+        {
+            DayOfTheWeek[] values = DayOfTheWeek.values();
+            int i = calendar.get(Calendar.DAY_OF_WEEK) - 1;
+            if (i<0 || i>= values.length)
+            {
+                getLogger().error("Illegal exchange values for repeating in day of week " + values  + " does not have index " + i);
+                dayOfWeek = DayOfTheWeek.Monday;
+            }
+            else
+            {
+                dayOfWeek = values[i];
+            }
+        }
+        return dayOfWeek;
+    }
+
+    private DayOfTheWeekIndex getWeekOfMonth(Calendar calendar) {
+        DayOfTheWeekIndex weekOfMonth;
+        {
+            DayOfTheWeekIndex[] values = DayOfTheWeekIndex.values();
+            int i = calendar.get(Calendar.WEEK_OF_MONTH) - 1;
+            if (i<0 || i>= values.length)
+            {
+                getLogger().error("Illegal exchange values for repeating in week of month " + values  + " does not have index " + i);
+                weekOfMonth = DayOfTheWeekIndex.First;
+            }
+            else
+            {
+                weekOfMonth = values[i];
+            }
+        }
+        return weekOfMonth;
     }
 
     private void removeRecurrenceExceptions(microsoft.exchange.webservices.data.Appointment exchangeAppointment) 
