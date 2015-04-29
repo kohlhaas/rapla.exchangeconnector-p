@@ -32,6 +32,7 @@ import org.rapla.entities.configuration.CalendarModelConfiguration;
 import org.rapla.entities.configuration.Preferences;
 import org.rapla.entities.configuration.RaplaConfiguration;
 import org.rapla.entities.domain.Appointment;
+import org.rapla.entities.domain.AppointmentFormater;
 import org.rapla.entities.domain.Reservation;
 import org.rapla.entities.storage.EntityResolver;
 import org.rapla.facade.ClientFacade;
@@ -64,10 +65,11 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 	RaplaKeyStorage keyStorage;
 	Map<String,List<CalendarModelImpl>> calendarModels = new HashMap<String,List<CalendarModelImpl>>();
 	protected ReadWriteLock lock = new ReentrantReadWriteLock();
+    private AppointmentFormater appointmentFormater;
 
 	public SynchronisationManager(RaplaContext context) throws RaplaException {
 		super(context);
-		
+		appointmentFormater = context.lookup(AppointmentFormater.class);
 		final ClientFacade clientFacade =  context.lookup(ClientFacade.class);
 		clientFacade.addModificationListener(this);
         keyStorage = context.lookup( RaplaKeyStorage.class);
@@ -510,7 +512,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
                 appointmentMessage.append(reservation.getName( locale));
             }
             appointmentMessage.append(" ");
-            String shortSummary = getAppointmentFormater().getShortSummary(appointment);
+            String shortSummary = appointmentFormater.getShortSummary(appointment);
             appointmentMessage.append(shortSummary);
         } else {
             appointmentMessage.append(getString("appointment"));
