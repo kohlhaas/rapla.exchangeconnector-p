@@ -650,8 +650,8 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
     {
     	final ClientFacade clientFacade = getClientFacade();
     	Date today = clientFacade.today();
-    	Date start = DateTools.addDays(today, -config.get(ExchangeConnectorConfig.SYNCING_PERIOD_PAST));
-    	Date end = DateTools.addDays(today, config.get(ExchangeConnectorConfig.SYNCING_PERIOD_FUTURE));
+    	Date start = DateTools.addDays(today, -config.get(ExchangeConnectorConfig.SYNCING_PERIOD_PAST).intValue());
+    	Date end = DateTools.addDays(today, config.get(ExchangeConnectorConfig.SYNCING_PERIOD_FUTURE).intValue());
     	return new TimeInterval(start, end);
     }
 
