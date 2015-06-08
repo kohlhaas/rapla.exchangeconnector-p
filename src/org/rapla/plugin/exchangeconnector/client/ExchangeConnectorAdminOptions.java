@@ -31,7 +31,7 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
     private JTextField exchangeWebServiceFQDNTextField;//= new JTextField();
     private JTextField categoryForRaplaAppointmentsOnExchangeTextField;//= new JTextField();
     private RaplaNumber syncIntervalPast;// = new RaplaNumber();
-    private RaplaNumber syncIntervalFuture;// = new RaplaNumber();
+    //private RaplaNumber syncIntervalFuture;// = new RaplaNumber();
     //private RaplaNumber pullFrequency;// = new RaplaNumber();
     //private JButton syncallButton;// = new JButton("(Re-)Sync all");
     //private JTextArea infoBox;//= new JTextArea( "Syncronize all Appointments in chosen\n" + "period of time for all user accounts,\n" + "on which syncing is enabled.");
@@ -68,7 +68,7 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
         this.exchangeWebServiceFQDNTextField = new JTextField();
         this.categoryForRaplaAppointmentsOnExchangeTextField = new JTextField();
         this.syncIntervalPast = new RaplaNumber();
-        this.syncIntervalFuture = new RaplaNumber();
+        //this.syncIntervalFuture = new RaplaNumber();
 //        this.pullFrequency = new RaplaNumber();
 //        this.syncallButton = new JButton(getString("button.sync"));
 //        this.infoBox = new JTextArea(getString("infobox.sync"));
@@ -119,7 +119,7 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
         content.add(syncIntervalPastLabel, "1,6");
         content.add(syncIntervalPast, "3,6");
         content.add(syncIntervalFutureLabel, "1,8");
-        content.add(syncIntervalFuture, "3,8");
+//        content.add(syncIntervalFuture, "3,8");
 //        content.add(pullFrequencyLabel, "1,10");
 //        content.add(pullFrequency, "3,10");
 //        content.add(syncallButton, "1,12");
@@ -153,7 +153,7 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
 		set(newConfig, EXCHANGE_WS_FQDN, exchangeWebServiceFQDNTextField.getText());
 		set(newConfig,EXCHANGE_APPOINTMENT_CATEGORY, categoryForRaplaAppointmentsOnExchangeTextField.getText());
 		set(newConfig,SYNCING_PERIOD_PAST, syncIntervalPast.getNumber().intValue());
-		set(newConfig,SYNCING_PERIOD_FUTURE, syncIntervalFuture.getNumber().intValue());
+		//set(newConfig,SYNCING_PERIOD_FUTURE, syncIntervalFuture.getNumber().intValue());
 		set(newConfig, EXCHANGE_TIMEZONE, (String)cbEventTypes.getSelectedItem()); 
         //ExchangeConnectorPlugin.PULL_FREQUENCY, pullFrequency.getNumber().intValue();
 		//ExchangeConnectorPlugin.IMPORT_EVENT_TYPE, cbEventTypes.getSelectedItem()).forObject.getElementKey();
@@ -237,7 +237,7 @@ public class ExchangeConnectorAdminOptions extends DefaultPluginOption implement
         exchangeWebServiceFQDNTextField.setText(reader.get(EXCHANGE_WS_FQDN));
         categoryForRaplaAppointmentsOnExchangeTextField.setText(reader.get(EXCHANGE_APPOINTMENT_CATEGORY));
         syncIntervalPast.setNumber(reader.get(SYNCING_PERIOD_PAST));
-        syncIntervalFuture.setNumber(reader.get(SYNCING_PERIOD_FUTURE));
+//        syncIntervalFuture.setNumber(reader.get(SYNCING_PERIOD_FUTURE));
         cbEventTypes.setModel( new DefaultComboBoxModel( timezones.toArray(new String[]{} )));
         cbEventTypes.setSelectedItem(reader.get( EXCHANGE_TIMEZONE));
         
