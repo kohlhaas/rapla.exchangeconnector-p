@@ -19,12 +19,17 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
 import microsoft.exchange.webservices.data.HttpErrorException;
 
 import org.rapla.components.util.Command;
 import org.rapla.components.util.CommandScheduler;
 import org.rapla.components.util.DateTools;
 import org.rapla.components.util.TimeInterval;
+import org.rapla.components.xmlbundle.CompoundI18n;
+import org.rapla.components.xmlbundle.I18nBundle;
 import org.rapla.entities.Entity;
 import org.rapla.entities.EntityNotFoundException;
 import org.rapla.entities.User;
@@ -40,7 +45,6 @@ import org.rapla.facade.ModificationEvent;
 import org.rapla.facade.ModificationListener;
 import org.rapla.facade.RaplaComponent;
 import org.rapla.facade.internal.CalendarModelImpl;
-import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.framework.logger.Logger;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
@@ -58,28 +62,35 @@ import org.rapla.storage.UpdateOperation;
 import org.rapla.storage.UpdateResult;
 
 
-public class SynchronisationManager extends RaplaComponent implements ModificationListener {
-    long SCHEDULE_PERIOD = DateTools.MILLISECONDS_PER_HOUR * 2;
-	ExchangeAppointmentStorage appointmentStorage;
-	ExchangeConnectorConfig.ConfigReader config;
-	RaplaKeyStorage keyStorage;
+public class SynchronisationManager implements ModificationListener {
+    private static final long SCHEDULE_PERIOD = DateTools.MILLISECONDS_PER_HOUR * 2;
+	private final ExchangeAppointmentStorage appointmentStorage;
+	private final ExchangeConnectorConfig.ConfigReader config;
+	private final RaplaKeyStorage keyStorage;
 	Map<String,List<CalendarModelImpl>> calendarModels = new HashMap<String,List<CalendarModelImpl>>();
 	protected ReadWriteLock lock = new ReentrantReadWriteLock();
-    private AppointmentFormater appointmentFormater;
+    private final AppointmentFormater appointmentFormater;
+    private final ClientFacade facade;
+    private final I18nBundle i18n;
+    private final Logger logger;
+    private final TimeZoneConverter converter;
 
-	public SynchronisationManager(RaplaContext context) throws RaplaException {
-		super(context);
-		appointmentFormater = context.lookup(AppointmentFormater.class);
-		final ClientFacade clientFacade =  context.lookup(ClientFacade.class);
-		clientFacade.addModificationListener(this);
-        keyStorage = context.lookup( RaplaKeyStorage.class);
-        this.config  = new ExchangeConnectorConfig.ConfigReader(clientFacade.getSystemPreferences().getEntry( ExchangeConnectorConfig.EXCHANGESERVER_CONFIG, new RaplaConfiguration()));
-        this.appointmentStorage = context.lookup( ExchangeAppointmentStorage.class);
-        for ( User user : getClientFacade().getUsers())
+    @Inject
+	public SynchronisationManager(ClientFacade facade, @Named(RaplaComponent.RaplaResourcesId) I18nBundle i18nRapla, @Named(ExchangeConnectorConfig.ResourceFileId) I18nBundle i18nExchange, Logger logger, TimeZoneConverter converter, AppointmentFormater appointmentFormater, RaplaKeyStorage keyStorage, ExchangeAppointmentStorage appointmentStorage, CommandScheduler scheduler) throws RaplaException {
+		super();
+		this.converter = converter;
+		this.logger = logger;
+		this.facade = facade;
+		this.i18n = new CompoundI18n(i18nRapla, i18nExchange);
+		this.appointmentFormater = appointmentFormater;
+		this.keyStorage = keyStorage;
+        this.config  = new ExchangeConnectorConfig.ConfigReader(facade.getSystemPreferences().getEntry( ExchangeConnectorConfig.EXCHANGESERVER_CONFIG, new RaplaConfiguration()));
+        this.appointmentStorage = appointmentStorage;
+        facade.addModificationListener(this);
+        for ( User user : facade.getUsers())
         {
         	updateCalendarMap( user, false);
         }
-        CommandScheduler scheduler = context.lookup( CommandScheduler.class);
         long delay =0;
 		
 		scheduler.schedule( new RetryCommand(), delay, SCHEDULE_PERIOD);
@@ -236,7 +247,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 			}
 			
 		} finally {
-			unlock( lock);
+			RaplaComponent.unlock( lock);
 		}
 		return result;
 	}
@@ -246,7 +257,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
         
         for (UpdateOperation operation: evt.getOperations())
 		{
-			Entity current = operation.getCurrent();
+			Entity<?> current = operation.getCurrent();
 			if ( current.getRaplaType() ==  Reservation.TYPE )
 			{
 				if ( operation instanceof UpdateResult.Remove)
@@ -332,7 +343,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 				try	{
 					calendarModels.remove( userId);
 				} finally {
-					unlock( lock);
+				    RaplaComponent.unlock( lock);
 				}
 			}
 		}
@@ -358,14 +369,14 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
     	Collection<SynchronizationTask> result = new HashSet<SynchronizationTask>();
     	boolean createIfNotNull = false;
     	String userId = user.getId();
-		Preferences preferences = getQuery().getPreferences(user, createIfNotNull);
+		Preferences preferences = facade.getPreferences(user, createIfNotNull);
 		if ( preferences == null)
 		{
 			Lock lock = writeLock();
 			try	{
 				this.calendarModels.remove( userId);
 			} finally {
-				unlock( lock);
+			    RaplaComponent.unlock( lock);
 			}
 			return result;
 		}
@@ -378,7 +389,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 			try	{
 				this.calendarModels.remove( userId);
 			} finally {
-				unlock( lock);
+			    RaplaComponent.unlock( lock);
 			}
         	return result;
         }
@@ -425,7 +436,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
     			this.calendarModels.remove( userId);
     		}
 		} finally {
-			unlock( lock);
+		    RaplaComponent.unlock( lock);
 		}
 		return result;
 	}
@@ -434,7 +445,8 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 		String userId = user.getId();
 		
 		Set<SynchronizationTask> result = new HashSet<SynchronizationTask>();
-		CalendarModelImpl calendarModelImpl = new CalendarModelImpl(getContext(), user, getClientFacade());
+		final Locale locale = i18n.getLocale();
+        CalendarModelImpl calendarModelImpl = new CalendarModelImpl(locale, user, facade);
 		Map<String, String> alternativOptions = null;
 		calendarModelImpl.setConfiguration( modelConfig, alternativOptions);
 		configList.add( calendarModelImpl);
@@ -496,26 +508,26 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 	    StringBuilder appointmentMessage = new StringBuilder();
         if ( task.status == SyncStatus.toDelete)
         {
-            appointmentMessage.append(getString("delete"));
+            appointmentMessage.append(i18n.getString("delete"));
             appointmentMessage.append(" ");
         }
         String appointmentId = task.getAppointmentId();
         // we don't resolve the appointment if we delete
-        EntityResolver resolver = getClientFacade().getOperator();
+        EntityResolver resolver = facade.getOperator();
         Appointment appointment = task.getStatus() != SyncStatus.toDelete  ? resolver.tryResolve( appointmentId, Appointment.class) : null;
         if ( appointment != null)
         {
             Reservation reservation = appointment.getReservation();
             if ( reservation != null)
             {
-                Locale locale = getLocale();
+                Locale locale = i18n.getLocale();
                 appointmentMessage.append(reservation.getName( locale));
             }
             appointmentMessage.append(" ");
             String shortSummary = appointmentFormater.getShortSummary(appointment);
             appointmentMessage.append(shortSummary);
         } else {
-            appointmentMessage.append(getString("appointment"));
+            appointmentMessage.append(i18n.getString("appointment"));
             appointmentMessage.append(" ");
             appointmentMessage.append(appointmentId);            
         }
@@ -528,7 +540,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 		{
 			 final AppointmentSynchronizer worker; 
 			 String userId = task.getUserId();
-			 EntityResolver resolver = getClientFacade().getOperator();
+			 EntityResolver resolver = facade.getOperator();
 			 String appointmentId = task.getAppointmentId();
 			 Appointment appointment;
 			 User user;
@@ -538,7 +550,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 				 appointment = task.getStatus() != SyncStatus.toDelete  ? resolver.tryResolve( appointmentId, Appointment.class) : null;
 				 user = resolver.resolve( userId, User.class);
 			 } catch (EntityNotFoundException e) {
-				 getLogger().info( "Removing synchronize " + task + " due to " + e.getMessage() );
+				 logger.info( "Removing synchronize " + task + " due to " + e.getMessage() );
 				 toRemove.add( task);
 				 continue;
 			 }
@@ -566,17 +578,15 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 					 }
 					 else
 					 {
-						 Preferences preferences = getQuery().getPreferences( user);
+						 Preferences preferences = facade.getPreferences( user);
 						 notificationMail = preferences.getEntryAsBoolean( ExchangeConnectorConfig.EXCHANGE_SEND_INVITATION_AND_CANCELATION, ExchangeConnectorConfig.DEFAULT_EXCHANGE_SEND_INVITATION_AND_CANCELATION);
 					 }
-					 RaplaContext context = getContext();
-					 Logger logger = getLogger().getChildLogger("exchange");
-					 TimeZoneConverter converter = context.lookup( TimeZoneConverter.class);
-					 worker = new AppointmentSynchronizer(logger, config,converter,task, appointment,user,username,password, notificationMail);
+					 Logger logger = this.logger.getChildLogger("exchange");
+					 worker = new AppointmentSynchronizer(logger, config, converter,task, appointment,user,username,password, notificationMail);
 				 }
 				 else
 				 {
-					 getLogger().info( "User no longer connected to Exchange " );
+				     logger.info( "User no longer connected to Exchange " );
 					 toRemove.add( task);
 					 continue;
 				 }
@@ -585,7 +595,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 			 {
 				 String message = "Internal error while processing SynchronizationTask " + task  +". Ignoring task. ";
 				 task.increaseRetries(message);
-                 getLogger().error( message, ex);
+				 logger.error( message, ex);
 				 continue;
 			 }
 			 try
@@ -626,7 +636,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 				 }
                  task.increaseRetries( message );
                  result.errorMessages.add(new SyncError(toString, message));
-				 getLogger().warn( "Can't synchronize " + task + " "  + toString + " " + message);
+				 logger.warn( "Can't synchronize " + task + " "  + toString + " " + message);
 				 result.open++;
 				 toStore.add( task);
 
@@ -648,8 +658,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
         
     private TimeInterval getSyncRange()
     {
-    	final ClientFacade clientFacade = getClientFacade();
-    	Date today = clientFacade.today();
+    	Date today = facade.today();
     	Date start = DateTools.addDays(today, -config.get(ExchangeConnectorConfig.SYNCING_PERIOD_PAST).intValue()
     	        );
     	Date end = null;// DateTools.addDays(today, config.get(ExchangeConnectorConfig.SYNCING_PERIOD_FUTURE).intValue());
@@ -662,7 +671,7 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 		TimeInterval syncRange = getSyncRange();
 		if ( !syncRange.overlaps( appointmentRange))
 		{
-		    getLogger().debug("Skipping update of appointment " + appointment + " because is date of item is out of range");
+		    logger.debug("Skipping update of appointment " + appointment + " because is date of item is out of range");
 	        return false;
 		}
 		else 
@@ -679,15 +688,15 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
 		try	{
 			this.calendarModels.remove( userId);
 		} finally {
-			unlock( lock);
+			RaplaComponent.unlock( lock);
 		}
 		boolean createIfNotNull = false;
-		Preferences preferences = getQuery().getPreferences(user, createIfNotNull);
+		Preferences preferences = facade.getPreferences(user, createIfNotNull);
 		if ( preferences == null)
 		{
 			return;
 		}
-		preferences = getModification().edit( preferences);
+		preferences = facade.edit( preferences);
 		CalendarModelConfiguration modelConfig = preferences.getEntry(CalendarModelConfiguration.CONFIG_ENTRY);
         if ( modelConfig != null )
         {
@@ -716,23 +725,18 @@ public class SynchronisationManager extends RaplaComponent implements Modificati
                     newExportMap.put( key, newConfig);
                 }
         	}
-            preferences.putEntry( EXPORT_ENTRY, getModification().newRaplaMap( newExportMap ));
+            preferences.putEntry( EXPORT_ENTRY, facade.newRaplaMap( newExportMap ));
         }
-		getModification().store( preferences);
+        facade.store( preferences);
 	}
 
 	public void testConnection(String exchangeUsername, String exchangePassword) throws RaplaException {
 		String fqdn = config.get(ExchangeConnectorConfig.EXCHANGE_WS_FQDN);
-		EWSConnector connector = new EWSConnector(fqdn, exchangeUsername, exchangePassword);
 		try {
+		    EWSConnector connector = new EWSConnector(fqdn, exchangeUsername, exchangePassword, null);
 			connector.test();
 		} catch (Exception e) {
 			throw new RaplaException("Kann die Verbindung zu Exchange nicht herstellen: " + e.getMessage());
 		}
 	}
-
-	
-
-    
-
 }

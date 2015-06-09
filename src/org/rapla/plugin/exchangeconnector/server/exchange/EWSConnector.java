@@ -23,26 +23,28 @@ import org.rapla.framework.logger.Logger;
 public class EWSConnector {
 
     private static final int SERVICE_DEFAULT_TIMEOUT = 10000;
-    String user;
-    String fqdn;
-    WebCredentials credentials;
-    Logger logger;
+    private final URI uri;
+    private final WebCredentials credentials;
+    private final Logger logger;
     
 //	private final Character DOMAIN_SEPERATION_SYMBOL = new Character('@');
 
-    public EWSConnector(String fqdn, String exchangeUsername,String exchangePassword)  {
-    	this( fqdn,new WebCredentials(exchangeUsername, exchangePassword));
+    public EWSConnector(String fqdn, String exchangeUsername,String exchangePassword, Logger logger) throws URISyntaxException  {
+    	this( fqdn,new WebCredentials(exchangeUsername, exchangePassword), logger);
     }
     /**
      * The constructor
      *
      * @param fqdn        : {@link String}
      * @param credentials : {@link WebCredentials}
+     * @param logger 
+     * @throws URISyntaxException 
      * @throws Exception
      */
-    public EWSConnector(String fqdn, WebCredentials credentials)  {
+    public EWSConnector(String fqdn, WebCredentials credentials, Logger logger) throws URISyntaxException  {
         super();
-        this.fqdn = fqdn;
+        this.logger = logger;
+        uri = new URI(fqdn + "/EWS/Exchange.asmx");
         this.credentials = credentials;
         
         // removed because auto is discovery not yet support
@@ -58,11 +60,6 @@ public class EWSConnector {
         //SynchronisationManager.logInfo("Connected to Exchange at + " + uri + " at timezone: " + DateTools.getTimeZone());
     }
 
-    public void setLogger(Logger logger)
-    {
-        this.logger = logger;
-    }
-    
     /**
      * @return {@link ExchangeService} the service
      */
@@ -86,20 +83,14 @@ public class EWSConnector {
         tmpService.setTimeout(SERVICE_DEFAULT_TIMEOUT);
 
         //define connection url to mail server, assume https
-        this.user = credentials.getUser();
-        URI uri;
-        try {
-            uri = new URI(fqdn + "/EWS/Exchange.asmx");
-            tmpService.setUrl(uri);
-        } catch (URISyntaxException e) {
-            throw new RaplaException(e.getMessage(), e);
-        }
+        tmpService.setUrl(uri);
 
         return tmpService;
     }
 
 
     public void test( ) throws Exception {
+        final String user = credentials.getUser();
 		ExchangeService service = getService();
         NameResolutionCollection nameResolutionCollection = service.resolveName(user, ResolveNameSearchLocation.DirectoryOnly, true);
 		if (nameResolutionCollection.getCount() == 1) {

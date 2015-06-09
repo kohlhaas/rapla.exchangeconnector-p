@@ -90,10 +90,14 @@ public class AppointmentSynchronizer  {
         this.appointmentTask = appointmentTask;
         this.config = config;
         
-        String url = config.get(ExchangeConnectorConfig.EXCHANGE_WS_FQDN);
-		ewsConnector = new EWSConnector(url, credentials);
-		Logger requestLogger = logger.getChildLogger("webservice");
-		ewsConnector.setLogger(requestLogger);
+        final String url = config.get(ExchangeConnectorConfig.EXCHANGE_WS_FQDN);
+        try {
+            final Logger ewsLogger = logger.getChildLogger("webservice");
+            ewsConnector = new EWSConnector(url, credentials, ewsLogger);
+        } catch (Exception e) {
+            // property definition should not throw an exception as no web service is called
+            throw new RaplaException(e.getMessage(), e);
+        }
   		if (raplaAppointmentPropertyDefinition == null)
   		{
   			try {
@@ -186,11 +190,9 @@ public class AppointmentSynchronizer  {
             df.parse(source);
         }
 
-        ExchangeService service = ewsConnector.getService();
         ewsConnector.test();
         
-        
-    	Comparable identifier = appointmentTask.getAppointmentId();
+    	Comparable<?> identifier = appointmentTask.getAppointmentId();
     	Logger logger = getLogger().getChildLogger("exchangeupdate");
     	long time = System.currentTimeMillis();
     	logger.info("Deleting appointment with id " + identifier);
@@ -201,8 +203,8 @@ public class AppointmentSynchronizer  {
         	microsoft.exchange.webservices.data.Appointment exchangeAppointment;
 			ItemId exchangIdObj = new ItemId(exchangeId);
             
+			ExchangeService service = ewsConnector.getService();
 			try {
-			    service = ewsConnector.getService();
 			    exchangeAppointment = microsoft.exchange.webservices.data.Appointment.bindToRecurringMaster(service, exchangIdObj);
 //                exchangeAppointment = microsoft.exchange.webservices.data.Appointment.bind(service, exchangIdObj);
             } catch (Exception e) {

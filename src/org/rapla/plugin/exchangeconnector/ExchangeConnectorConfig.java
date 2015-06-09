@@ -12,7 +12,8 @@ public interface ExchangeConnectorConfig
 {
     public static final TypedComponentRole<RaplaConfiguration> EXCHANGESERVER_CONFIG = new TypedComponentRole<RaplaConfiguration>("org.rapla.plugin.exchangeconnector.server.Config");
     
-	public static final TypedComponentRole<I18nBundle> RESOURCE_FILE = new TypedComponentRole<I18nBundle>(ExchangeConnectorPlugin.class.getPackage().getName() + ".ExchangeConnectorResources");
+    public static final String ResourceFileId = "org.rapla.plugin.exchangeconnector.ExchangeConnectorResources";
+    public static final TypedComponentRole<I18nBundle> RESOURCE_FILE = new TypedComponentRole<I18nBundle>(ResourceFileId);
 	
 	public static final TypedComponentRole<String> EXCHANGE_WS_FQDN = new TypedComponentRole<String>("ews_fqdn");
 	public static final String DEFAULT_EXCHANGE_WS_FQDN = "https://myexchange.com";
