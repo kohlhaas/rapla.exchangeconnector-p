@@ -67,14 +67,6 @@ public class SynchronizationTask implements Serializable
 		return appointmentId;
 	}
 	
-	public String getExchangeAppointmentId() {
-		return exchangeAppointmentId;
-	}
-	
-	public void setExchangeAppointmentId(String exchangeAppointmentId) {
-		this.exchangeAppointmentId = exchangeAppointmentId;
-	}
-
 //	public TimeInterval getSyncInterval() {
 //		return syncInterval;
 //	}

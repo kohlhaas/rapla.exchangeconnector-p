@@ -66,7 +66,6 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		operator = context.lookup(StorageOperator.class);
 		DynamicType dynamicType = operator.getDynamicType( StorageOperator.SYNCHRONIZATIONTASK_TYPE);
 		Attribute appointmentIdAtt = dynamicType.getAttribute("objectId");
-		Attribute exchangeAppointmentIdAtt = dynamicType.getAttribute("externalObjectId");
 		Attribute statusAtt = dynamicType.getAttribute("status");
 		Attribute retriesAtt = dynamicType.getAttribute("retries");
 		Attribute lastRetryAtt = dynamicType.getAttribute("lastRetry");
@@ -77,7 +76,6 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		{
 			User user = persistant.getOwner();
 			String appointmentId = (String)persistant.getClassification().getValue(appointmentIdAtt);
-			String exchangeAppointmentId = (String) persistant.getClassification().getValue(exchangeAppointmentIdAtt);
 			String status = (String)persistant.getClassification().getValue(statusAtt);
 			String retriesString = (String) persistant.getClassification().getValue(retriesAtt);
 			Date lastRetry = (Date) persistant.getClassification().getValue(lastRetryAtt); 
@@ -101,10 +99,6 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 				}
 			}
 			SynchronizationTask synchronizationTask = new SynchronizationTask(appointmentId, user.getId(), retries,lastRetry, lastError);
-			if ( exchangeAppointmentId != null)
-			{
-				synchronizationTask.setExchangeAppointmentId( exchangeAppointmentId);
-			}
 			if ( status == null)
 			{
 				getLogger().error("Synchronization task " + persistant.getId() +  " has no status. Ignoring.");
@@ -349,7 +343,6 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
             if ( newClassification != null)
 			{
 				newClassification.setValue("objectId", task.getAppointmentId());
-				newClassification.setValue("externalObjectId", task.getExchangeAppointmentId());
 				newClassification.setValue("status", task.getStatus().name());
 				newClassification.setValue("retries", task.getRetries());
 	            newClassification.setValue("lastRetry", task.getLastRetry());
