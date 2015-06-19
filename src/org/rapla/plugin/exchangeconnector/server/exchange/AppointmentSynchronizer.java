@@ -9,10 +9,9 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TimeZone;
@@ -84,19 +83,21 @@ import org.rapla.server.TimeZoneConverter;
  */
 public class AppointmentSynchronizer
 {
-    private static final ExtendedPropertyDefinition RAPLA_ID_PROPERTY_DEFINITION;
-    static{
+    
+    private static final ExtendedPropertyDefinition RAPLA_APPOINTMENT_MARKER;
+    private static final ExtendedPropertyDefinition RAPLA_APPOINTMENT_ID;
+    static {
         try
         {
-            RAPLA_ID_PROPERTY_DEFINITION = new ExtendedPropertyDefinition(DefaultExtendedPropertySet.Appointment, "raplaId", MapiPropertyType.String);
+            RAPLA_APPOINTMENT_ID = new ExtendedPropertyDefinition(DefaultExtendedPropertySet.Appointment, "raplaId", MapiPropertyType.String);
+            RAPLA_APPOINTMENT_MARKER = new ExtendedPropertyDefinition(DefaultExtendedPropertySet.Appointment, "isRaplaMeeting", MapiPropertyType.Boolean);
         }
         catch (Exception e)
         {
-            // current implementation never throws an exception
-            throw new IllegalStateException(e.getMessage() ,e);
+            throw new IllegalStateException(e.getMessage(), e);
         }
-    }
 
+    }
     private static final String LINE_BREAK = "\n";
     private static final String BODY_ATTENDEE_LIST_OPENING_LINE = "The following resources participate in the appointment:" + LINE_BREAK;
 
@@ -140,32 +141,27 @@ public class AppointmentSynchronizer
         }
     }
     
-    static public Map<String,String> remove(Logger logger,  final String url,  String exchangeUsername, String exchangePassword) throws  RaplaException
+    static public Collection<String> remove(Logger logger,  final String url,  String exchangeUsername, String exchangePassword) throws  RaplaException
     {
         WebCredentials credentials = new WebCredentials(exchangeUsername, exchangePassword);
-        Map<String,String> result = new LinkedHashMap<String,String>();
+        Collection<String> result = new LinkedHashSet<String>();
         final Logger ewsLogger = logger.getChildLogger("webservice");
         final ItemView view = new ItemView(1);
-        final SearchFilter searchFilter = new SearchFilter.Exists(RAPLA_ID_PROPERTY_DEFINITION);
-        List<String> appointmentIds = new ArrayList<String>();
-        List<String> subjects = new ArrayList<String>();
+        final SearchFilter searchFilter = new SearchFilter.Exists(RAPLA_APPOINTMENT_MARKER);
+        List<Item> items = new ArrayList<Item>();
         Collection<ItemId> itemIds = new ArrayList<ItemId>();
         
         try {
             EWSConnector ewsConnector = new EWSConnector(url, credentials, ewsLogger);
             ExchangeService service = ewsConnector.getService();
-            final FindItemsResults<Item> items = service.findItems(new FolderId(WellKnownFolderName.Calendar), searchFilter, view);
-            for (Item item:items)
+            final FindItemsResults<Item> foundItems = service.findItems(new FolderId(WellKnownFolderName.Calendar), searchFilter, view);
+            for (Item item:foundItems)
             {
                 ItemId id = item.getId();
-                String subject = item.getSubject();
-                Object idValue = item.getObjectFromPropertyDefinition( RAPLA_ID_PROPERTY_DEFINITION);
-                String appointmentId = idValue != null ? idValue.toString() : null;
-                if ( id != null && appointmentId != null)
+                if ( id != null)
                 {
                     itemIds.add( id);
-                    subjects.add( subject);
-                    appointmentIds.add( appointmentId );
+                    items.add( item );
                 }
             }
         } 
@@ -192,24 +188,28 @@ public class AppointmentSynchronizer
         for (ServiceResponse resultItem: deleteItems)
         {
             ServiceResult code = resultItem.getResult();
-            String appointmentId = appointmentIds.get( index);
-            String subject = subjects.get( index );
             if ( code == ServiceResult.Error)
             {
+                Item item = items.get( index);
                 String errorMessage = resultItem.getErrorMessage();
                 if ( errorMessage == null || errorMessage.isEmpty())
                 {
                     errorMessage = "UnknownError";
                 }
+                String subject;
+                try
+                {
+                    subject = item.getSubject();
+                }
+                catch (Exception e)
+                {
+                    subject = "Unknown";
+                }
                 if ( subject != null)
                 {
                     errorMessage = "Fehler beim Termin mit dem Betreff " + subject + ": " + errorMessage;
                 }
-                result.put( appointmentId, errorMessage);
-            }
-            else 
-            {
-                result.put( appointmentId, "");
+                result.add( errorMessage);
             }
             index ++;
         }
@@ -356,7 +356,7 @@ public class AppointmentSynchronizer
         try
         {
             final ItemView view = new ItemView(1);
-            final SearchFilter searchFilter = new SearchFilter.IsEqualTo(RAPLA_ID_PROPERTY_DEFINITION, raplaId);
+            final SearchFilter searchFilter = new SearchFilter.IsEqualTo(RAPLA_APPOINTMENT_ID, raplaId);
             final FindItemsResults<Item> items = service.findItems(new FolderId(WellKnownFolderName.Calendar), searchFilter, view);
             if (items != null && items.isMoreAvailable())
             {
@@ -395,7 +395,6 @@ public class AppointmentSynchronizer
             //    exchangeAppointment.load();
         }
         // Maybe use thie ical uid to refer to the original appointment, check if a url is expected
-        //exchangeAppointment.setICalUid( raplaAppointment.getId());
 
         Date start = raplaAppointment.getStart();
         Date end = raplaAppointment.getEnd();
@@ -446,7 +445,8 @@ public class AppointmentSynchronizer
         String messageBody = getMessageBody();
         exchangeAppointment.setBody(new MessageBody(BodyType.Text, messageBody));
 
-        exchangeAppointment.setExtendedProperty(RAPLA_ID_PROPERTY_DEFINITION, appointmentTask.getAppointmentId());
+        exchangeAppointment.setExtendedProperty(RAPLA_APPOINTMENT_ID,  raplaAppointment.getId());
+        exchangeAppointment.setExtendedProperty(RAPLA_APPOINTMENT_MARKER, Boolean.TRUE);
         addPersonsAndResources(exchangeAppointment);
 
         return exchangeAppointment;

@@ -5,10 +5,12 @@ import static org.rapla.entities.configuration.CalendarModelConfiguration.EXPORT
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -156,7 +158,8 @@ public class SynchronisationManager implements ModificationListener {
 	    final Object sync = synchronizer.putIfAbsent(user.getId(), new Object());
 	    synchronized (sync)
         {
-	        Collection<SynchronizationTask> existingTasks = appointmentStorage.getTasks(user);
+	        final String userId = user.getId();
+            Collection<SynchronizationTask> existingTasks = appointmentStorage.getTasksForUser(userId);
 	        for (SynchronizationTask task:existingTasks)
 	        {
 	            task.resetRetries();
@@ -174,7 +177,8 @@ public class SynchronisationManager implements ModificationListener {
         result.username = secrets != null ? secrets.login :"";
         if ( secrets != null)
         {
-            Collection<SynchronizationTask> existingTasks = appointmentStorage.getTasks(user);
+            final String userId = user.getId();
+            Collection<SynchronizationTask> existingTasks = appointmentStorage.getTasksForUser(userId);
             for ( SynchronizationTask task:existingTasks)
             {
                 SyncStatus status = task.getStatus();
@@ -200,18 +204,12 @@ public class SynchronisationManager implements ModificationListener {
 	
 	public synchronized SynchronizeResult synchronizeUser(User user) throws RaplaException  {
 	    // remove old appointments
-	    Map<String,SyncError> appointmentStats = removeAllAppointmentsFromExchangeAndAppointmentStore(user);
-        Map<String,SyncError> removingErrorsToAdd = new LinkedHashMap<>(appointmentStats);
+	    Collection<SyncError> removingErrors = removeAllAppointmentsFromExchangeAndAppointmentStore(user);
 	    // then insert and update the new tasks
         Collection<SynchronizationTask> updateTasks = updateCalendarMap(user);
-        for (SynchronizationTask task: updateTasks)
-        {
-            String appointmentId = task.getAppointmentId();
-            removingErrorsToAdd.remove( appointmentId);
-        }
 		// we skip notification on a resync
         SynchronizeResult result = execute( updateTasks, true);
-        result.errorMessages.addAll( removingErrorsToAdd.values());
+        result.errorMessages.addAll( 0, removingErrors);
 		return result;
     }
 	
@@ -399,7 +397,7 @@ public class SynchronisationManager implements ModificationListener {
                     {
                         RaplaComponent.unlock(lock);
                     }
-                    appointmentStorage.removeTasks(userId);
+                    appointmentStorage.removeTasksForUser(userId);
                 }
                 else if (operation instanceof UpdateResult.Change)
                 {
@@ -435,7 +433,8 @@ public class SynchronisationManager implements ModificationListener {
 		}
         if ( tasks.size() > 0)
 		{
-			appointmentStorage.addOrReplace( tasks);
+            Collection<SynchronizationTask> toRemove = Collections.emptyList();
+            appointmentStorage.storeAndRemove( tasks, toRemove);
 			execute( tasks );
 		}
     }
@@ -503,7 +502,7 @@ public class SynchronisationManager implements ModificationListener {
         	}
         }
         // iterate over all existing tasks of the user
-        Collection<SynchronizationTask> userTasks = appointmentStorage.getTasks(user);
+        Collection<SynchronizationTask> userTasks = appointmentStorage.getTasksForUser(userId);
         //TimeInterval syncRange = getSyncRange();
         // if a calendar changes delete all the appointments that are now longer covered by the calendars
         for ( SynchronizationTask task: userTasks)
@@ -622,7 +621,7 @@ public class SynchronisationManager implements ModificationListener {
         return appointmentMessage.toString();
     }
 	
-    private Map<String,SyncError> removeAllAppointmentsFromExchangeAndAppointmentStore(User user) throws RaplaException
+    private Collection<SyncError> removeAllAppointmentsFromExchangeAndAppointmentStore(User user) throws RaplaException
     {
         final LoginInfo secrets = keyStorage.getSecrets(user, ExchangeConnectorServerPlugin.EXCHANGE_USER_STORAGE);
         if (secrets == null)
@@ -631,28 +630,19 @@ public class SynchronisationManager implements ModificationListener {
         }
         final String username = secrets.login;
         final String password = secrets.secret;
-        Map<String, String> appointments = AppointmentSynchronizer.remove(logger, exchangeUrl, username, password);
-        Map<String,SyncError> result = new LinkedHashMap<>();
-        for (Map.Entry<String, String> entry : appointments.entrySet())
+        Collection<String> appointments = AppointmentSynchronizer.remove(logger, exchangeUrl, username, password);
+        Collection<SyncError> result = new LinkedHashSet<SyncError>();
+        for (String errorMessage: appointments)
         {
-            String appointmentId = entry.getKey();
-            String errorMessage = entry.getValue();
             // appointment remove failed
             if (errorMessage != null && !errorMessage.isEmpty())
             {
-                Appointment appointment = facade.getOperator().tryResolve(appointmentId, Appointment.class);
-                String appointmentDetail = appointmentId;
-                if (appointment != null)
-                {
-                    boolean isDelete = true;
-                    appointmentDetail = getAppointmentMessage( appointmentId, isDelete);
-                }
-                SyncError error = new SyncError(appointmentDetail, errorMessage);
-                result.put(appointmentId,error);
+                SyncError error = new SyncError(errorMessage, errorMessage);
+                result.add(error);
             }
         }
         String userId = user.getId();
-        appointmentStorage.removeTasks(userId);
+        appointmentStorage.removeTasksForUser(userId);
         return result;
     }
 
@@ -821,7 +811,7 @@ public class SynchronisationManager implements ModificationListener {
 	public void removeTasksAndExports(User user) throws RaplaException 
 	{
 		String userId = user.getId();
-		appointmentStorage.removeTasks( userId);
+		appointmentStorage.removeTasksForUser( userId);
 		Lock lock = writeLock();
 		try	{
 			this.calendarModels.remove( userId);
