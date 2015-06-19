@@ -12,7 +12,6 @@ public class SynchronizationTask implements Serializable
 	{
 		toUpdate(true)
 		,toDelete(true)
-		,toReplace(true)
 		,synched(false)
 		,deleted(false);
 		boolean unsynchronized;
@@ -29,7 +28,6 @@ public class SynchronizationTask implements Serializable
 	private static final long serialVersionUID = 219323872273312836L;
 	String userId;
 	String appointmentId;
-	String exchangeAppointmentId;
 	Date lastRetry;
 	private int retries = 0;
 	String lastError;
@@ -111,6 +109,7 @@ public class SynchronizationTask implements Serializable
 		result = prime * result + ((userId == null) ? 0 : userId.hashCode());
 		return result;
 	}
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -136,8 +135,7 @@ public class SynchronizationTask implements Serializable
 	@Override
 	public String toString() {
 		return "SynchronizationTask [userId=" + userId + ", appointmentId="
-				+ appointmentId + ", exchangeAppointmentId="
-				+ exchangeAppointmentId 
+				+ appointmentId  
 				+ ", retries=" + retries
 		        + ", lastRetry=" + lastRetry
 				+ ", status=" + status + "]";

@@ -25,6 +25,7 @@
 			<accessrule kind="accessible" pattern="org/rapla/plugin/abstractcalendar/*"/>
 			<accessrule kind="accessible" pattern="org/rapla/components/**"/>
 			<accessrule kind="accessible" pattern="org/rapla/**)"/>
+			<accessrule kind="accessible" pattern="javax/inject/**)"/>
 			<accessrule kind="discouraged" pattern="**"/>
 		</accessrules>
 	</classpathentry>

@@ -71,7 +71,11 @@ public class SyncResultDialog extends RaplaGUIComponent
             text.append("\n\nUnsynchronisierte Termine: \n");
             for ( SyncError error:errorMessages)
             {
-                text.append( "- " + error.getAppointmentDetail() + "\n");
+                String appointmentDetail = error.getAppointmentDetail();
+                if ( appointmentDetail != null && !appointmentDetail.isEmpty())
+                {
+                    text.append( "- " + appointmentDetail + "\n");
+                }
             }
         }
         area.setText( text.toString());

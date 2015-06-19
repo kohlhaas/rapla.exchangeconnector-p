@@ -44,7 +44,7 @@ public class EWSConnector {
     public EWSConnector(String fqdn, WebCredentials credentials, Logger logger) throws URISyntaxException  {
         super();
         this.logger = logger;
-        uri = new URI(fqdn + "/EWS/Exchange.asmx");
+        uri = new URI(fqdn.toLowerCase().endsWith("/ews/exchange.asmx") ? fqdn : fqdn + "/EWS/Exchange.asmx");
         this.credentials = credentials;
         
         // removed because auto is discovery not yet support

@@ -11,7 +11,7 @@ import org.rapla.plugin.exchangeconnector.client.ExchangeConnectorUserOptions;
 import org.rapla.plugin.exchangeconnector.client.ExchangeExtensionFactory;
 
 
-public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceContainer>, ExchangeConnectorConfig {
+public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceContainer> {
 
 	public final static boolean ENABLE_BY_DEFAULT = false;
 
@@ -23,7 +23,7 @@ public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceCo
     }
 
     public void provideServices(ClientServiceContainer container, Configuration config) throws RaplaContextException {
-        container.addResourceFile(RESOURCE_FILE);
+        container.addResourceFile(ExchangeConnectorConfig.RESOURCE_FILE);
         container.addContainerProvidedComponent(RaplaClientExtensionPoints.PLUGIN_OPTION_PANEL_EXTENSION, ExchangeConnectorAdminOptions.class);
         if (config.getAttributeAsBoolean("enabled", ENABLE_BY_DEFAULT)) {
             container.addContainerProvidedComponent(RaplaClientExtensionPoints.USER_OPTION_PANEL_EXTENSION, ExchangeConnectorUserOptions.class);

@@ -4,7 +4,6 @@ import static org.rapla.entities.configuration.CalendarModelConfiguration.EXPORT
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -15,6 +14,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -32,13 +32,15 @@ import org.rapla.components.xmlbundle.CompoundI18n;
 import org.rapla.components.xmlbundle.I18nBundle;
 import org.rapla.entities.Entity;
 import org.rapla.entities.EntityNotFoundException;
+import org.rapla.entities.RaplaType;
 import org.rapla.entities.User;
 import org.rapla.entities.configuration.CalendarModelConfiguration;
 import org.rapla.entities.configuration.Preferences;
-import org.rapla.entities.configuration.RaplaConfiguration;
+import org.rapla.entities.domain.Allocatable;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.AppointmentFormater;
 import org.rapla.entities.domain.Reservation;
+import org.rapla.entities.dynamictype.Classifiable;
 import org.rapla.entities.storage.EntityResolver;
 import org.rapla.facade.ClientFacade;
 import org.rapla.facade.ModificationEvent;
@@ -61,22 +63,27 @@ import org.rapla.server.TimeZoneConverter;
 import org.rapla.storage.UpdateOperation;
 import org.rapla.storage.UpdateResult;
 
-
 public class SynchronisationManager implements ModificationListener {
     private static final long SCHEDULE_PERIOD = DateTools.MILLISECONDS_PER_HOUR * 2;
+    // existing tasks in memory
 	private final ExchangeAppointmentStorage appointmentStorage;
-	private final ExchangeConnectorConfig.ConfigReader config;
-	private final RaplaKeyStorage keyStorage;
-	Map<String,List<CalendarModelImpl>> calendarModels = new HashMap<String,List<CalendarModelImpl>>();
-	protected ReadWriteLock lock = new ReentrantReadWriteLock();
+	private final Map<String,List<CalendarModelImpl>> calendarModels = new HashMap<String,List<CalendarModelImpl>>();
+	private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final AppointmentFormater appointmentFormater;
     private final ClientFacade facade;
     private final I18nBundle i18n;
     private final Logger logger;
-    private final TimeZoneConverter converter;
+    private final RaplaKeyStorage keyStorage;
 
+    private final TimeZoneConverter converter;
+    private final String exchangeUrl;
+    private final String exchangeTimezoneId;
+    private final String exchangeAppointmentCategory;
+    
+    private final int syncPeriodPast;
+    
     @Inject
-	public SynchronisationManager(ClientFacade facade, @Named(RaplaComponent.RaplaResourcesId) I18nBundle i18nRapla, @Named(ExchangeConnectorConfig.ResourceFileId) I18nBundle i18nExchange, Logger logger, TimeZoneConverter converter, AppointmentFormater appointmentFormater, RaplaKeyStorage keyStorage, ExchangeAppointmentStorage appointmentStorage, CommandScheduler scheduler) throws RaplaException {
+	public SynchronisationManager(ClientFacade facade, @Named(RaplaComponent.RaplaResourcesId) I18nBundle i18nRapla, @Named(ExchangeConnectorConfig.ResourceFileId) I18nBundle i18nExchange, Logger logger, TimeZoneConverter converter, AppointmentFormater appointmentFormater, RaplaKeyStorage keyStorage, ExchangeAppointmentStorage appointmentStorage, CommandScheduler scheduler, ExchangeConnectorConfig config) throws RaplaException {
 		super();
 		this.converter = converter;
 		this.logger = logger;
@@ -84,12 +91,17 @@ public class SynchronisationManager implements ModificationListener {
 		this.i18n = new CompoundI18n(i18nRapla, i18nExchange);
 		this.appointmentFormater = appointmentFormater;
 		this.keyStorage = keyStorage;
-        this.config  = new ExchangeConnectorConfig.ConfigReader(facade.getSystemPreferences().getEntry( ExchangeConnectorConfig.EXCHANGESERVER_CONFIG, new RaplaConfiguration()));
+        //RaplaConfiguration systemConfig = facade.getSystemPreferences().getEntry( ExchangeConnectorConfig.EXCHANGESERVER_CONFIG, new RaplaConfiguration());
+        exchangeUrl = config.getExchangeServerURL();
+        exchangeTimezoneId = config.getExchangeTimezone();
+        exchangeAppointmentCategory = config.getAppointmentCategory();
+        syncPeriodPast = config.getSyncPeriodPast();
+        
         this.appointmentStorage = appointmentStorage;
         facade.addModificationListener(this);
         for ( User user : facade.getUsers())
         {
-        	updateCalendarMap( user, false);
+        	updateCalendarMap( user );
         }
         long delay =0;
 		
@@ -102,43 +114,55 @@ public class SynchronisationManager implements ModificationListener {
 	{
 	    boolean firstExecution = true;
 	    
-		public void execute() throws Exception {
-			Collection<SynchronizationTask> allTasks = appointmentStorage.getAllTasks();
-			Collection<SynchronizationTask> includedTasks = new ArrayList<SynchronizationTask>();
-			Date now = new Date();
-			for ( SynchronizationTask task:allTasks)
-			{
-			    int retries = task.getRetries();
-			    if ( retries > 5 && !firstExecution)
-			    {
-			        Date lastRetry = task.getLastRetry();
-			        if ( lastRetry != null )
-			        {
-			            // skip a schedule Period for the time of retries
-			            if (lastRetry.getTime() > now.getTime() - (retries-5) * SCHEDULE_PERIOD)
-			            {
-			                continue;
-			            }
-			        }
-			    }
-			    includedTasks.add( task );
-			}
-			firstExecution = false;
-			SynchronisationManager.this.execute(includedTasks);
+		public void execute()  {
+		    try
+		    {
+    			Collection<SynchronizationTask> allTasks = appointmentStorage.getAllTasks();
+    			Collection<SynchronizationTask> includedTasks = new ArrayList<SynchronizationTask>();
+    			final Date now = new Date();
+    			for ( SynchronizationTask task:allTasks)
+    			{
+    			    final int retries = task.getRetries();
+    			    if ( retries > 5 && !firstExecution)
+    			    {
+    			        final Date lastRetry = task.getLastRetry();
+    			        if ( lastRetry != null )
+    			        {
+    			            // skip a schedule Period for the time of retries
+    			            if (lastRetry.getTime() > now.getTime() - (retries-5) * SCHEDULE_PERIOD)
+    			            {
+    			                continue;
+    			            }
+    			        }
+    			    }
+    			    includedTasks.add( task );
+    			}
+    			firstExecution = false;
+    			SynchronisationManager.this.execute(includedTasks);
+		    }
+		    catch (Exception ex)
+		    {
+		        logger.error( ex.getMessage(), ex);
+		    }
 		}
 	}
 	public synchronized void dataChanged(ModificationEvent evt) throws RaplaException {
 		synchronize((UpdateResult) evt);
 	}
 	
-	public synchronized SynchronizeResult retry(User user) throws RaplaException  
+	ConcurrentHashMap<String, Object> synchronizer = new ConcurrentHashMap<String, Object>();
+	public SynchronizeResult retry(User user) throws RaplaException  
 	{
-		Collection<SynchronizationTask> existingTasks = appointmentStorage.getTasks(user);
-		for (SynchronizationTask task:existingTasks)
-		{
-		    task.resetRetries();
-		}
-		return execute( existingTasks);
+	    final Object sync = synchronizer.putIfAbsent(user.getId(), new Object());
+	    synchronized (sync)
+        {
+	        Collection<SynchronizationTask> existingTasks = appointmentStorage.getTasks(user);
+	        for (SynchronizationTask task:existingTasks)
+	        {
+	            task.resetRetries();
+	        }
+	        return execute( existingTasks);
+        }
 	}
 	
 	public SynchronizationStatus getSynchronizationStatus(User user) throws RaplaException 
@@ -174,61 +198,65 @@ public class SynchronisationManager implements ModificationListener {
         return result;
 	}
 	
-	
 	public synchronized SynchronizeResult synchronizeUser(User user) throws RaplaException  {
-	    Collection<SynchronizationTask> tasks = new HashSet<SynchronizationTask>();
-		{
-    		Collection<SynchronizationTask> existingTasks = appointmentStorage.getTasks(user);
-			for ( SynchronizationTask task:existingTasks)
-    		{
-    			task.setStatus( SyncStatus.toDelete);
-    			tasks.add( task);
-    		}
-		}
-		// then insert and update the new tasks
-		Collection<SynchronizationTask> updateTasks = updateCalendarMap(user, true);
-		tasks.addAll( updateTasks);
+	    // remove old appointments
+	    Map<String,SyncError> appointmentStats = removeAllAppointmentsFromExchangeAndAppointmentStore(user);
+        Map<String,SyncError> removingErrorsToAdd = new LinkedHashMap<>(appointmentStats);
+	    // then insert and update the new tasks
+        Collection<SynchronizationTask> updateTasks = updateCalendarMap(user);
+        for (SynchronizationTask task: updateTasks)
+        {
+            String appointmentId = task.getAppointmentId();
+            removingErrorsToAdd.remove( appointmentId);
+        }
 		// we skip notification on a resync
-		SynchronizeResult result = execute( tasks, true);
+        SynchronizeResult result = execute( updateTasks, true);
+        result.errorMessages.addAll( removingErrorsToAdd.values());
 		return result;
     }
+	
+    private Collection<SynchronizationTask> updateTasksSetDelete(Appointment appointment) throws RaplaException  {
+        Collection<SynchronizationTask> result = new HashSet<SynchronizationTask>();
+        Collection<SynchronizationTask> taskList = appointmentStorage.getTasks( appointment);
+        for (SynchronizationTask task:taskList)
+        {
+            task.setStatus( SyncStatus.toDelete);
+            result.add( task );
+        }
+        return result;
+    }
 
-	protected Collection<SynchronizationTask> updateTasks(Appointment appointment, boolean remove) throws RaplaException  {
-		Collection<SynchronizationTask> result = new HashSet<SynchronizationTask>();
-		if ( remove){
-     		Collection<SynchronizationTask> taskList = appointmentStorage.getTasks( appointment);
-        	for (SynchronizationTask task:taskList)
-        	{
-        		task.setStatus( SyncStatus.toDelete);
-        		result.add( task );
-        	}
- 		}
- 		else
- 		{
- 			 if ( isInSyncInterval( appointment))
- 	         {
- 			     Collection<SynchronizationTask> taskList = appointmentStorage.getTasks( appointment);
- 			     Collection<String> matchingUserIds = findMatchingUser( appointment);
- 			     // delete all appointments that are no longer covered  
- 			     for (SynchronizationTask task:taskList)
- 			     {
- 			         String userId = task.getUserId();
- 			         if ( userId != null && !matchingUserIds.contains( userId) && task.getStatus() != SyncStatus.deleted)
- 			         {
- 			             task.setStatus( SyncStatus.toDelete);
- 			         }
- 			     }
- 			     result.addAll(taskList);
- 				 for( String userId:matchingUserIds)
- 				 {
- 					 SynchronizationTask task = addOrUpdateAppointment(appointment,userId);
- 					 result.add( task );
- 				 }
- 	         }
- 		}
+    private Collection<SynchronizationTask> updateOrCreateTasks(Appointment appointment) throws RaplaException  {
+	    Collection<SynchronizationTask> result = new HashSet<SynchronizationTask>();
+		 if ( isInSyncInterval( appointment))
+         {
+		     Collection<SynchronizationTask> taskList = appointmentStorage.getTasks( appointment);
+             result.addAll(taskList);
+		     Collection<String> matchingUserIds = findMatchingUser( appointment);
+		     // delete all appointments that are no longer covered  
+		     for (SynchronizationTask task:taskList)
+		     {
+		         String userId = task.getUserId();
+		         if ( userId != null && !matchingUserIds.contains( userId) && task.getStatus() != SyncStatus.deleted)
+		         {
+		             task.setStatus( SyncStatus.toDelete);
+		         }
+		     }
+			 for( String userId:matchingUserIds)
+			 {
+			     SynchronizationTask task = appointmentStorage.getTask( appointment,userId);
+			     if ( task == null)
+			     {
+			         task = appointmentStorage.createTask(appointment, userId);
+	                 result.add( task );
+			     }
+			     task.setStatus( SyncStatus.toUpdate);
+			 }
+         }
 		return result;
 	}
 		
+    // checks all exports if appointment is still in on of the exported calendars (check eslected resources)
     private Collection<String> findMatchingUser(Appointment appointment) throws RaplaException {
     	Set<String> result = new HashSet<String>();
 		Lock lock = readLock();
@@ -252,103 +280,159 @@ public class SynchronisationManager implements ModificationListener {
 		return result;
 	}
 
-	public synchronized void synchronize(UpdateResult evt) throws RaplaException {
+    // checks all exports if appointment is still in on of the exported calendars (check eslected resources)
+    private Collection<String> findMatchingUsers(Allocatable allocatable) throws RaplaException {
+        Set<String> result = new HashSet<String>();
+        Lock lock = readLock();
+        try {
+            for (String userId :calendarModels.keySet())
+            {
+                List<CalendarModelImpl> list = calendarModels.get(userId);
+                for ( CalendarModelImpl conf:list)
+                {
+                    if (conf.getSelectedObjectsAndChildren().contains( allocatable))
+                    {
+                        result.add( userId);
+                        break;
+                    }
+                }
+            }
+            
+        } finally {
+            RaplaComponent.unlock( lock);
+        }
+        return result;
+    }
+
+	private void synchronize(UpdateResult evt) throws RaplaException {
         Collection<SynchronizationTask> tasks = new ArrayList<SynchronizationTask>();
         
         for (UpdateOperation operation: evt.getOperations())
 		{
 			Entity<?> current = operation.getCurrent();
-			if ( current.getRaplaType() ==  Reservation.TYPE )
+			final RaplaType<?> raplaType = current.getRaplaType();
+            if ( raplaType ==  Reservation.TYPE )
 			{
 				if ( operation instanceof UpdateResult.Remove)
 				{
 					Reservation oldReservation = (Reservation) current;
 					for ( Appointment app: oldReservation.getAppointments() )
 					{
-						Collection<SynchronizationTask> result = updateTasks( app, true);
+						Collection<SynchronizationTask> result = updateTasksSetDelete(app);
 						tasks.addAll(result);
 					}
 				}
-				if ( operation instanceof UpdateResult.Add)
+				else if ( operation instanceof UpdateResult.Add)
 				{
 					Reservation newReservation = (Reservation) ((UpdateResult.Add) operation).getNew();
 					for ( Appointment app: newReservation.getAppointments() )
 					{
-						Collection<SynchronizationTask> result =  updateTasks(  app, false);
+					    Collection<SynchronizationTask> result =  updateOrCreateTasks(app);
 						tasks.addAll(result);
 					}
 				}
-				if ( operation instanceof UpdateResult.Change)
+				else //if ( operation instanceof UpdateResult.Change)
 				{
 				    Reservation oldReservation = (Reservation) ((UpdateResult.Change) operation).getOld();
 					Reservation newReservation =(Reservation) ((UpdateResult.Change) operation).getNew();
-					Set<Appointment> oldAppointments =  new HashSet<Appointment>(Arrays.asList(oldReservation.getAppointments()));
-					Set<Appointment> newAppointments =  new HashSet<Appointment>(Arrays.asList(newReservation.getAppointments()));
-					for ( Appointment oldApp: oldAppointments)
+					Map<String,Appointment> oldAppointments =  Appointment.AppointmentUtil.idMap(oldReservation.getAppointments());
+					Map<String,Appointment> newAppointments =  Appointment.AppointmentUtil.idMap(newReservation.getAppointments());
+					for ( Appointment oldApp: oldAppointments.values())
 					{
-						if ( newAppointments.contains( oldApp))
+						if ( newAppointments.containsKey( oldApp.getId()))
 						{
 							continue;
 						}
-						Collection<SynchronizationTask> result =  updateTasks(  oldApp, true);
+						// remove all appointments that are no longer used
+						Collection<SynchronizationTask> result =  updateTasksSetDelete(oldApp);
 						tasks.addAll(result);
 					}
-					for ( Appointment newApp: newAppointments)
+					for ( Appointment newApp: newAppointments.values())
 					{
-//						boolean notChanged =false;
-//						if ( oldAppointments.contains( newApp))
-//						{
-//							for ( Appointment oldApp: oldAppointments)
-//							{
-//								if ( oldApp.equals( newApp))
-//								{
-//									if ( oldApp.matches( newApp))
-//									{
-//										Allocatable[] oldAllocatables = oldReservation.getAllocatablesFor( oldApp);
-//										Allocatable[] newAllocatables = newReservation.getAllocatablesFor( newApp);
-//										if (Arrays.equals( oldAllocatables,  newAllocatables))
-//										{
-//											notChanged = true;
-//										}
-//									}
-//								}
-//							}
-//						}
-//						if ( notChanged )
-//						{
-//							continue;
-//						}
-						Collection<SynchronizationTask> result =  updateTasks(  newApp, false);
+                        // TODO check if appointment change is really necessary. should be done by a diff in AppointmentSynchronizer instead of here.
+					    // reservation info could also be changed, so that all appointments should be updated
+//                        String appId = newApp.getId();
+//                        Appointment oldApp = oldAppointments.get( appId );
+//                        if ( oldApp != null)
+//                        {
+//                            if ( oldApp.matches( newApp))
+//                            {
+//                                Allocatable[] oldAllocatables = oldReservation.getAllocatablesFor( oldApp);
+//                                Allocatable[] newAllocatables = newReservation.getAllocatablesFor( newApp);
+//                                if (Arrays.equals( oldAllocatables,  newAllocatables))
+//                                {
+//                                    continue;
+//                                }
+//                            }
+//                        }
+						Collection<SynchronizationTask> result =  updateOrCreateTasks(newApp);
 						tasks.addAll(result);
 					}
 				}
 			}
-			if ( current.getRaplaType() ==  Preferences.TYPE )
+			// the exported calendars could have changed
+			else if ( raplaType ==  Preferences.TYPE )
 			{
 				Preferences preferences = (Preferences)operation.getCurrent();
 				if ( !(operation instanceof UpdateResult.Remove))
 				{
+				    // CHANGE inspect if exports have changed 
 					User owner = preferences.getOwner();
 					if ( owner != null)
 					{
-						Collection<SynchronizationTask> result =  updateCalendarMap(owner, false);
+						Collection<SynchronizationTask> result =  updateCalendarMap(owner );
 						tasks.addAll(result);
 					}
 				}
 			}
-			if ( current.getRaplaType() ==  User.TYPE )
+			else if ( raplaType ==  User.TYPE )
 			{
-				String userId = current.getId();
-				Lock lock = writeLock();
-				try	{
-					calendarModels.remove( userId);
-				} finally {
-				    RaplaComponent.unlock( lock);
-				}
+                String userId = current.getId();
+                if (operation instanceof UpdateResult.Remove)
+                {
+                    Lock lock = writeLock();
+                    try
+                    {
+                        calendarModels.remove(userId);
+                    }
+                    finally
+                    {
+                        RaplaComponent.unlock(lock);
+                    }
+                    appointmentStorage.removeTasks(userId);
+                }
+                else if (operation instanceof UpdateResult.Change)
+                {
+                    User owner = facade.getOperator().tryResolve(userId, User.class);
+                    if (owner != null)
+                    {
+                        Collection<SynchronizationTask> result = updateCalendarMap(owner);
+                        tasks.addAll(result);
+                    }
+                }   
+			}
+			else if ( raplaType ==  Allocatable.TYPE )
+			{
+                if (operation instanceof UpdateResult.Change)
+                {
+                    Allocatable allocatable = (Allocatable) current;
+                    final boolean isInternal = Classifiable.ClassifiableUtil.isInternalType(allocatable);
+                    if (!isInternal)
+                    {
+                        final Collection<String> users = findMatchingUsers(allocatable);
+                        for (String userId : users)
+                        {
+                            User owner = facade.getOperator().tryResolve(userId, User.class);
+                            if (owner != null)
+                            {
+                                Collection<SynchronizationTask> result = updateCalendarMap(owner);
+                                tasks.addAll(result);
+                            }
+                        }
+                    }
+                }
 			}
 		}
-
-        evt.getAddObjects();
         if ( tasks.size() > 0)
 		{
 			appointmentStorage.addOrReplace( tasks);
@@ -364,15 +448,19 @@ public class SynchronisationManager implements ModificationListener {
 		return RaplaComponent.lock( lock.readLock(), 10);
 	}
 
-    private Collection<SynchronizationTask> updateCalendarMap(User user, boolean addUpdate) throws RaplaException 
+	/** this method does not update the appointments only create new or remove existing appointments.
+    New exchange appointments are added if the rapla appointment is in an exported calendar view but not in exchange.  
+    Exchange appointments are removed if the rapla appointment is not in an exported calendar view anymore.  
+     */
+    private Collection<SynchronizationTask> updateCalendarMap(User user) throws RaplaException 
     {
-    	Collection<SynchronizationTask> result = new HashSet<SynchronizationTask>();
-    	boolean createIfNotNull = false;
-    	String userId = user.getId();
-		Preferences preferences = facade.getPreferences(user, createIfNotNull);
+        final Collection<SynchronizationTask> result = new HashSet<SynchronizationTask>();
+    	final boolean createIfNotNull = false;
+    	final String userId = user.getId();
+    	final Preferences preferences = facade.getPreferences(user, createIfNotNull);
 		if ( preferences == null)
 		{
-			Lock lock = writeLock();
+		    final Lock lock = writeLock();
 			try	{
 				this.calendarModels.remove( userId);
 			} finally {
@@ -380,12 +468,12 @@ public class SynchronisationManager implements ModificationListener {
 			}
 			return result;
 		}
-		CalendarModelConfiguration modelConfig = preferences.getEntry(CalendarModelConfiguration.CONFIG_ENTRY);
-        Map<String,CalendarModelConfiguration> exportMap= preferences.getEntry(CalendarModelConfiguration.EXPORT_ENTRY);
-        List<CalendarModelConfiguration> configList = new ArrayList<CalendarModelConfiguration>();
+		final CalendarModelConfiguration modelConfig = preferences.getEntry(CalendarModelConfiguration.CONFIG_ENTRY);
+		final Map<String,CalendarModelConfiguration> exportMap= preferences.getEntry(CalendarModelConfiguration.EXPORT_ENTRY);
+		final List<CalendarModelConfiguration> configList = new ArrayList<CalendarModelConfiguration>();
         if ( modelConfig == null && exportMap == null)
         {
-        	Lock lock = writeLock();
+            final Lock lock = writeLock();
 			try	{
 				this.calendarModels.remove( userId);
 			} finally {
@@ -393,7 +481,7 @@ public class SynchronisationManager implements ModificationListener {
 			}
         	return result;
         }
-        List<CalendarModelImpl> calendarModelList = new ArrayList<CalendarModelImpl>();
+        final List<CalendarModelImpl> calendarModelList = new ArrayList<CalendarModelImpl>();
         Set<String> appointmentsFound = new HashSet<String>();
         if ( modelConfig!= null)
         {
@@ -403,14 +491,18 @@ public class SynchronisationManager implements ModificationListener {
         {
             configList.addAll( exportMap.values());
         }
+        // at this point configList contains all exported calendars for the user
         for ( CalendarModelConfiguration config:configList)
         {
+            // is exchange export enabled in export config?
     		if ( hasExchangeExport( config))
         	{
-    			Collection<SynchronizationTask> updateTasks = updateTasks(user, config, calendarModelList,appointmentsFound, addUpdate);
-        		result.addAll(updateTasks);
+    		    // calculate tasks depending on the current calendarModel and put all exported appointments into appointmentFound set
+    		    Collection<SynchronizationTask> newTasksFromCalendar = createTasksFromCalendar(user, config, calendarModelList,appointmentsFound);
+        		result.addAll(newTasksFromCalendar);
         	}
         }
+        // iterate over all existing tasks of the user
         Collection<SynchronizationTask> userTasks = appointmentStorage.getTasks(user);
         //TimeInterval syncRange = getSyncRange();
         // if a calendar changes delete all the appointments that are now longer covered by the calendars
@@ -418,30 +510,33 @@ public class SynchronisationManager implements ModificationListener {
         {
             String appointmentId = task.getAppointmentId();
             SyncStatus status = task.getStatus();
-            if ( !appointmentsFound.contains( appointmentId) && (status != SynchronizationTask.SyncStatus.deleted && status != SynchronizationTask.SyncStatus.toDelete) && !result.contains( task))
+            
+            // existing appointmentId in tasks not found in current calendar export
+            // only add delete tasks once for each appointment
+            if ( (status != SynchronizationTask.SyncStatus.deleted && status != SynchronizationTask.SyncStatus.toDelete) && !appointmentsFound.contains( appointmentId) )
             {
                 task.setStatus( SyncStatus.toDelete);
                 result.add( task);
             }
         }
-        
-        Lock lock = writeLock();
-		try	{
-    		if ( calendarModelList.size() > 0)
+        final Lock lock = writeLock();
+        try {
+            if ( calendarModelList.size() > 0)
             {
-    			this.calendarModels.put( userId, calendarModelList);
+                this.calendarModels.put( userId, calendarModelList);
             }
-    		else
-    		{
-    			this.calendarModels.remove( userId);
-    		}
-		} finally {
-		    RaplaComponent.unlock( lock);
-		}
+            else
+            {
+                this.calendarModels.remove( userId);
+            }
+        } finally {
+            RaplaComponent.unlock( lock);
+        }
 		return result;
 	}
 
-	protected Collection<SynchronizationTask> updateTasks(User user,CalendarModelConfiguration modelConfig,List<CalendarModelImpl> configList, Set<String> appointmentsFound,boolean addUpdated) throws RaplaException {
+    // check if filter or calendar selection changes so that we need to add or remove events from the exchange calendar
+	private Collection<SynchronizationTask> createTasksFromCalendar(User user,CalendarModelConfiguration modelConfig,List<CalendarModelImpl> configList, Set<String> appointmentsFound) throws RaplaException {
 		String userId = user.getId();
 		
 		Set<SynchronizationTask> result = new HashSet<SynchronizationTask>();
@@ -456,17 +551,17 @@ public class SynchronisationManager implements ModificationListener {
 		{
 			SynchronizationTask task = appointmentStorage.getTask(app, userId);
 			appointmentsFound.add( app.getId());
-			// add new appointments to the appointment store, we don't need to check for updates here as this, will be triggered by a reservation change
+			// add new appointments to the appointment store, we don't need to check for updates here, as this will be triggered by a reservation change
 			if ( task == null)
 			{
 				task = appointmentStorage.createTask(app, userId);
 				result.add( task);
 			} 
-			else if ( addUpdated)
-			{
-				task.setStatus( SyncStatus.toReplace);
-				result.add(  task );
-			}
+//			else if ( addUpdated) // can be removed if we remove all rapla appointments via find
+//			{
+//				task.setStatus( SyncStatus.toReplace);
+//				result.add(  task );
+//			}
 			
 		}
 		return result;
@@ -481,40 +576,33 @@ public class SynchronisationManager implements ModificationListener {
 		return false;
 	}
 
-	public synchronized SynchronizationTask addOrUpdateAppointment(Appointment appointment,String userId) throws RaplaException {
-    	SynchronizationTask task = appointmentStorage.getTask( appointment,userId);
-    	if ( task == null)
-    	{
-    		task = appointmentStorage.createTask(appointment, userId);
-    	}
-    	task.setStatus( SyncStatus.toUpdate);
-    	return task;
-    }
-    
 	private SynchronizeResult execute(Collection<SynchronizationTask> tasks) throws RaplaException {
 		return execute( tasks, false);
 	}
 	
 	private SynchronizeResult execute(Collection<SynchronizationTask> tasks, boolean skipNotification) throws RaplaException {
-		Collection<SynchronizationTask> toStore = new HashSet<SynchronizationTask>();
-		Collection<SynchronizationTask> toRemove = new HashSet<SynchronizationTask>();
-		SynchronizeResult result = processTasks(tasks, toStore, toRemove, skipNotification);
-		appointmentStorage.storeAndRemove(toStore, toRemove);
+		SynchronizeResult result = processTasks(tasks, skipNotification);
 		return result;
 	}
 	
 	public String getAppointmentMessage( SynchronizationTask task)
 	{
-	    StringBuilder appointmentMessage = new StringBuilder();
-        if ( task.status == SyncStatus.toDelete)
+        boolean isDelete = task.status == SyncStatus.toDelete;
+        String appointmentId = task.getAppointmentId();
+        return getAppointmentMessage(appointmentId, isDelete);
+	}
+
+    private String getAppointmentMessage(String appointmentId, boolean isDeleteTask)
+    {
+        StringBuilder appointmentMessage = new StringBuilder();
+        if ( isDeleteTask)
         {
             appointmentMessage.append(i18n.getString("delete"));
             appointmentMessage.append(" ");
         }
-        String appointmentId = task.getAppointmentId();
         // we don't resolve the appointment if we delete
         EntityResolver resolver = facade.getOperator();
-        Appointment appointment = task.getStatus() != SyncStatus.toDelete  ? resolver.tryResolve( appointmentId, Appointment.class) : null;
+        Appointment appointment = isDeleteTask  ?  null : resolver.tryResolve( appointmentId, Appointment.class);
         if ( appointment != null)
         {
             Reservation reservation = appointment.getReservation();
@@ -532,59 +620,79 @@ public class SynchronisationManager implements ModificationListener {
             appointmentMessage.append(appointmentId);            
         }
         return appointmentMessage.toString();
-	}
+    }
+	
+    private Map<String,SyncError> removeAllAppointmentsFromExchangeAndAppointmentStore(User user) throws RaplaException
+    {
+        final LoginInfo secrets = keyStorage.getSecrets(user, ExchangeConnectorServerPlugin.EXCHANGE_USER_STORAGE);
+        if (secrets == null)
+        {
+            throw new RaplaException("Keine Benutzerkonto mit Exchange verknuepft.");
+        }
+        final String username = secrets.login;
+        final String password = secrets.secret;
+        Map<String, String> appointments = AppointmentSynchronizer.remove(logger, exchangeUrl, username, password);
+        Map<String,SyncError> result = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : appointments.entrySet())
+        {
+            String appointmentId = entry.getKey();
+            String errorMessage = entry.getValue();
+            // appointment remove failed
+            if (errorMessage != null && !errorMessage.isEmpty())
+            {
+                Appointment appointment = facade.getOperator().tryResolve(appointmentId, Appointment.class);
+                String appointmentDetail = appointmentId;
+                if (appointment != null)
+                {
+                    boolean isDelete = true;
+                    appointmentDetail = getAppointmentMessage( appointmentId, isDelete);
+                }
+                SyncError error = new SyncError(appointmentDetail, errorMessage);
+                result.put(appointmentId,error);
+            }
+        }
+        String userId = user.getId();
+        appointmentStorage.removeTasks(userId);
+        return result;
+    }
 
-	protected SynchronizeResult processTasks(Collection<SynchronizationTask> tasks,Collection<SynchronizationTask> toStore,Collection<SynchronizationTask> toRemove, boolean skipNotification) {
-		SynchronizeResult result = new SynchronizeResult();
+	private SynchronizeResult processTasks(Collection<SynchronizationTask> tasks, boolean skipNotification) throws RaplaException {
+	    final Collection<SynchronizationTask> toStore = new HashSet<SynchronizationTask>();
+        final Collection<SynchronizationTask> toRemove = new HashSet<SynchronizationTask>();
+        
+	    final SynchronizeResult result = new SynchronizeResult();
+		final EntityResolver resolver = facade.getOperator();
 	    for ( SynchronizationTask task:tasks)
 		{
-			 final AppointmentSynchronizer worker; 
-			 String userId = task.getUserId();
-			 EntityResolver resolver = facade.getOperator();
-			 String appointmentId = task.getAppointmentId();
-			 Appointment appointment;
-			 User user;
-			 try
+			 final String userId = task.getUserId();
+			 final String appointmentId = task.getAppointmentId();
+			 final Appointment appointment;
+			 final User user;
+			 final SyncStatus beforeStatus = task.getStatus();
+             try
 			 {
 			 	// we don't resolve the appointment if we delete 
-				 appointment = task.getStatus() != SyncStatus.toDelete  ? resolver.tryResolve( appointmentId, Appointment.class) : null;
+				 appointment = beforeStatus != SyncStatus.toDelete  ? resolver.tryResolve( appointmentId, Appointment.class) : null;
 				 user = resolver.resolve( userId, User.class);
 			 } catch (EntityNotFoundException e) {
 				 logger.info( "Removing synchronize " + task + " due to " + e.getMessage() );
 				 toRemove.add( task);
 				 continue;
 			 }
-			 SyncStatus before = task.getStatus();
-			 if ( appointment != null && !isInSyncInterval( appointment) || before == SyncStatus.deleted)
+			 if ( (beforeStatus == SyncStatus.deleted) || (appointment != null && !isInSyncInterval( appointment)) )
 			 {
 				 toRemove.add( task);
 				 continue;
 			 }
-			 if ( before == SyncStatus.synched)
+			 if ( beforeStatus == SyncStatus.synched)
 			 {
 				 continue;
 			 }
-			 try
+			 final AppointmentSynchronizer worker; 
+		     try
 			 {
-				 LoginInfo secrets = keyStorage.getSecrets( user, ExchangeConnectorServerPlugin.EXCHANGE_USER_STORAGE);
-				 if ( secrets != null)
-				 {
-					 String username = secrets.login;
-					 String password = secrets.secret;
-					 boolean notificationMail;
-					 if ( skipNotification)
-					 {
-						 notificationMail = false;
-					 }
-					 else
-					 {
-						 Preferences preferences = facade.getPreferences( user);
-						 notificationMail = preferences.getEntryAsBoolean( ExchangeConnectorConfig.EXCHANGE_SEND_INVITATION_AND_CANCELATION, ExchangeConnectorConfig.DEFAULT_EXCHANGE_SEND_INVITATION_AND_CANCELATION);
-					 }
-					 Logger logger = this.logger.getChildLogger("exchange");
-					 worker = new AppointmentSynchronizer(logger, config, converter,task, appointment,user,username,password, notificationMail);
-				 }
-				 else
+				 worker = createAppoinmentSynchronizer(skipNotification, task, appointment, user);
+				 if ( worker == null)
 				 {
 				     logger.info( "User no longer connected to Exchange " );
 					 toRemove.add( task);
@@ -642,33 +750,63 @@ public class SynchronisationManager implements ModificationListener {
 
 			 }
 			 SyncStatus after = task.getStatus();
-			 if ( after == SyncStatus.deleted && before != SyncStatus.deleted)
+			 if ( after == SyncStatus.deleted && beforeStatus != SyncStatus.deleted)
 			 {
 		           toRemove.add( task);
                    result.removed ++;
 			 }
-             if ( after == SyncStatus.synched && before != SyncStatus.synched)
+             if ( after == SyncStatus.synched && beforeStatus != SyncStatus.synched)
              {
                  toStore.add( task);
                  result.changed ++;
              }
 		}
+	    appointmentStorage.storeAndRemove(toStore, toRemove);
 	    return result;
 	}
+
+    private AppointmentSynchronizer createAppoinmentSynchronizer(boolean skipNotification, SynchronizationTask task, final Appointment appointment, final User user)
+            throws RaplaException
+    {
+        final AppointmentSynchronizer worker;
+        final LoginInfo secrets = keyStorage.getSecrets( user, ExchangeConnectorServerPlugin.EXCHANGE_USER_STORAGE);
+        if ( secrets != null)
+        {
+        	 final String username = secrets.login;
+        	 final String password = secrets.secret;
+        	 final boolean notificationMail;
+        	 if ( skipNotification)
+        	 {
+        		 notificationMail = false;
+        	 }
+        	 else
+        	 {
+        		 Preferences preferences = facade.getPreferences( user);
+        		 notificationMail = preferences.getEntryAsBoolean( ExchangeConnectorConfig.EXCHANGE_SEND_INVITATION_AND_CANCELATION, ExchangeConnectorConfig.DEFAULT_EXCHANGE_SEND_INVITATION_AND_CANCELATION);
+        	 }
+        	 final Logger logger = this.logger.getChildLogger("exchange");
+             worker = new AppointmentSynchronizer(logger, converter, exchangeUrl, exchangeTimezoneId, exchangeAppointmentCategory, user, username,password, notificationMail, task, appointment);
+         }
+         else
+         {
+             worker = null;
+         }
+        return worker;
+    }
         
     private TimeInterval getSyncRange()
     {
     	Date today = facade.today();
-    	Date start = DateTools.addDays(today, -config.get(ExchangeConnectorConfig.SYNCING_PERIOD_PAST).intValue()
+        Date start = DateTools.addDays(today, -syncPeriodPast
     	        );
     	Date end = null;// DateTools.addDays(today, config.get(ExchangeConnectorConfig.SYNCING_PERIOD_FUTURE).intValue());
     	return new TimeInterval(start, end);
     }
 
     private boolean isInSyncInterval( Appointment appointment)  {
-    	Date start = appointment.getStart();
-		TimeInterval appointmentRange = new TimeInterval(start, appointment.getMaxEnd());
-		TimeInterval syncRange = getSyncRange();
+    	final Date start = appointment.getStart();
+    	final TimeInterval appointmentRange = new TimeInterval(start, appointment.getMaxEnd());
+    	final TimeInterval syncRange = getSyncRange();
 		if ( !syncRange.overlaps( appointmentRange))
 		{
 		    logger.debug("Skipping update of appointment " + appointment + " because is date of item is out of range");
@@ -731,9 +869,8 @@ public class SynchronisationManager implements ModificationListener {
 	}
 
 	public void testConnection(String exchangeUsername, String exchangePassword) throws RaplaException {
-		String fqdn = config.get(ExchangeConnectorConfig.EXCHANGE_WS_FQDN);
 		try {
-		    EWSConnector connector = new EWSConnector(fqdn, exchangeUsername, exchangePassword, null);
+		    final EWSConnector connector = new EWSConnector(exchangeUrl, exchangeUsername, exchangePassword, null);
 			connector.test();
 		} catch (Exception e) {
 			throw new RaplaException("Kann die Verbindung zu Exchange nicht herstellen: " + e.getMessage());

@@ -12,6 +12,7 @@ import org.rapla.framework.RaplaContext;
 import org.rapla.framework.RaplaException;
 import org.rapla.gui.PublishExtension;
 import org.rapla.gui.RaplaGUIComponent;
+import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
 import org.rapla.plugin.exchangeconnector.SynchronizationStatus;
@@ -26,7 +27,7 @@ class ExchangePublishExtension extends RaplaGUIComponent implements PublishExten
 	public ExchangePublishExtension(RaplaContext context, CalendarSelectionModel model, ExchangeConnectorRemote remote)  {
 		super(context);
 		this.model = model;
-		setChildBundleName(ExchangeConnectorPlugin.RESOURCE_FILE);
+		setChildBundleName(ExchangeConnectorConfig.RESOURCE_FILE);
         panel.setLayout(new TableLayout( new double[][] {{TableLayout.PREFERRED,5,TableLayout.PREFERRED,5,TableLayout.FILL},
                 {TableLayout.PREFERRED,5,TableLayout.PREFERRED       }}));
         dummyURL = new JTextField();

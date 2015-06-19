@@ -3,9 +3,13 @@ package org.rapla.plugin.exchangeconnector;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 import org.rapla.components.xmlbundle.I18nBundle;
 import org.rapla.entities.configuration.RaplaConfiguration;
+import org.rapla.facade.ClientFacade;
 import org.rapla.framework.Configuration;
+import org.rapla.framework.RaplaException;
 import org.rapla.framework.TypedComponentRole;
 
 public interface ExchangeConnectorConfig 
@@ -68,14 +72,22 @@ public interface ExchangeConnectorConfig
 //	public static final  TypedComponentRole<String> ROOM_TYPE = new  TypedComponentRole<String>("rapla.room.type");
 //	public static final String DEFAULT_ROOM_TYPE = "room";
 
+	public String getExchangeServerURL();
+	
 	 public static class ConfigReader implements ExchangeConnectorConfig
 	    {
-	    	Configuration config;
 		    Map<TypedComponentRole<?>,Object> map = new HashMap<TypedComponentRole<?>,Object>();
-	    	public ConfigReader(Configuration config)
+		    
+                
+		    @Inject
+	    	public ConfigReader(ClientFacade facade) throws RaplaException
 	    	{
-
-		        load(config,EXCHANGE_WS_FQDN,DEFAULT_EXCHANGE_WS_FQDN);
+		        this(facade.getSystemPreferences().getEntry(ExchangeConnectorConfig.EXCHANGESERVER_CONFIG,new RaplaConfiguration()));
+	    	}
+		    
+		    public ConfigReader(Configuration config)
+		    {
+	            load(config,EXCHANGE_WS_FQDN,DEFAULT_EXCHANGE_WS_FQDN);
 		        loadInt(config,SYNCING_PERIOD_PAST,DEFAULT_SYNCING_PERIOD_PAST);
 		        //loadInt(config,SYNCING_PERIOD_FUTURE,DEFAULT_SYNCING_PERIOD_FUTURE);
 		        load(config,EXCHANGE_APPOINTMENT_CATEGORY,DEFAULT_EXCHANGE_APPOINTMENT_CATEGORY);
@@ -120,5 +132,30 @@ public interface ExchangeConnectorConfig
 	    		return (T) map.get(key);
 	    	}
 	    	
+	    	public String getExchangeServerURL()
+	    	{
+	    	    return get(EXCHANGE_WS_FQDN);
+	    	}
+
+            @Override
+            public String getExchangeTimezone()
+            {
+                return get(EXCHANGE_TIMEZONE);
+            }
+            
+            @Override
+            public String getAppointmentCategory()
+            {
+                return get(EXCHANGE_APPOINTMENT_CATEGORY);
+	        }
+            
+            public int getSyncPeriodPast()
+            {
+                return get(SYNCING_PERIOD_PAST).intValue();
+            }
 	    }
+
+    public String getExchangeTimezone();
+    public String getAppointmentCategory();
+    public int getSyncPeriodPast();
 }

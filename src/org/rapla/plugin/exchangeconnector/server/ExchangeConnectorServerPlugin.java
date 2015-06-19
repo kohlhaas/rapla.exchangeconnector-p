@@ -17,6 +17,7 @@ import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfigRemote;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorPlugin;
 import org.rapla.plugin.exchangeconnector.ExchangeConnectorRemote;
+import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig.ConfigReader;
 import org.rapla.server.RaplaServerExtensionPoints;
 import org.rapla.server.ServerServiceContainer;
 
@@ -63,8 +64,10 @@ public class ExchangeConnectorServerPlugin implements PluginDescriptor<ServerSer
       */
     public void provideServices(ServerServiceContainer container, Configuration config) throws RaplaContextException {
         convertSettings(container.getContext(), config);
-        container.addResourceFile(ExchangeConnectorPlugin.RESOURCE_FILE);
+        container.addResourceFile(ExchangeConnectorConfig.RESOURCE_FILE);
         container.addRemoteMethodFactory(ExchangeConnectorConfigRemote.class, ExchangeConnectorRemoteConfigFactory.class);
+        container.addContainerProvidedComponent(ExchangeConnectorConfig.class, ConfigReader.class);
+        
         if (!config.getAttributeAsBoolean("enabled", ExchangeConnectorPlugin.ENABLE_BY_DEFAULT)) {
         	return;
         }

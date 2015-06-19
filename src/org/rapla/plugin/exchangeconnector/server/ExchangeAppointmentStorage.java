@@ -229,7 +229,7 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
         return new SynchronizationTask( appointment.getId(), userId, retries, date, lastError);
 	}
 	
-	synchronized public void addOrReplace(Collection<SynchronizationTask> toStore) throws RaplaException 
+	public void addOrReplace(Collection<SynchronizationTask> toStore) throws RaplaException 
 	{
 		Lock lock = writeLock();
 		try
@@ -258,30 +258,30 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		storeAndRemove( toStore, toRemove);
 	}
 	
-	synchronized public void remove(SynchronizationTask appointmentTask) throws RaplaException {
-		String appointmentId = appointmentTask.getAppointmentId();
-		boolean remove = false;
-		Lock lock = writeLock();
-		try
-		{
-			Set<SynchronizationTask> set = tasks.get(appointmentId);
-			if ( set != null)
-			{
-				remove = set.remove( appointmentTask);
-			}
-		} 
-		finally
-		{
-			unlock( lock);
-		}
-		if ( remove)
-		{
-			Collection<SynchronizationTask> toStore = Collections.emptyList();
-			Collection<SynchronizationTask> toRemove = Collections.singletonList(appointmentTask);
-			storeAndRemove( toStore,toRemove);
-		}
-	}
-	
+//	public void remove(SynchronizationTask appointmentTask) throws RaplaException {
+//		String appointmentId = appointmentTask.getAppointmentId();
+//		boolean remove = false;
+//		Lock lock = writeLock();
+//		try
+//		{
+//			Set<SynchronizationTask> set = tasks.get(appointmentId);
+//			if ( set != null)
+//			{
+//				remove = set.remove( appointmentTask);
+//			}
+//		} 
+//		finally
+//		{
+//			unlock( lock);
+//		}
+//		if ( remove)
+//		{
+//			Collection<SynchronizationTask> toStore = Collections.emptyList();
+//			Collection<SynchronizationTask> toRemove = Collections.singletonList(appointmentTask);
+//			storeAndRemove( toStore,toRemove);
+//		}
+//	}
+//	
 	public void storeAndRemove(Collection<SynchronizationTask> toStore, Collection<SynchronizationTask> toRemove) throws RaplaException
 	{
 	    Map<String,Set<String>> hashMap = new HashMap<String,Set<String>>();
@@ -289,7 +289,22 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 		Collection<Entity> removeObjects = new HashSet<Entity>();
 		for ( SynchronizationTask task:toRemove)
 		{
-			String persistantId = task.getPersistantId();
+			// remove task from memory 
+		    String appointmentId = task.getAppointmentId();
+            if ( appointmentId != null)
+            {
+                Lock writeLock = writeLock();
+                try {
+                    //remove tasks from appointmenttask 
+                    final Set<SynchronizationTask> set = tasks.get(appointmentId);
+                    if(set!=null)set.remove(task);
+                } finally {
+                    RaplaComponent.unlock(writeLock);
+                }
+            }
+            
+            // remove task from database
+		    String persistantId = task.getPersistantId();
 			if ( persistantId != null)
 			{
 			    Allocatable persistant = operator.tryResolve( persistantId, Allocatable.class);
@@ -298,19 +313,15 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 					removeObjects.add( persistant);
 				}
 			}
-			String appointmentId = task.getAppointmentId();
-			if ( appointmentId != null)
-			{
-			    tasks.remove( appointmentId);
-			}
+			
 		}
 		for ( SynchronizationTask task:toStore)
 		{
-			String persistantId = task.getPersistantId();
-			Classification newClassification = null;
+			final String persistantId = task.getPersistantId();
+			final Classification newClassification;
 			if ( persistantId != null)
 			{
-			    Entity persistant = operator.tryResolve( persistantId, Allocatable.class);
+			    final Entity persistant = operator.tryResolve( persistantId, Allocatable.class);
 				if ( persistant != null)
 				{
 					Set<Entity> singleton = Collections.singleton( persistant);
@@ -318,69 +329,79 @@ public class ExchangeAppointmentStorage extends RaplaComponent {
 					Allocatable editable = (Allocatable) editObjects.iterator().next();
 					newClassification = editable.getClassification();
 					storeObjects.add( editable);
+				} 
+				else 
+				{
+				    final String lastError = task.getLastError();
+		            if ( lastError != null)
+		            {
+		                addHash( hashMap, task, lastError );
+		            }
+		            continue;
 				}
 			}
 			else
 			{
-				DynamicType dynamicType = operator.getDynamicType( StorageOperator.SYNCHRONIZATIONTASK_TYPE);
+				final DynamicType dynamicType = operator.getDynamicType( StorageOperator.SYNCHRONIZATIONTASK_TYPE);
 				newClassification = dynamicType.newClassification(); 
-				Allocatable newObject = getModification().newAllocatable(newClassification, null );
-				String userId = task.getUserId();
-				task.setPersistantId( newObject.getId());
-				User owner =  operator.tryResolve(userId, User.class);
+				final String userId = task.getUserId();
+				final User owner =  operator.tryResolve(userId, User.class);
 				if ( owner == null)
 				{
-					getLogger().error("User for id " + userId + " not found. Ignoring appointmentTask for appointment " + task.getAppointmentId());
-					continue;
+				    getLogger().error("User for id " + userId + " not found. Ignoring appointmentTask for appointment " + task.getAppointmentId());
+				    continue;
 				}
 				else
 				{	
-					newObject.setOwner(owner);
+    				final Allocatable newObject = getModification().newAllocatable(newClassification, owner );
+    				task.setPersistantId( newObject.getId());
 					storeObjects.add( newObject);
 				}
 			}
-			String lastError = task.getLastError();
-            if ( newClassification != null)
-			{
-				newClassification.setValue("objectId", task.getAppointmentId());
-				newClassification.setValue("status", task.getStatus().name());
-				newClassification.setValue("retries", task.getRetries());
-	            newClassification.setValue("lastRetry", task.getLastRetry());
-	            newClassification.setValue("lastError", lastError);
-			}
-			if ( lastError != null)
+			final String lastError = task.getLastError();
+			newClassification.setValue("objectId", task.getAppointmentId());
+			newClassification.setValue("status", task.getStatus().name());
+			newClassification.setValue("retries", task.getRetries());
+            newClassification.setValue("lastRetry", task.getLastRetry());
+            newClassification.setValue("lastError", lastError);
+
+            if ( lastError != null)
 			{
 			    addHash( hashMap, task, lastError );
 			}
 		}
+		// error handling. update LAST_SYNC_ERROR_CHANGE on new error
+		// check if there is a new error. Use hashing to check for new errors
 		for ( Entry<String, Set<String>> entry : hashMap.entrySet())
 		{
-		    String userid = entry.getKey();
-		    Set<String> hashKeys = entry.getValue();
-            User user = operator.tryResolve( userid, User.class);
+		    final String userid = entry.getKey();
+		    final Set<String> hashKeys = entry.getValue();
+            final User user = operator.tryResolve( userid, User.class);
             if ( user == null)
             {
                 // User is deleted we don't have to update his preferences
                 continue;
             }
             
-            StringBuilder hashableString = new StringBuilder();
+            final StringBuilder hashableString = new StringBuilder();
             for (String hashEntry: hashKeys)
             {
                 hashableString.append( hashEntry );
             }
-            Preferences userPreferences = operator.getPreferences(user,true ); 
-            String newHash = LocalAbstractCachableOperator.encrypt("sha-1",hashableString.toString());
-            String hash = userPreferences.getEntryAsString(LAST_SYNC_ERROR_CHANGE_HASH, null);
+            final Preferences userPreferences = operator.getPreferences(user,true ); 
+            final String newHash = LocalAbstractCachableOperator.encrypt("sha-1",hashableString.toString());
+            final String hash = userPreferences.getEntryAsString(LAST_SYNC_ERROR_CHANGE_HASH, null);
 	        if ( hash == null || !newHash.equals(hash))
 	        {
                 Preferences edit = getModification().edit( userPreferences);
-	            edit.putEntry(ExchangeConnectorRemote.LAST_SYNC_ERROR_CHANGE, getRaplaLocale().getSerializableFormat().formatTimestamp( getClientFacade().getOperator().getCurrentTimestamp()));
-	            edit.putEntry(LAST_SYNC_ERROR_CHANGE_HASH, newHash);
+	            String timestampOfFailure = getRaplaLocale().getSerializableFormat().formatTimestamp( getClientFacade().getOperator().getCurrentTimestamp());
+                edit.putEntry(ExchangeConnectorRemote.LAST_SYNC_ERROR_CHANGE, timestampOfFailure);
+	            // store hash of errors to check changes in with future errors
+                edit.putEntry(LAST_SYNC_ERROR_CHANGE_HASH, newHash);
 	            storeObjects.add( edit );
 	        }
 		}
-		User user = null;
+		final User user = null;
 		operator.storeAndRemove(storeObjects, removeObjects, user);
 	}
 
