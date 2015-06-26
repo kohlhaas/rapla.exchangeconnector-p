@@ -83,10 +83,11 @@ import org.rapla.server.TimeZoneConverter;
  */
 public class AppointmentSynchronizer
 {
-    
+
     private static final ExtendedPropertyDefinition RAPLA_APPOINTMENT_MARKER;
     private static final ExtendedPropertyDefinition RAPLA_APPOINTMENT_ID;
-    static {
+    static
+    {
         try
         {
             RAPLA_APPOINTMENT_ID = new ExtendedPropertyDefinition(DefaultExtendedPropertySet.Appointment, "raplaId", MapiPropertyType.String);
@@ -112,8 +113,9 @@ public class AppointmentSynchronizer
     private final String exchangeTimezoneId;
     private final String exchangeAppointmentCategory;
 
-    public AppointmentSynchronizer(Logger logger, TimeZoneConverter converter, final String url,
-            final String exchangeTimezoneId, final String exchangeAppointmentCategory, User user, String exchangeUsername, String exchangePassword, boolean sendNotificationMail, SynchronizationTask appointmentTask, Appointment appointment) throws RaplaException
+    public AppointmentSynchronizer(Logger logger, TimeZoneConverter converter, final String url, final String exchangeTimezoneId,
+            final String exchangeAppointmentCategory, User user, String exchangeUsername, String exchangePassword, boolean sendNotificationMail,
+            SynchronizationTask appointmentTask, Appointment appointment) throws RaplaException
     {
         this.sendNotificationMail = sendNotificationMail;
         this.logger = logger;
@@ -123,7 +125,7 @@ public class AppointmentSynchronizer
         this.raplaAppointment = appointment;
         this.appointmentTask = appointmentTask;
         this.exchangeTimezoneId = exchangeTimezoneId;
-        this.exchangeAppointmentCategory=exchangeAppointmentCategory;
+        this.exchangeAppointmentCategory = exchangeAppointmentCategory;
         try
         {
             final Logger ewsLogger = logger.getChildLogger("webservice");
@@ -140,59 +142,75 @@ public class AppointmentSynchronizer
             throw new RaplaException(e.getMessage(), e);
         }
     }
-    
-    static public Collection<String> remove(Logger logger,  final String url,  String exchangeUsername, String exchangePassword) throws  RaplaException
+
+    static public Collection<String> remove(Logger logger, final String url, String exchangeUsername, String exchangePassword) throws RaplaException
     {
         WebCredentials credentials = new WebCredentials(exchangeUsername, exchangePassword);
         Collection<String> result = new LinkedHashSet<String>();
         final Logger ewsLogger = logger.getChildLogger("webservice");
-        final ItemView view = new ItemView(1);
         final SearchFilter searchFilter = new SearchFilter.Exists(RAPLA_APPOINTMENT_MARKER);
         List<Item> items = new ArrayList<Item>();
         Collection<ItemId> itemIds = new ArrayList<ItemId>();
-        
-        try {
-            EWSConnector ewsConnector = new EWSConnector(url, credentials, ewsLogger);
-            ExchangeService service = ewsConnector.getService();
-            final FindItemsResults<Item> foundItems = service.findItems(new FolderId(WellKnownFolderName.Calendar), searchFilter, view);
-            for (Item item:foundItems)
+
+        try
+        {
+            boolean newRequestNeeded = true;
+            int offset = 0;
+            final int maxRequestedAppointments = 1;
+            while (newRequestNeeded)
             {
-                ItemId id = item.getId();
-                if ( id != null)
+                final ItemView view = new ItemView(maxRequestedAppointments, offset);
+                EWSConnector ewsConnector = new EWSConnector(url, credentials, ewsLogger);
+                ExchangeService service = ewsConnector.getService();
+                final FindItemsResults<Item> foundItems = service.findItems(new FolderId(WellKnownFolderName.Calendar), searchFilter, view);
+                if (foundItems.getItems().size() == maxRequestedAppointments)
                 {
-                    itemIds.add( id);
-                    items.add( item );
+                    offset++;
+                }
+                else
+                {
+                    newRequestNeeded = false;
+                }
+                for (Item item : foundItems)
+                {
+                    ItemId id = item.getId();
+                    if (id != null)
+                    {
+                        itemIds.add(id);
+                        items.add(item);
+                    }
                 }
             }
-        } 
+        }
         catch (Exception ex)
         {
             throw new RaplaException(ex.getMessage(), ex);
         }
-        if(itemIds.isEmpty())
+        if (itemIds.isEmpty())
             return result;
         AffectedTaskOccurrence affectedTaskOccurrences = AffectedTaskOccurrence.AllOccurrences;
         SendCancellationsMode sendCancellationsMode = SendCancellationsMode.SendToNone;
         DeleteMode deleteMode = DeleteMode.HardDelete;
         ServiceResponseCollection<ServiceResponse> deleteItems;
-        try {
+        try
+        {
             EWSConnector ewsConnector = new EWSConnector(url, credentials, ewsLogger);
             ExchangeService service = ewsConnector.getService();
             deleteItems = service.deleteItems(itemIds, deleteMode, sendCancellationsMode, affectedTaskOccurrences);
         }
         catch (Exception e)
         {
-            throw new RaplaException(e.getMessage(),e);
+            throw new RaplaException(e.getMessage(), e);
         }
         int index = 0;
-        for (ServiceResponse resultItem: deleteItems)
+        for (ServiceResponse resultItem : deleteItems)
         {
             ServiceResult code = resultItem.getResult();
-            if ( code == ServiceResult.Error)
+            if (code == ServiceResult.Error)
             {
-                Item item = items.get( index);
+                Item item = items.get(index);
                 String errorMessage = resultItem.getErrorMessage();
-                if ( errorMessage == null || errorMessage.isEmpty())
+                if (errorMessage == null || errorMessage.isEmpty())
                 {
                     errorMessage = "UnknownError";
                 }
@@ -205,13 +223,13 @@ public class AppointmentSynchronizer
                 {
                     subject = "Unknown";
                 }
-                if ( subject != null)
+                if (subject != null)
                 {
                     errorMessage = "Fehler beim Termin mit dem Betreff " + subject + ": " + errorMessage;
                 }
-                result.add( errorMessage);
+                result.add(errorMessage);
             }
-            index ++;
+            index++;
         }
         return result;
     }
@@ -252,13 +270,13 @@ public class AppointmentSynchronizer
      */
     private void addOrUpdate() throws Exception
     {
-        ewsConnector.test();
+        //ewsConnector.test();
         long time = System.currentTimeMillis();
         Logger logger = getLogger().getChildLogger("exchangeupdate");
         logger.info("Updating appointment " + raplaAppointment);
         ExchangeService service = ewsConnector.getService();
         {
-            microsoft.exchange.webservices.data.Appointment exchangeAppointment = getExchangeAppointmentByRaplaId(service,raplaAppointment.getId());
+            microsoft.exchange.webservices.data.Appointment exchangeAppointment = getExchangeAppointmentByRaplaId(service, raplaAppointment.getId());
             if (isDeletedRecurrenceRemoved(exchangeAppointment, calcExceptionDates()))
             {
                 delete();
@@ -330,7 +348,7 @@ public class AppointmentSynchronizer
         }
         //delete on the Exchange Server side
         //remove it from the "to-be-removed"-list
-        logger.info("Delted appointment with id " + identifier + " took " + (System.currentTimeMillis() - time) + " ms ");
+        logger.info("Deleted appointment with id " + identifier + " took " + (System.currentTimeMillis() - time) + " ms ");
     }
 
     private void saveToExchangeServer(microsoft.exchange.webservices.data.Appointment exchangeAppointment, boolean notify) throws Exception
@@ -358,7 +376,7 @@ public class AppointmentSynchronizer
             final ItemView view = new ItemView(1);
             final SearchFilter searchFilter = new SearchFilter.IsEqualTo(RAPLA_APPOINTMENT_ID, raplaId);
             final FindItemsResults<Item> items = service.findItems(new FolderId(WellKnownFolderName.Calendar), searchFilter, view);
-            if (items != null && items.isMoreAvailable())
+            if (items != null && !items.getItems().isEmpty())
             {
                 final Item item = items.iterator().next();
                 if (item instanceof microsoft.exchange.webservices.data.Appointment)
@@ -388,7 +406,7 @@ public class AppointmentSynchronizer
         if (exchangeAppointment == null)
         {
             exchangeAppointment = new microsoft.exchange.webservices.data.Appointment(service);
-        } 
+        }
         else
         {
             // Maybe we need this 
@@ -428,13 +446,13 @@ public class AppointmentSynchronizer
         exchangeAppointment.setLegacyFreeBusyStatus(LegacyFreeBusyStatus.valueOf(ExchangeConnectorConfig.DEFAULT_EXCHANGE_FREE_AND_BUSY));
 
         exchangeAppointment.getCategories().clearList();
-        
+
         // add category for filtering
         exchangeAppointment.getCategories().add(exchangeAppointmentCategory);
         // add category for each event type
         String categoryName = raplaAppointment.getReservation().getClassification().getType().getName(Locale.getDefault());
         exchangeAppointment.getCategories().add(categoryName);
-                
+
         //setExchangeRecurrence( );
         Repeating repeating = raplaAppointment.getRepeating();
         if (repeating != null)
@@ -445,7 +463,7 @@ public class AppointmentSynchronizer
         String messageBody = getMessageBody();
         exchangeAppointment.setBody(new MessageBody(BodyType.Text, messageBody));
 
-        exchangeAppointment.setExtendedProperty(RAPLA_APPOINTMENT_ID,  raplaAppointment.getId());
+        exchangeAppointment.setExtendedProperty(RAPLA_APPOINTMENT_ID, raplaAppointment.getId());
         exchangeAppointment.setExtendedProperty(RAPLA_APPOINTMENT_MARKER, Boolean.TRUE);
         addPersonsAndResources(exchangeAppointment);
 
@@ -711,7 +729,7 @@ public class AppointmentSynchronizer
         {
             exchangeAppointment.load(new PropertySet(AppointmentSchema.DeletedOccurrences));
             final DeletedOccurrenceInfoCollection deletedOccurrences = exchangeAppointment.getDeletedOccurrences();
-            if(deletedOccurrences != null)
+            if (deletedOccurrences != null)
             {
                 final Iterator<DeletedOccurrenceInfo> iterator = deletedOccurrences.iterator();
                 while (iterator.hasNext())
@@ -732,7 +750,7 @@ public class AppointmentSynchronizer
         return result;
     }
 
-    private void removeRecurrenceExceptions(microsoft.exchange.webservices.data.Appointment exchangeAppointment)
+    private void removeRecurrenceExceptions(microsoft.exchange.webservices.data.Appointment exchangeAppointment) throws Exception
     {
         SortedSet<Date> exceptionDates = calcExceptionDates();
         if (exceptionDates.size() == 0)
@@ -740,39 +758,35 @@ public class AppointmentSynchronizer
             return;
         }
         Date lastException = exceptionDates.last();
-        try
+        ItemId id = exchangeAppointment.getId();
+        int occurrenceIndex = 1;
+        while (true)
         {
-            ItemId id = exchangeAppointment.getId();
-            int occurrenceIndex = 1;
-            while (true)
+            ExchangeService service = ewsConnector.getService();
+            microsoft.exchange.webservices.data.Appointment occurrence = null;
+            try
             {
-                ExchangeService service = ewsConnector.getService();
-                microsoft.exchange.webservices.data.Appointment occurrence = microsoft.exchange.webservices.data.Appointment.bindToOccurrence(service, id,
-                        occurrenceIndex);
-                if (occurrence == null)
-                {
-                    break;
-                }
-                else
-                {
-                    occurrenceIndex++;
-                }
-                Date exchangeException = DateTools.cutDate(exchange2rapla(occurrence.getStart()));
-                if (exchangeException.after(lastException))
-                {
-                    break;
-                }
-                //FIXME occurences wont get reinserted when exception is deleted in rapla
-                if (exceptionDates.contains(exchangeException))
-                {
-                    getLogger().info("Removing exception for " + occurrence.getId().getUniqueId() + " " + occurrence.toString());
-                    occurrence.delete(DeleteMode.MoveToDeletedItems, SendCancellationsMode.SendOnlyToAll);
-                }
+                occurrence = microsoft.exchange.webservices.data.Appointment.bindToOccurrence(service, id, occurrenceIndex);
             }
-        }
-        catch (Exception e)
-        {
-            //Intended Exception
+            catch (Exception e)
+            {
+                logger.info(e.getMessage());
+            }
+            occurrenceIndex++;
+            if (occurrence == null)
+            {
+                continue;
+            }
+            Date exchangeException = DateTools.cutDate(exchange2rapla(occurrence.getStart()));
+            if (exchangeException.after(lastException))
+            {
+                break;
+            }
+            if (exceptionDates.contains(exchangeException))
+            {
+                getLogger().info("Removing exception for " + occurrence.getId().getUniqueId() + " " + occurrence.toString());
+                occurrence.delete(DeleteMode.MoveToDeletedItems, SendCancellationsMode.SendOnlyToAll);
+            }
         }
     }
 
