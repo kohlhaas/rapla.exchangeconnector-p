@@ -775,7 +775,8 @@ public class SynchronisationManager implements ModificationListener {
         		 notificationMail = preferences.getEntryAsBoolean( ExchangeConnectorConfig.EXCHANGE_SEND_INVITATION_AND_CANCELATION, ExchangeConnectorConfig.DEFAULT_EXCHANGE_SEND_INVITATION_AND_CANCELATION);
         	 }
         	 final Logger logger = this.logger.getChildLogger("exchange");
-             worker = new AppointmentSynchronizer(logger, converter, exchangeUrl, exchangeTimezoneId, exchangeAppointmentCategory, user, username,password, notificationMail, task, appointment);
+             final Locale locale = i18n.getLocale();
+             worker = new AppointmentSynchronizer(logger, converter, exchangeUrl, exchangeTimezoneId, exchangeAppointmentCategory, user, username,password, notificationMail, task, appointment, locale);
          }
          else
          {

@@ -17,6 +17,24 @@ import java.util.SortedSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
 
+import org.rapla.components.util.DateTools;
+import org.rapla.entities.User;
+import org.rapla.entities.domain.Allocatable;
+import org.rapla.entities.domain.Appointment;
+import org.rapla.entities.domain.Repeating;
+import org.rapla.entities.domain.RepeatingType;
+import org.rapla.entities.domain.Reservation;
+import org.rapla.entities.dynamictype.Attribute;
+import org.rapla.entities.dynamictype.AttributeAnnotations;
+import org.rapla.entities.dynamictype.Classification;
+import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
+import org.rapla.framework.RaplaException;
+import org.rapla.framework.logger.Logger;
+import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
+import org.rapla.plugin.exchangeconnector.server.SynchronizationTask;
+import org.rapla.plugin.exchangeconnector.server.SynchronizationTask.SyncStatus;
+import org.rapla.server.TimeZoneConverter;
+
 import microsoft.exchange.webservices.data.AffectedTaskOccurrence;
 import microsoft.exchange.webservices.data.AppointmentSchema;
 import microsoft.exchange.webservices.data.ArgumentException;
@@ -57,24 +75,6 @@ import microsoft.exchange.webservices.data.TimeZoneDefinition;
 import microsoft.exchange.webservices.data.WebCredentials;
 import microsoft.exchange.webservices.data.WellKnownFolderName;
 
-import org.rapla.components.util.DateTools;
-import org.rapla.entities.User;
-import org.rapla.entities.domain.Allocatable;
-import org.rapla.entities.domain.Appointment;
-import org.rapla.entities.domain.Repeating;
-import org.rapla.entities.domain.RepeatingType;
-import org.rapla.entities.domain.Reservation;
-import org.rapla.entities.dynamictype.Attribute;
-import org.rapla.entities.dynamictype.AttributeAnnotations;
-import org.rapla.entities.dynamictype.Classification;
-import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
-import org.rapla.framework.RaplaException;
-import org.rapla.framework.logger.Logger;
-import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
-import org.rapla.plugin.exchangeconnector.server.SynchronizationTask;
-import org.rapla.plugin.exchangeconnector.server.SynchronizationTask.SyncStatus;
-import org.rapla.server.TimeZoneConverter;
-
 /**
  * 
  * synchronizes a rapla appointment with an exchange appointment.
@@ -112,14 +112,16 @@ public class AppointmentSynchronizer
     private EWSConnector ewsConnector;
     private final String exchangeTimezoneId;
     private final String exchangeAppointmentCategory;
+    private final Locale locale;
 
     public AppointmentSynchronizer(Logger logger, TimeZoneConverter converter, final String url, final String exchangeTimezoneId,
             final String exchangeAppointmentCategory, User user, String exchangeUsername, String exchangePassword, boolean sendNotificationMail,
-            SynchronizationTask appointmentTask, Appointment appointment) throws RaplaException
+            SynchronizationTask appointmentTask, Appointment appointment, Locale locale) throws RaplaException
     {
         this.sendNotificationMail = sendNotificationMail;
         this.logger = logger;
         this.raplaUser = user;
+        this.locale = locale;
         WebCredentials credentials = new WebCredentials(exchangeUsername, exchangePassword);
         timeZoneConverter = converter;
         this.raplaAppointment = appointment;
@@ -440,7 +442,7 @@ public class AppointmentSynchronizer
         exchangeAppointment.setEnd(endDate);
         exchangeAppointment.setEndTimeZone(tDef);
         exchangeAppointment.setIsAllDayEvent(raplaAppointment.isWholeDaysSet());
-        exchangeAppointment.setSubject(getName(raplaAppointment.getReservation(), Locale.GERMAN));
+        exchangeAppointment.setSubject(getName(raplaAppointment.getReservation(), locale));
         exchangeAppointment.setIsResponseRequested(false);
         exchangeAppointment.setIsReminderSet(ExchangeConnectorConfig.DEFAULT_EXCHANGE_REMINDER_SET);
         exchangeAppointment.setLegacyFreeBusyStatus(LegacyFreeBusyStatus.valueOf(ExchangeConnectorConfig.DEFAULT_EXCHANGE_FREE_AND_BUSY));
@@ -450,7 +452,7 @@ public class AppointmentSynchronizer
         // add category for filtering
         exchangeAppointment.getCategories().add(exchangeAppointmentCategory);
         // add category for each event type
-        String categoryName = raplaAppointment.getReservation().getClassification().getType().getName(Locale.getDefault());
+        String categoryName = raplaAppointment.getReservation().getClassification().getType().getName(locale);
         exchangeAppointment.getCategories().add(categoryName);
 
         //setExchangeRecurrence( );
@@ -523,10 +525,19 @@ public class AppointmentSynchronizer
 
     private String getMessageBody() throws Exception
     {
-        String bodyAttendeeList = BODY_ATTENDEE_LIST_OPENING_LINE + getStringForRessources(raplaAppointment) + LINE_BREAK;
-        String content = RAPLA_BODY_MESSAGE;
-        content += bodyAttendeeList.isEmpty() ? "" : bodyAttendeeList;
-        content += RAPLA_NOSYNC_KEYWORD;
+        Reservation reservation = raplaAppointment.getReservation();
+        String content;
+        if ( reservation.getClassification().getType().getAnnotation(DynamicTypeAnnotations.KEY_DESCRIPTION_FORMAT_EXPORT) != null)
+        {
+            content = reservation.format(locale, DynamicTypeAnnotations.KEY_DESCRIPTION_FORMAT_EXPORT, raplaAppointment);
+        }
+        else
+        {
+            String bodyAttendeeList = BODY_ATTENDEE_LIST_OPENING_LINE + getStringForRessources(raplaAppointment) + LINE_BREAK;
+            content = RAPLA_BODY_MESSAGE;
+            content += bodyAttendeeList.isEmpty() ? "" : bodyAttendeeList;
+            content += RAPLA_NOSYNC_KEYWORD;
+        }
         return content;
     }
 
@@ -540,7 +551,7 @@ public class AppointmentSynchronizer
         {
             if (!restrictedAllocatable.isPerson())
             {
-                final String name = restrictedAllocatable.getName(Locale.getDefault());
+                final String name = restrictedAllocatable.getName(locale);
                 result.append(name).append(LINE_BREAK);
             }
         }
@@ -563,7 +574,7 @@ public class AppointmentSynchronizer
             //String emailAttribute = config.get(ExchangeConnectorConfig.RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL);
             final Classification classification = restrictedAllocatable.getClassification();
             final String email = getEmail(classification);
-            final String name = restrictedAllocatable.getName(Locale.getDefault());
+            final String name = restrictedAllocatable.getName(locale);
             if (restrictedAllocatable.isPerson())
             {
                 if (email != null && !email.equalsIgnoreCase(raplaUser.getEmail()))
