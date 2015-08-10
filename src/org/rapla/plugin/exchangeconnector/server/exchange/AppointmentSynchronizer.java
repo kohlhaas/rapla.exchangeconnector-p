@@ -21,6 +21,7 @@ import org.rapla.components.util.DateTools;
 import org.rapla.entities.User;
 import org.rapla.entities.domain.Allocatable;
 import org.rapla.entities.domain.Appointment;
+import org.rapla.entities.domain.NameFormatUtil;
 import org.rapla.entities.domain.Repeating;
 import org.rapla.entities.domain.RepeatingType;
 import org.rapla.entities.domain.Reservation;
@@ -442,7 +443,8 @@ public class AppointmentSynchronizer
         exchangeAppointment.setEnd(endDate);
         exchangeAppointment.setEndTimeZone(tDef);
         exchangeAppointment.setIsAllDayEvent(raplaAppointment.isWholeDaysSet());
-        exchangeAppointment.setSubject(getName(raplaAppointment.getReservation(), locale));
+        String subject = NameFormatUtil.getExportName(raplaAppointment, locale);
+        exchangeAppointment.setSubject(subject);
         exchangeAppointment.setIsResponseRequested(false);
         exchangeAppointment.setIsReminderSet(ExchangeConnectorConfig.DEFAULT_EXCHANGE_REMINDER_SET);
         exchangeAppointment.setLegacyFreeBusyStatus(LegacyFreeBusyStatus.valueOf(ExchangeConnectorConfig.DEFAULT_EXCHANGE_FREE_AND_BUSY));
@@ -486,14 +488,6 @@ public class AppointmentSynchronizer
         {
 
         }
-    }
-
-    private Object getName(Reservation reservation, Locale locale)
-    {
-        String annotationName = reservation.getClassification().getType().getAnnotation(DynamicTypeAnnotations.KEY_NAME_FORMAT_EXPORT) != null ? DynamicTypeAnnotations.KEY_NAME_FORMAT_EXPORT
-                : DynamicTypeAnnotations.KEY_NAME_FORMAT;
-        String eventDescription = reservation.format(locale, annotationName);
-        return eventDescription;
     }
 
     private Date rapla2exchange(Date date)
