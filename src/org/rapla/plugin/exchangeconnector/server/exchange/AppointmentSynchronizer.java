@@ -782,7 +782,6 @@ public class AppointmentSynchronizer
                 }
                 logger.info(e.getMessage());
             }
-            occurrenceIndex++;
             if (occurrence == null)
             {
                 continue;
