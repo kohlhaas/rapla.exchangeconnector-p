@@ -17,6 +17,24 @@ import java.util.SortedSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
 
+import org.rapla.components.util.DateTools;
+import org.rapla.entities.User;
+import org.rapla.entities.domain.Allocatable;
+import org.rapla.entities.domain.Appointment;
+import org.rapla.entities.domain.Repeating;
+import org.rapla.entities.domain.RepeatingType;
+import org.rapla.entities.domain.Reservation;
+import org.rapla.entities.dynamictype.Attribute;
+import org.rapla.entities.dynamictype.AttributeAnnotations;
+import org.rapla.entities.dynamictype.Classification;
+import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
+import org.rapla.framework.RaplaException;
+import org.rapla.framework.logger.Logger;
+import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
+import org.rapla.plugin.exchangeconnector.server.SynchronizationTask;
+import org.rapla.plugin.exchangeconnector.server.SynchronizationTask.SyncStatus;
+import org.rapla.server.TimeZoneConverter;
+
 import microsoft.exchange.webservices.data.AffectedTaskOccurrence;
 import microsoft.exchange.webservices.data.AppointmentSchema;
 import microsoft.exchange.webservices.data.ArgumentException;
@@ -48,6 +66,7 @@ import microsoft.exchange.webservices.data.SearchFilter;
 import microsoft.exchange.webservices.data.SendCancellationsMode;
 import microsoft.exchange.webservices.data.SendInvitationsMode;
 import microsoft.exchange.webservices.data.SendInvitationsOrCancellationsMode;
+import microsoft.exchange.webservices.data.ServiceError;
 import microsoft.exchange.webservices.data.ServiceLocalException;
 import microsoft.exchange.webservices.data.ServiceResponse;
 import microsoft.exchange.webservices.data.ServiceResponseCollection;
@@ -56,24 +75,6 @@ import microsoft.exchange.webservices.data.ServiceResult;
 import microsoft.exchange.webservices.data.TimeZoneDefinition;
 import microsoft.exchange.webservices.data.WebCredentials;
 import microsoft.exchange.webservices.data.WellKnownFolderName;
-
-import org.rapla.components.util.DateTools;
-import org.rapla.entities.User;
-import org.rapla.entities.domain.Allocatable;
-import org.rapla.entities.domain.Appointment;
-import org.rapla.entities.domain.Repeating;
-import org.rapla.entities.domain.RepeatingType;
-import org.rapla.entities.domain.Reservation;
-import org.rapla.entities.dynamictype.Attribute;
-import org.rapla.entities.dynamictype.AttributeAnnotations;
-import org.rapla.entities.dynamictype.Classification;
-import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
-import org.rapla.framework.RaplaException;
-import org.rapla.framework.logger.Logger;
-import org.rapla.plugin.exchangeconnector.ExchangeConnectorConfig;
-import org.rapla.plugin.exchangeconnector.server.SynchronizationTask;
-import org.rapla.plugin.exchangeconnector.server.SynchronizationTask.SyncStatus;
-import org.rapla.server.TimeZoneConverter;
 
 /**
  * 
@@ -768,8 +769,12 @@ public class AppointmentSynchronizer
             {
                 occurrence = microsoft.exchange.webservices.data.Appointment.bindToOccurrence(service, id, occurrenceIndex);
             }
-            catch (Exception e)
+            catch (ServiceResponseException e)
             {
+                if(e.getErrorCode() == ServiceError.ErrorItemNotFound || e.getErrorCode() == ServiceError.ErrorCalendarOccurrenceIndexIsOutOfRecurrenceRange)
+                {
+                    break;
+                }
                 logger.info(e.getMessage());
             }
             occurrenceIndex++;
