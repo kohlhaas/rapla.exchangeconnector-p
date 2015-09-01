@@ -2,7 +2,7 @@
 <launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
 <stringAttribute key="bad_container_name" value="\rapla.exchangeconnector-p\e"/>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
-<listEntry value="/rapla/src/org/rapla/bootstrap/RaplaServerLoader.java"/>
+<listEntry value="/rapla/test-src/org/rapla/bootstrap/RaplaServerLoader.java"/>
 </listAttribute>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
 <listEntry value="1"/>

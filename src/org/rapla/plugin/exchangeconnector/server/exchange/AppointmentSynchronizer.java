@@ -67,6 +67,7 @@ import microsoft.exchange.webservices.data.SearchFilter;
 import microsoft.exchange.webservices.data.SendCancellationsMode;
 import microsoft.exchange.webservices.data.SendInvitationsMode;
 import microsoft.exchange.webservices.data.SendInvitationsOrCancellationsMode;
+import microsoft.exchange.webservices.data.ServiceError;
 import microsoft.exchange.webservices.data.ServiceLocalException;
 import microsoft.exchange.webservices.data.ServiceResponse;
 import microsoft.exchange.webservices.data.ServiceResponseCollection;
@@ -764,8 +765,8 @@ public class AppointmentSynchronizer
         }
         Date lastException = exceptionDates.last();
         ItemId id = exchangeAppointment.getId();
-        int occurrenceIndex = 1;
-        while (true)
+        final int MAX_TRIES=1000;
+        for (int occurrenceIndex = 1;occurrenceIndex<MAX_TRIES;occurrenceIndex++)
         {
             ExchangeService service = ewsConnector.getService();
             microsoft.exchange.webservices.data.Appointment occurrence = null;
@@ -773,8 +774,12 @@ public class AppointmentSynchronizer
             {
                 occurrence = microsoft.exchange.webservices.data.Appointment.bindToOccurrence(service, id, occurrenceIndex);
             }
-            catch (Exception e)
+            catch (ServiceResponseException e)
             {
+                if(e.getErrorCode() == ServiceError.ErrorItemNotFound || e.getErrorCode() == ServiceError.ErrorCalendarOccurrenceIndexIsOutOfRecurrenceRange)
+                {
+                    break;
+                }
                 logger.info(e.getMessage());
             }
             occurrenceIndex++;
