@@ -22,6 +22,7 @@ import org.rapla.entities.User;
 import org.rapla.entities.domain.Allocatable;
 import org.rapla.entities.domain.Appointment;
 import org.rapla.entities.domain.NameFormatUtil;
+import org.rapla.entities.domain.PermissionContainer;
 import org.rapla.entities.domain.Repeating;
 import org.rapla.entities.domain.RepeatingType;
 import org.rapla.entities.domain.Reservation;
@@ -544,13 +545,26 @@ public class AppointmentSynchronizer
         // join and check for mail address, if so, add to reservation
         for (Allocatable restrictedAllocatable : resources)
         {
-            if (!restrictedAllocatable.isPerson())
+            if ( canReadAllocations( restrictedAllocatable))
             {
-                final String name = restrictedAllocatable.getName(locale);
-                result.append(name).append(LINE_BREAK);
+                if (!restrictedAllocatable.isPerson())
+                {
+                    final String name = getResourceName(restrictedAllocatable);
+                    result.append(name).append(LINE_BREAK);
+                }
             }
         }
         return result.toString();
+    }
+
+    private String getResourceName(Allocatable allocatable)
+    {
+        return allocatable.getName(locale);
+    }
+    
+    private boolean canReadAllocations(Allocatable allocatable)
+    {
+        return PermissionContainer.Util.canRead(allocatable, raplaUser);
     }
 
     private void addPersonsAndResources(microsoft.exchange.webservices.data.Appointment exchangeAppointment) throws ServiceLocalException, Exception
@@ -566,10 +580,14 @@ public class AppointmentSynchronizer
 
         for (Allocatable restrictedAllocatable : allocatables)
         {
+            if (! canReadAllocations( restrictedAllocatable))
+            {
+                continue;
+            }
             //String emailAttribute = config.get(ExchangeConnectorConfig.RAPLA_EVENT_TYPE_ATTRIBUTE_EMAIL);
             final Classification classification = restrictedAllocatable.getClassification();
             final String email = getEmail(classification);
-            final String name = restrictedAllocatable.getName(locale);
+            final String name = getResourceName(restrictedAllocatable);
             if (restrictedAllocatable.isPerson())
             {
                 if (email != null && !email.equalsIgnoreCase(raplaUser.getEmail()))
