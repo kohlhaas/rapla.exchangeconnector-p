@@ -819,14 +819,21 @@ public class SynchronisationManager implements ModificationListener {
 		} finally {
 			RaplaComponent.unlock( lock);
 		}
-		boolean createIfNotNull = false;
-		Preferences preferences = facade.getPreferences(user, createIfNotNull);
-		if ( preferences == null)
-		{
-			return;
-		}
-		preferences = facade.edit( preferences);
-		CalendarModelConfiguration modelConfig = preferences.getEntry(CalendarModelConfiguration.CONFIG_ENTRY);
+		
+		// if we want to remove the exported flats comment this in
+		//removeExportedCalendarFlags(user);
+	}
+
+    private void removeExportedCalendarFlags(User user) throws RaplaException
+    {
+        final boolean createIfNotNull = false;
+        Preferences preferences = facade.getPreferences(user, createIfNotNull);
+        if ( preferences == null)
+        {
+            return;
+        }	
+        preferences = facade.edit( preferences);
+        CalendarModelConfiguration modelConfig = preferences.getEntry(CalendarModelConfiguration.CONFIG_ENTRY);
         if ( modelConfig != null )
         {
         	Map<String, String> optionMap = modelConfig.getOptionMap();
@@ -857,7 +864,7 @@ public class SynchronisationManager implements ModificationListener {
             preferences.putEntry( EXPORT_ENTRY, facade.newRaplaMap( newExportMap ));
         }
         facade.store( preferences);
-	}
+    }
 
 	public void testConnection(String exchangeUsername, String exchangePassword) throws RaplaException {
 		try {
