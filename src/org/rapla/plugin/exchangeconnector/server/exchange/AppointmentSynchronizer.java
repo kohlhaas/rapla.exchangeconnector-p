@@ -29,6 +29,7 @@ import org.rapla.entities.domain.Reservation;
 import org.rapla.entities.dynamictype.Attribute;
 import org.rapla.entities.dynamictype.AttributeAnnotations;
 import org.rapla.entities.dynamictype.Classification;
+import org.rapla.entities.dynamictype.DynamicType;
 import org.rapla.entities.dynamictype.DynamicTypeAnnotations;
 import org.rapla.framework.RaplaException;
 import org.rapla.framework.logger.Logger;
@@ -445,7 +446,7 @@ public class AppointmentSynchronizer
         exchangeAppointment.setEnd(endDate);
         exchangeAppointment.setEndTimeZone(tDef);
         exchangeAppointment.setIsAllDayEvent(raplaAppointment.isWholeDaysSet());
-        String subject = NameFormatUtil.getExportName(raplaAppointment, locale);
+        String subject = getExportName(raplaAppointment, locale);
         exchangeAppointment.setSubject(subject);
         exchangeAppointment.setIsResponseRequested(false);
         exchangeAppointment.setIsReminderSet(ExchangeConnectorConfig.DEFAULT_EXCHANGE_REMINDER_SET);
@@ -475,6 +476,23 @@ public class AppointmentSynchronizer
 
         return exchangeAppointment;
     }
+    
+    public static String getExportName(Appointment appointment, Locale locale)
+    {
+        final Reservation reservation = appointment.getReservation();
+        String eventDescription;
+        DynamicType type = reservation.getClassification().getType();
+		if ( type.getAnnotation( DynamicTypeAnnotations.KEY_NAME_FORMAT_EXCHANGE) != null)
+        {
+            eventDescription = reservation.format(locale, DynamicTypeAnnotations.KEY_NAME_FORMAT_EXCHANGE, appointment);
+        }
+		else 
+        {
+            eventDescription = NameFormatUtil.getExportName( appointment, locale);
+        }
+        return eventDescription;
+    }
+
 
     static class MyTimeZoneDefinition extends TimeZoneDefinition
     {

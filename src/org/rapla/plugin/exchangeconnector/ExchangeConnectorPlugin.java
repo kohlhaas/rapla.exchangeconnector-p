@@ -9,7 +9,8 @@ import org.rapla.plugin.exchangeconnector.client.ExchangeClientError;
 import org.rapla.plugin.exchangeconnector.client.ExchangeConnectorAdminOptions;
 import org.rapla.plugin.exchangeconnector.client.ExchangeConnectorUserOptions;
 import org.rapla.plugin.exchangeconnector.client.ExchangeExtensionFactory;
-
+import org.rapla.plugin.exchangeconnector.client.ExportExchangeDescriptionAnnotationEdit;
+import org.rapla.gui.AnnotationEditExtension;
 
 public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceContainer> {
 
@@ -29,6 +30,7 @@ public class ExchangeConnectorPlugin implements PluginDescriptor<ClientServiceCo
             container.addContainerProvidedComponent(RaplaClientExtensionPoints.USER_OPTION_PANEL_EXTENSION, ExchangeConnectorUserOptions.class);
     	    container.addContainerProvidedComponent( RaplaClientExtensionPoints.PUBLISH_EXTENSION_OPTION, ExchangeExtensionFactory.class);
             container.addContainerProvidedComponent( RaplaClientExtensionPoints.CLIENT_EXTENSION, ExchangeClientError.class);
+            container.addContainerProvidedComponent( AnnotationEditExtension.DYNAMICTYPE_ANNOTATION_EDIT, ExportExchangeDescriptionAnnotationEdit.class);
         }
     }
     
